@@ -1,9 +1,13 @@
 package com.oceanview.model;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 public class User {
+
+    public enum UserRole {
+        ADMIN, STAFF
+    }
+
     private Long id;
     private String username;
     private String password;
@@ -12,28 +16,20 @@ public class User {
     private String email;
     private String phone;
     private UserRole role;
-    private boolean isActive;
+    private boolean active;
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    public enum UserRole {
-        ADMIN, STAFF
-    }
-
-    // Constructor
     public User() {}
 
-    public User(String username, String password, String firstName, String lastName,
-                String email, String phone, UserRole role) {
+    public User(String username, String firstName, String lastName, String email, String phone, UserRole role) {
         this.username = username;
-        this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phone = phone;
         this.role = role;
-        this.isActive = true;
+        this.active = true;
     }
 
     // Getters and Setters
@@ -63,8 +59,8 @@ public class User {
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
 
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public LocalDateTime getLastLogin() { return lastLogin; }
     public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
@@ -72,36 +68,12 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    // Business methods
     public boolean isAdmin() {
-        return role == UserRole.ADMIN;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+        return UserRole.ADMIN.equals(this.role);
     }
 
     @Override
     public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", role=" + role +
-                '}';
+        return "User{id=" + id + ", username='" + username + "', role=" + role + "}";
     }
 }
