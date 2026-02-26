@@ -1,10 +1,10 @@
-
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ocean View Hotel - Login</title>
+    <title>Ocean View - Staff Portal</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,10 +17,13 @@
 
     <style>
         :root {
-            --primary-color: #0d6efd;
-            --primary-dark: #0b5ed7;
-            --secondary-color: #6c757d;
-            --light-bg: #f8f9fa;
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --dark-color: #1e293b;
+            --light-color: #f8f9fa;
+            --success-color: #06d6a0;
+            --gradient: linear-gradient(135deg, #4361ee, #3a0ca3);
         }
 
         * {
@@ -31,81 +34,198 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: #f0f2f5;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
-        .login-wrapper {
-            max-width: 450px;
-            width: 100%;
-        }
-
-        .brand-section {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .brand-icon {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
+        .split-container {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);
-        }
-
-        .brand-icon i {
-            font-size: 40px;
-            color: var(--primary-color);
-        }
-
-        .brand-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .brand-subtitle {
-            color: var(--secondary-color);
-            font-size: 1rem;
-        }
-
-        .login-card {
+            max-width: 1200px;
+            width: 95%;
+            min-height: 650px;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Left Side - Image/Hero Section */
+        .hero-section {
+            flex: 1.2;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             overflow: hidden;
         }
 
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), #764ba2);
-            padding: 30px;
-            text-align: center;
-            color: white;
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('${pageContext.request.contextPath}/images/login.jpg') center/cover;
         }
 
-        .card-header h2 {
-            font-size: 1.8rem;
+        /* Dark overlay for better text readability */
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(100deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3));
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+            padding: 50px 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: fit-content;
+        }
+
+        .hero-title {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+            margin-bottom: 30px;
+            max-width: 80%;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .quote-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+        }
+
+        .quote-text {
+            font-size: 1.1rem;
+            font-style: italic;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .quote-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quote-author i {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+
+        .author-info h4 {
             font-weight: 600;
+            margin-bottom: 2px;
+            font-size: 1rem;
+        }
+
+        .author-info p {
+            opacity: 0.8;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-item {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Right Side - Form Section */
+        .form-section {
+            flex: 1;
+            padding: 50px 45px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-header h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--dark-color);
             margin-bottom: 10px;
         }
 
-        .card-header p {
-            opacity: 0.9;
-            margin: 0;
-            font-size: 0.95rem;
+        .form-header p {
+            color: #6b7280;
+            font-size: 1rem;
         }
 
-        .card-body {
-            padding: 40px 30px;
+        .role-badge {
+            display: inline-block;
+            background: #eef2f6;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--dark-color);
+            margin-top: 10px;
+        }
+
+        .role-badge i {
+            color: var(--primary-color);
+            margin-right: 5px;
         }
 
         .form-group {
@@ -116,78 +236,83 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #555;
+            color: var(--dark-color);
             font-weight: 500;
             font-size: 0.95rem;
         }
 
-        .input-group {
+        .input-wrapper {
             position: relative;
+            display: flex;
+            align-items: center;
         }
 
-        .input-group i.input-icon {
+        .input-icon {
             position: absolute;
             left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary-color);
-            font-size: 1.1rem;
-            z-index: 10;
+            color: #9ca3af;
+            font-size: 1rem;
+            z-index: 2;
         }
 
         .form-control {
-            height: 50px;
-            padding: 10px 15px 10px 45px;
-            border: 2px solid #e1e1e1;
+            width: 100%;
+            height: 55px;
+            padding: 10px 45px 10px 45px;
+            border: 2px solid #eef2f6;
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             transition: all 0.3s;
+            background: #f8fafc;
         }
 
         .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+            outline: none;
         }
 
         .toggle-password {
             position: absolute;
             right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary-color);
+            color: #9ca3af;
             cursor: pointer;
-            z-index: 10;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            z-index: 2;
         }
 
         .toggle-password:hover {
             color: var(--primary-color);
         }
 
+        #password {
+            padding-right: 45px;
+        }
+
         .remember-forgot {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin: 25px 0 30px;
         }
 
         .remember-me {
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
         .remember-me input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            margin-right: 8px;
             cursor: pointer;
             accent-color: var(--primary-color);
         }
 
         .remember-me label {
-            color: #555;
+            color: #4b5563;
             cursor: pointer;
-            user-select: none;
             font-size: 0.95rem;
         }
 
@@ -196,18 +321,16 @@
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 500;
-            transition: color 0.3s;
         }
 
         .forgot-link:hover {
-            color: var(--primary-dark);
             text-decoration: underline;
         }
 
         .btn-login {
             width: 100%;
-            height: 50px;
-            background: var(--primary-color);
+            height: 55px;
+            background: var(--gradient);
             border: none;
             border-radius: 12px;
             color: white;
@@ -219,16 +342,33 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
         }
 
         .btn-login:hover {
-            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+            box-shadow: 0 15px 30px rgba(67, 97, 238, 0.4);
         }
 
-        .btn-login:active {
-            transform: translateY(0);
+        .staff-note {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #eef2f6;
+        }
+
+        .staff-note p {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .staff-note i {
+            color: var(--primary-color);
+            margin-right: 5px;
         }
 
         .alert {
@@ -247,25 +387,6 @@
         .alert-success {
             background: #e8f5e9;
             color: #2e7d32;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 25px;
-            color: var(--secondary-color);
-            font-size: 0.95rem;
-        }
-
-        .footer-text a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s;
-        }
-
-        .footer-text a:hover {
-            color: var(--primary-dark);
-            text-decoration: underline;
         }
 
         .spinner {
@@ -300,13 +421,18 @@
             100% { transform: rotate(360deg); }
         }
 
-        @media (max-width: 576px) {
-            .card-body {
-                padding: 30px 20px;
+        @media (max-width: 968px) {
+            .split-container {
+                flex-direction: column;
+                min-height: auto;
             }
 
-            .card-header {
-                padding: 25px;
+            .hero-section {
+                min-height: 450px;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
             }
         }
     </style>
@@ -315,85 +441,133 @@
 
 <div class="spinner" id="spinner"></div>
 
-<div class="login-wrapper">
-    <div class="brand-section">
-        <div class="brand-icon">
-            <i class="fas fa-hotel"></i>
+<div class="split-container">
+    <!-- Left Side - Staff/Admin Focused Quotes -->
+    <div class="hero-section">
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
+            <div class="brand-badge">
+                <i class="fas fa-hotel me-2"></i> Ocean View Staff Portal
+            </div>
+
+            <div>
+                <h1 class="hero-title">
+                    Staff & Admin<br>Reservation System
+                </h1>
+
+                <p class="hero-subtitle">
+                    Secure access for hotel management team to handle reservations, guest requests, and room assignments.
+                </p>
+
+                <!-- Quick Stats for Staff -->
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <div class="stat-number">156</div>
+                        <div class="stat-label">Rooms</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">89%</div>
+                        <div class="stat-label">Occupancy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Support</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Quote at Bottom -->
+            <div class="testimonial" style="margin-top: 20px;">
+                <p class="testimonial-text" style="font-size: 0.9rem;">
+                </p>
+                <div class="testimonial-author">
+                    <i class="fas fa-crown" style="color: gold;"></i>
+                    <div class="author-info">
+                        <strong>Management Team</strong>
+                        <small>Ocean View Hotel</small>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h1 class="brand-title">Ocean View</h1>
-        <p class="brand-subtitle">Hotel Reservation System</p>
     </div>
 
-    <div class="login-card">
-        <div class="card-header">
-            <h2>Welcome Back</h2>
-            <p>Please, login to your account</p>
+    <!-- Right Side - Login Form (Unchanged) -->
+    <div class="form-section">
+        <div class="form-header">
+            <h2>Staff Login</h2>
+            <p>Welcome back! Please login to access the management system</p>
+            <div class="role-badge">
+                <i class="fas fa-shield-alt"></i> Authorized Personnel Only
+            </div>
         </div>
 
-        <div class="card-body">
-            <% if (request.getAttribute("error") != null) { %>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <%= request.getAttribute("error") %>
-            </div>
-            <% } %>
+        <% if (request.getAttribute("error") != null) { %>
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <%= request.getAttribute("error") %>
+        </div>
+        <% } %>
 
-            <% if (request.getAttribute("success") != null) { %>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle me-2"></i>
-                <%= request.getAttribute("success") %>
-            </div>
-            <% } %>
+        <% if (request.getAttribute("success") != null) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            <%= request.getAttribute("success") %>
+        </div>
+        <% } %>
 
-            <form action="${pageContext.request.contextPath}/login" method="POST" id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <div class="input-group">
-                        <i class="fas fa-user input-icon"></i>
-                        <input type="text"
-                               class="form-control"
-                               id="username"
-                               name="username"
-                               placeholder="Enter your username"
-                               value="${rememberedUsername != null ? rememberedUsername : ''}"
-                               required
-                               autofocus>
-                    </div>
+        <!-- Login Form -->
+        <form action="${pageContext.request.contextPath}/login" method="POST" id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           name="username"
+                           placeholder="Enter your username"
+                           value="${rememberedUsername != null ? rememberedUsername : ''}"
+                           required
+                           autofocus>
                 </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-group">
-                        <i class="fas fa-lock input-icon"></i>
-                        <input type="password"
-                               class="form-control"
-                               id="password"
-                               name="password"
-                               placeholder="Enter your password"
-                               required>
-                        <i class="fas fa-eye toggle-password" id="togglePassword"></i>
-                    </div>
-                </div>
-
-                <div class="remember-forgot">
-                    <div class="remember-me">
-                        <input type="checkbox" id="remember" name="remember" ${cookie.rememberMe != null ? 'checked' : ''}>
-                        <label for="remember">Remember me</label>
-                    </div>
-                    <a href="#" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
-                        Forgot Password?
-                    </a>
-                </div>
-
-                <button type="submit" class="btn-login" id="loginBtn">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Login
-                </button>
-            </form>
-
-            <div class="footer-text">
-                <p>Don't have an account? <a href="#" data-bs-toggle="modal" data-bs-target="#contactAdminModal">Contact Administrator</a></p>
             </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password"
+                           class="form-control"
+                           id="password"
+                           name="password"
+                           placeholder="Enter your password"
+                           required>
+                    <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                </div>
+            </div>
+
+            <div class="remember-forgot">
+                <div class="remember-me">
+                    <input type="checkbox" id="remember" name="remember" ${cookie.rememberMe != null ? 'checked' : ''}>
+                    <label for="remember">Remember me</label>
+                </div>
+                <a href="#" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                    Forgot Password?
+                </a>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn">
+                Access Dashboard
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="staff-note">
+            <p>
+                <i class="fas fa-info-circle"></i>
+                This portal is for authorized staff and administrators only. All activities are logged.
+            </p>
         </div>
     </div>
 </div>
@@ -420,42 +594,16 @@
     </div>
 </div>
 
-<!-- Contact Admin Modal -->
-<div class="modal fade" id="contactAdminModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Contact Administrator</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>To get access to the system, please contact:</p>
-                <div class="mt-3 p-3 bg-light rounded">
-                    <p class="mb-2"><i class="fas fa-envelope text-primary me-2"></i>it@oceanview.com</p>
-                    <p class="mb-0"><i class="fas fa-phone text-primary me-2"></i>+94 71 234 5678</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     $(document).ready(function() {
-        // Show loading spinner on form submit
         $('#loginForm').on('submit', function() {
             $('#spinner').addClass('active');
             $('#loginBtn').prop('disabled', true);
         });
 
-        // Toggle password visibility
         $('#togglePassword').click(function() {
             const passwordField = $('#password');
             const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
@@ -463,17 +611,6 @@
             $(this).toggleClass('fa-eye fa-eye-slash');
         });
 
-        // Input validation
-        $('#username').on('blur', function() {
-            const username = $(this).val();
-            if (username.length < 3) {
-                $(this).addClass('is-invalid');
-            } else {
-                $(this).removeClass('is-invalid');
-            }
-        });
-
-        // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             $('.alert').fadeOut('slow');
         }, 5000);

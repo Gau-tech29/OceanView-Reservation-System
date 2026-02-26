@@ -10,5 +10,7 @@ public interface BaseDAO<T, ID> {
     boolean delete(ID id) throws SQLException;
     Optional<T> findById(ID id) throws SQLException;
     List<T> findAll() throws SQLException;
+    List<T> findAll(int page, int size) throws SQLException;
     long count() throws SQLException;
+    boolean exists(ID id) throws SQLException;
 }
