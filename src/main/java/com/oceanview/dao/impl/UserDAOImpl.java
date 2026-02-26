@@ -103,6 +103,21 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
+    public List<User> findAll(int page, int size) throws SQLException {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, size);
+            ps.setInt(2, (page - 1) * size);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapRow(rs));
+            }
+        }
+        return users;
+    }
+
+    @Override
     public List<User> findByRole(User.UserRole role) throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE role = ?";
@@ -196,5 +211,17 @@ public class UserDAOImpl implements UserDAO {
             if (rs.next()) return rs.getLong(1);
         }
         return 0;
+    }
+
+    @Override
+    public boolean exists(Long id) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
     }
 }
