@@ -3,6 +3,11 @@
 <%@ page import="com.oceanview.dto.DashboardStatsDTO" %>
 <%@ page import="java.time.LocalDate" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+
+<%
+    // Set page title for active menu detection
+    request.setAttribute("pageTitle", "Dashboard");
+%>
 <%
     User user = (User) session.getAttribute("user");
     if (user == null) {
@@ -728,47 +733,58 @@
         <p>Hotel Reservation System</p>
     </div>
 
+    <!-- Sidebar Menu - Update this section -->
     <ul class="sidebar-menu">
         <li>
-            <a href="#" class="active">
+            <a href="${pageContext.request.contextPath}/admin/dashboard" ${pageTitle == 'Dashboard' ? 'class="active"' : ''}>
                 <i class="fas fa-chart-pie"></i>
                 <span>Dashboard</span>
             </a>
         </li>
-        <li><a href="${pageContext.request.contextPath}/admin/manage-staff"><i class="fas fa-users-cog"></i><span>Manage Staff</span></a></li>
-        <li><a href="${pageContext.request.contextPath}/admin/manage-rooms"><i class="fas fa-door-open"></i><span>Manage Rooms</span></a></li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/manage-staff" ${pageTitle == 'Manage Staff' ? 'class="active"' : ''}>
+                <i class="fas fa-users-cog"></i>
+                <span>Manage Staff</span>
+            </a>
+        </li>
+        <li>
+            <a href="${pageContext.request.contextPath}/admin/manage-rooms" ${pageTitle == 'Manage Rooms' ? 'class="active"' : ''}>
+                <i class="fas fa-door-open"></i>
+                <span>Manage Rooms</span>
+            </a>
+        </li>
+        <li>
+            <a href="${pageContext.request.contextPath}/admin/reservations">
                 <i class="fas fa-calendar-alt"></i>
                 <span>All Reservations</span>
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/guests">
                 <i class="fas fa-users"></i>
                 <span>Guests</span>
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/bills">
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Bills & Payments</span>
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/maintenance">
                 <i class="fas fa-tools"></i>
                 <span>Maintenance</span>
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/reports">
                 <i class="fas fa-chart-bar"></i>
                 <span>Reports</span>
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="${pageContext.request.contextPath}/admin/settings">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
@@ -956,7 +972,7 @@
     <div class="recent-activity">
         <div class="section-header">
             <h3>Recent Reservations</h3>
-            <a href="#" class="view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
+            <a href="${pageContext.request.contextPath}/admin/reservations" class="view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
 
         <div class="table-responsive">
@@ -974,68 +990,74 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td><strong>#RES001</strong></td>
-                    <td>John Smith</td>
-                    <td>Deluxe Suite - 501</td>
-                    <td>2024-02-25</td>
-                    <td>2024-02-28</td>
-                    <td><span class="badge-status badge-confirmed">Confirmed</span></td>
-                    <td><span class="badge-status badge-confirmed">Paid</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action" title="View"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger btn-action" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>#RES002</strong></td>
-                    <td>Emma Wilson</td>
-                    <td>Ocean View - 302</td>
-                    <td>2024-02-26</td>
-                    <td>2024-03-01</td>
-                    <td><span class="badge-status badge-pending">Pending</span></td>
-                    <td><span class="badge-status badge-pending">Pending</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action" title="View"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger btn-action" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>#RES003</strong></td>
-                    <td>Michael Brown</td>
-                    <td>Standard - 201</td>
-                    <td>2024-02-24</td>
-                    <td>2024-02-27</td>
-                    <td><span class="badge-status badge-checked-in">Checked In</span></td>
-                    <td><span class="badge-status badge-confirmed">Paid</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action" title="View"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger btn-action" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>#RES004</strong></td>
-                    <td>Sarah Davis</td>
-                    <td>Family Room - 401</td>
-                    <td>2024-02-23</td>
-                    <td>2024-02-26</td>
-                    <td><span class="badge-status badge-checked-out">Checked Out</span></td>
-                    <td><span class="badge-status badge-confirmed">Paid</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action" title="View"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger btn-action" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
+                <c:choose>
+                    <c:when test="${empty recentReservations}">
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="fas fa-calendar-times fa-3x mb-3" style="color: var(--secondary-color);"></i>
+                                <h5 style="color: var(--secondary-color);">No recent reservations</h5>
+                            </td>
+                        </tr>
+                    </c:when>
+                    <c:otherwise>
+                        <c:forEach var="reservation" items="${recentReservations}">
+                            <tr>
+                                <td><strong>${reservation.reservationNumber}</strong></td>
+                                <td>${reservation.guest.firstName} ${reservation.guest.lastName}</td>
+                                <td>${reservation.room.roomType} - ${reservation.room.roomNumber}</td>
+                                <td>${reservation.checkInDate}</td>
+                                <td>${reservation.checkOutDate}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${reservation.reservationStatus == 'CONFIRMED'}">
+                                            <span class="badge-status badge-confirmed">Confirmed</span>
+                                        </c:when>
+                                        <c:when test="${reservation.reservationStatus == 'CHECKED_IN'}">
+                                            <span class="badge-status badge-checked-in">Checked In</span>
+                                        </c:when>
+                                        <c:when test="${reservation.reservationStatus == 'CHECKED_OUT'}">
+                                            <span class="badge-status badge-checked-out">Checked Out</span>
+                                        </c:when>
+                                        <c:when test="${reservation.reservationStatus == 'CANCELLED'}">
+                                            <span class="badge-status badge-cancelled">Cancelled</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge-status badge-pending">Pending</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${reservation.paymentStatus == 'PAID'}">
+                                            <span class="badge-status badge-confirmed">Paid</span>
+                                        </c:when>
+                                        <c:when test="${reservation.paymentStatus == 'PARTIAL'}">
+                                            <span class="badge-status badge-pending">Partial</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge-status badge-pending">Pending</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <a href="${pageContext.request.contextPath}/admin/reservations/view?id=${reservation.id}"
+                                       class="btn btn-sm btn-outline-primary btn-action" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="${pageContext.request.contextPath}/admin/reservations/edit?id=${reservation.id}"
+                                       class="btn btn-sm btn-outline-success btn-action" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="row">
         <div class="col-lg-8">
             <div class="chart-container">
@@ -1055,6 +1077,7 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <!-- Scripts -->
@@ -1068,9 +1091,8 @@
         console.log('User menu clicked');
     }
 
-    // Initialize charts
     document.addEventListener('DOMContentLoaded', function() {
-        // Revenue Chart
+        // Revenue Chart with real data
         const ctx1 = document.getElementById('revenueChart').getContext('2d');
         new Chart(ctx1, {
             type: 'line',
@@ -1078,7 +1100,20 @@
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 datasets: [{
                     label: 'Revenue ($)',
-                    data: [45000, 52000, 48000, 58000, 62000, 68000, 72000, 75000, 71000, 69000, 73000, 78000],
+                    data: [
+                        ${monthlyRevenue.get('Jan') != null ? monthlyRevenue.get('Jan') : 0},
+                        ${monthlyRevenue.get('Feb') != null ? monthlyRevenue.get('Feb') : 0},
+                        ${monthlyRevenue.get('Mar') != null ? monthlyRevenue.get('Mar') : 0},
+                        ${monthlyRevenue.get('Apr') != null ? monthlyRevenue.get('Apr') : 0},
+                        ${monthlyRevenue.get('May') != null ? monthlyRevenue.get('May') : 0},
+                        ${monthlyRevenue.get('Jun') != null ? monthlyRevenue.get('Jun') : 0},
+                        ${monthlyRevenue.get('Jul') != null ? monthlyRevenue.get('Jul') : 0},
+                        ${monthlyRevenue.get('Aug') != null ? monthlyRevenue.get('Aug') : 0},
+                        ${monthlyRevenue.get('Sep') != null ? monthlyRevenue.get('Sep') : 0},
+                        ${monthlyRevenue.get('Oct') != null ? monthlyRevenue.get('Oct') : 0},
+                        ${monthlyRevenue.get('Nov') != null ? monthlyRevenue.get('Nov') : 0},
+                        ${monthlyRevenue.get('Dec') != null ? monthlyRevenue.get('Dec') : 0}
+                    ],
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     tension: 0.4,
@@ -1099,42 +1134,39 @@
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: '#0d6efd',
-                        titleColor: 'white',
-                        bodyColor: 'white',
-                        borderColor: '#0d6efd',
-                        borderWidth: 1
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: $' + context.raw.toFixed(2);
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(13, 110, 253, 0.1)'
-                        },
                         ticks: {
                             callback: function(value) {
                                 return '$' + value.toLocaleString();
                             }
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
                         }
                     }
                 }
             }
         });
 
-        // Room Status Chart
+        // Room Status Chart with real data
         const ctx2 = document.getElementById('roomStatusChart').getContext('2d');
         new Chart(ctx2, {
             type: 'doughnut',
             data: {
                 labels: ['Available', 'Occupied', 'Maintenance', 'Reserved'],
                 datasets: [{
-                    data: [45, 35, 10, 10],
+                    data: [
+                        ${roomStatus.get('Available') != null ? roomStatus.get('Available') : 0},
+                        ${roomStatus.get('Occupied') != null ? roomStatus.get('Occupied') : 0},
+                        ${roomStatus.get('Maintenance') != null ? roomStatus.get('Maintenance') : 0},
+                        ${roomStatus.get('Reserved') != null ? roomStatus.get('Reserved') : 0}
+                    ],
                     backgroundColor: [
                         '#198754',
                         '#0d6efd',
@@ -1160,7 +1192,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.label + ': ' + context.raw + '%';
+                                return context.label + ': ' + context.raw + ' rooms';
                             }
                         }
                     }
@@ -1169,7 +1201,6 @@
             }
         });
     });
-
     // Auto-refresh data every 60 seconds
     setInterval(function() {
         console.log('Refreshing dashboard data...');

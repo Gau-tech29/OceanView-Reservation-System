@@ -15,5 +15,5 @@ public interface BillDAO extends BaseDAO<Bill, Long> {
     List<Bill> findOverdueBills() throws SQLException;
     double getTotalRevenueByDateRange(LocalDate start, LocalDate end) throws SQLException;
     boolean updateStatus(Long id, Bill.BillStatus status) throws SQLException;
-    boolean incrementPrintedCount(Long id) throws SQLException;
+    void incrementPrintedCount(Long id) throws SQLException;  // Changed to void
 }

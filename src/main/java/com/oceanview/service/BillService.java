@@ -1,6 +1,5 @@
 package com.oceanview.service;
 
-import com.oceanview.service.ReservationService;
 import com.oceanview.dao.BillDAO;
 import com.oceanview.dao.impl.BillDAOImpl;
 import com.oceanview.model.Bill;
@@ -53,7 +52,10 @@ public class BillService {
         bill.setDueDate(LocalDate.now().plusDays(7)); // Due in 7 days
         bill.setCheckInDate(reservation.getCheckInDate());
         bill.setCheckOutDate(reservation.getCheckOutDate());
-        bill.setRoomCharges(reservation.getRoomPrice().multiply(new BigDecimal(reservation.getTotalNights())));
+
+        // Calculate room charges (room price * number of nights)
+        BigDecimal nights = new BigDecimal(reservation.getTotalNights());
+        bill.setRoomCharges(reservation.getRoomPrice().multiply(nights));
         bill.setAdditionalCharges(BigDecimal.ZERO);
 
         // Calculate tax (12%)
@@ -64,11 +66,12 @@ public class BillService {
         // Calculate total
         bill.calculateTotals();
 
-        bill.setBillStatus(Bill.BillStatus.DRAFT);
+        bill.setBillStatus(Bill.BillStatus.PENDING);
 
         return billDAO.save(bill);
     }
 
+    // Rest of your BillService methods remain the same...
     public Optional<Bill> getBillById(Long id) throws SQLException {
         return billDAO.findById(id);
     }
@@ -172,6 +175,8 @@ public class BillService {
         return billDAO.update(bill);
     }
 
+// In BillService.java, update the printBill method from:
+
     public void printBill(Long id) throws SQLException, IllegalArgumentException {
         Optional<Bill> billOpt = billDAO.findById(id);
 
@@ -179,7 +184,7 @@ public class BillService {
             throw new IllegalArgumentException("Bill not found");
         }
 
-        billDAO.incrementPrintedCount(id);
+        billDAO.incrementPrintedCount(id);  // No need to check return value
     }
 
     public Bill cancelBill(Long id) throws SQLException, IllegalArgumentException {

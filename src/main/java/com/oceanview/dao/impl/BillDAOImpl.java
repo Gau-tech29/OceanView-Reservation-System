@@ -55,7 +55,7 @@ public class BillDAOImpl implements BillDAO {
             ps.setString(16, bill.getBillStatus().name());
             ps.setString(17, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
             ps.setString(18, bill.getNotes());
-            ps.setInt(19, bill.getPrintedCount());
+            ps.setInt(19, bill.getPrintedCount() != null ? bill.getPrintedCount() : 0);
             ps.setTimestamp(20, Timestamp.valueOf(LocalDateTime.now()));
             ps.setTimestamp(21, Timestamp.valueOf(LocalDateTime.now()));
 
@@ -96,7 +96,7 @@ public class BillDAOImpl implements BillDAO {
             ps.setString(9, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
             ps.setTimestamp(10, bill.getPaymentDate() != null ? Timestamp.valueOf(bill.getPaymentDate()) : null);
             ps.setString(11, bill.getNotes());
-            ps.setInt(12, bill.getPrintedCount());
+            ps.setInt(12, bill.getPrintedCount() != null ? bill.getPrintedCount() : 0);
             ps.setTimestamp(13, Timestamp.valueOf(LocalDateTime.now()));
             ps.setLong(14, bill.getId());
 
@@ -358,7 +358,7 @@ public class BillDAOImpl implements BillDAO {
     }
 
     @Override
-    public boolean incrementPrintedCount(Long id) throws SQLException {
+    public void incrementPrintedCount(Long id) throws SQLException {
         String sql = "UPDATE bills SET printed_count = printed_count + 1, updated_at = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -366,7 +366,7 @@ public class BillDAOImpl implements BillDAO {
             ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
             ps.setLong(2, id);
 
-            return ps.executeUpdate() > 0;
+            ps.executeUpdate();  // Don't return anything
         }
     }
 

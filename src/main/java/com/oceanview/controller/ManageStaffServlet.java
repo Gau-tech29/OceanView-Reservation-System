@@ -315,4 +315,6 @@ public class ManageStaffServlet extends HttpServlet {
         user.setActive(activeStr != null && activeStr.equals("on"));
         return user;
     }
+
+
 }

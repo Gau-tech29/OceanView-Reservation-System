@@ -36,7 +36,7 @@ public class Bill {
     private User user;
 
     public enum BillStatus {
-        DRAFT, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED
+        DRAFT, PENDING, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED
     }
 
     public enum PaymentMethod {
