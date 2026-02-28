@@ -10,8 +10,8 @@ public interface GuestDAO extends BaseDAO<Guest, Long> {
     Optional<Guest> findByEmail(String email) throws SQLException;
     Optional<Guest> findByPhone(String phone) throws SQLException;
     List<Guest> findByName(String firstName, String lastName) throws SQLException;
-    List<Guest> findVipGuests() throws SQLException;
+    List<Guest> searchGuests(String keyword) throws SQLException;
+    List<Guest> findRecentGuests(int limit) throws SQLException;
     List<Guest> findTopGuests(int limit) throws SQLException;
-    boolean updateLoyaltyPoints(Long id, int points) throws SQLException;
-    boolean markAsVip(Long id) throws SQLException;
+    long countActiveGuests() throws SQLException;
 }

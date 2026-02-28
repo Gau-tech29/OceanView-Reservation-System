@@ -54,7 +54,7 @@ public class Reservation {
         this.discountAmount = BigDecimal.ZERO;
         this.paymentStatus = PaymentStatus.PENDING;
         this.reservationStatus = ReservationStatus.CONFIRMED;
-        this.source = ReservationSource.WEBSITE;
+        this.source = ReservationSource.WALK_IN;
     }
 
     // Getters and Setters

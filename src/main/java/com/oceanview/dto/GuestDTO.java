@@ -1,9 +1,8 @@
-package com.oceanview.model;
+package com.oceanview.dto;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
-public class Guest {
+public class GuestDTO {
     private Long id;
     private String guestNumber;
     private String firstName;
@@ -15,32 +14,26 @@ public class Guest {
     private String country;
     private String postalCode;
     private String idCardNumber;
-    private IdCardType idCardType;
-    private boolean isVip;
+    private String idCardType;   // matches Guest.IdCardType enum name
+    private Boolean isVip;
     private Integer loyaltyPoints;
     private String notes;
+    private Integer totalStays;
+    private LocalDateTime lastStay;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public enum IdCardType {
-        PASSPORT, NATIONAL_ID, DRIVERS_LICENSE
-    }
-
     // Constructors
-    public Guest() {
-        this.loyaltyPoints = 0;
-        this.isVip = false;
-    }
+    public GuestDTO() {}
 
-    public Guest(String guestNumber, String firstName, String lastName,
-                 String email, String phone) {
+    public GuestDTO(Long id, String guestNumber, String firstName, String lastName,
+                    String email, String phone) {
+        this.id = id;
         this.guestNumber = guestNumber;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phone = phone;
-        this.loyaltyPoints = 0;
-        this.isVip = false;
     }
 
     // Getters and Setters
@@ -55,8 +48,6 @@ public class Guest {
 
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
-
-    public String getFullName() { return firstName + " " + lastName; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -79,11 +70,11 @@ public class Guest {
     public String getIdCardNumber() { return idCardNumber; }
     public void setIdCardNumber(String idCardNumber) { this.idCardNumber = idCardNumber; }
 
-    public IdCardType getIdCardType() { return idCardType; }
-    public void setIdCardType(IdCardType idCardType) { this.idCardType = idCardType; }
+    public String getIdCardType() { return idCardType; }
+    public void setIdCardType(String idCardType) { this.idCardType = idCardType; }
 
-    public boolean isVip() { return isVip; }
-    public void setVip(boolean vip) { isVip = vip; }
+    public Boolean getIsVip() { return isVip; }
+    public void setIsVip(Boolean isVip) { this.isVip = isVip; }
 
     public Integer getLoyaltyPoints() { return loyaltyPoints; }
     public void setLoyaltyPoints(Integer loyaltyPoints) { this.loyaltyPoints = loyaltyPoints; }
@@ -91,43 +82,20 @@ public class Guest {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
+    public Integer getTotalStays() { return totalStays; }
+    public void setTotalStays(Integer totalStays) { this.totalStays = totalStays; }
+
+    public LocalDateTime getLastStay() { return lastStay; }
+    public void setLastStay(LocalDateTime lastStay) { this.lastStay = lastStay; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    // Business methods
-    public void addLoyaltyPoints(int points) {
-        this.loyaltyPoints += points;
-        updateVipStatus();
-    }
-
-    private void updateVipStatus() {
-        this.isVip = this.loyaltyPoints >= 1000;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Guest guest = (Guest) o;
-        return Objects.equals(id, guest.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Guest{" +
-                "id=" + id +
-                ", guestNumber='" + guestNumber + '\'' +
-                ", fullName='" + getFullName() + '\'' +
-                ", email='" + email + '\'' +
-                ", isVip=" + isVip +
-                '}';
+    // Helper methods
+    public String getFullName() {
+        return firstName + " " + lastName;
     }
 }

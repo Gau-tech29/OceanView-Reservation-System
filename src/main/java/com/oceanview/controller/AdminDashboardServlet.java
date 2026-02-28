@@ -15,6 +15,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,8 +54,8 @@ public class AdminDashboardServlet extends HttpServlet {
             DashboardStatsDTO stats = getDashboardStats();
             request.setAttribute("stats", stats);
 
-            // Get monthly revenue data for chart
-            Map<String, Double> monthlyRevenue = getMonthlyRevenue();
+            // Get monthly revenue data for chart (last 6 months)
+            Map<String, Double> monthlyRevenue = getLast6MonthsRevenue();
             request.setAttribute("monthlyRevenue", monthlyRevenue);
 
             // Get room status distribution
@@ -63,6 +64,10 @@ public class AdminDashboardServlet extends HttpServlet {
 
             // Get recent reservations
             request.setAttribute("recentReservations", reservationService.getRecentReservations(10));
+
+            // Get revenue by room type
+            Map<String, Double> revenueByRoomType = getRevenueByRoomType();
+            request.setAttribute("revenueByRoomType", revenueByRoomType);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -76,28 +81,34 @@ public class AdminDashboardServlet extends HttpServlet {
     private DashboardStatsDTO getDashboardStats() throws SQLException {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
-        // Get real data from services
         stats.setTotalRooms((int) roomService.getTotalRooms());
         stats.setAvailableRooms((int) roomService.getAvailableRoomsCount());
-        stats.setActiveReservations(reservationService.getActiveReservationsCount());
+        stats.setActiveReservations((int) reservationService.getActiveReservationsCount());
         stats.setTotalReservations((int) reservationService.getTotalReservationsCount());
         stats.setTodayCheckIns(reservationService.getTodaysCheckInsCount());
         stats.setTodayCheckOuts(reservationService.getTodaysCheckOutsCount());
         stats.setMonthlyRevenue(reservationService.getCurrentMonthRevenue());
         stats.setOccupancyRate(calculateOccupancyRate());
-        stats.setTotalGuests(reservationService.getTotalGuestsCount());
+        stats.setTotalGuests(0); // You'll need to implement this
 
         return stats;
     }
 
-    private Map<String, Double> getMonthlyRevenue() throws SQLException {
+    private Map<String, Double> getLast6MonthsRevenue() throws SQLException {
         Map<String, Double> revenue = new HashMap<>();
-        String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        LocalDate now = LocalDate.now();
+        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-        for (int i = 0; i < 12; i++) {
-            double amount = reservationService.getMonthlyRevenue(i + 1, LocalDate.now().getYear());
-            revenue.put(months[i], amount);
+        for (int i = 5; i >= 0; i--) {
+            LocalDate date = now.minusMonths(i);
+            int month = date.getMonthValue();
+            int year = date.getYear();
+
+            double amount = reservationService.getMonthlyRevenue(month, year);
+            String key = monthNames[month - 1] + " " + year;
+            revenue.put(key, amount);
         }
+
         return revenue;
     }
 
@@ -110,9 +121,20 @@ public class AdminDashboardServlet extends HttpServlet {
         return distribution;
     }
 
+    private Map<String, Double> getRevenueByRoomType() throws SQLException {
+        // You'll need to implement this in your service
+        Map<String, Double> revenue = new HashMap<>();
+        revenue.put("Standard", 12500.00);
+        revenue.put("Deluxe", 18750.00);
+        revenue.put("Suite", 22500.00);
+        revenue.put("Executive", 15000.00);
+        revenue.put("Family", 9800.00);
+        return revenue;
+    }
+
     private double calculateOccupancyRate() throws SQLException {
         long totalRooms = roomService.getTotalRooms();
-        long occupiedRooms = roomService.getOccupiedRoomsCount();
+        long occupiedRooms = roomService.getOccupiedRoomsCount() + roomService.getReservedRoomsCount();
 
         if (totalRooms == 0) return 0.0;
         return (double) occupiedRooms / totalRooms * 100;

@@ -1,6 +1,8 @@
 package com.oceanview.service;
 
+import com.oceanview.dao.ReservationDAO;
 import com.oceanview.dao.RoomDAO;
+import com.oceanview.dao.impl.ReservationDAOImpl;
 import com.oceanview.dao.impl.RoomDAOImpl;
 import com.oceanview.model.Room;
 import com.oceanview.util.ValidationUtils;
@@ -13,13 +15,16 @@ import java.util.Optional;
 public class RoomService {
 
     private final RoomDAO roomDAO;
+    private final ReservationDAO reservationDAO;
 
     public RoomService() {
         this.roomDAO = RoomDAOImpl.getInstance();
+        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
     public RoomService(RoomDAO roomDAO) {
         this.roomDAO = roomDAO;
+        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
     public Room createRoom(Room room) throws SQLException, IllegalArgumentException {
@@ -113,8 +118,6 @@ public class RoomService {
         return roomDAO.update(room);
     }
 
-    // Add these methods to your existing RoomService.java
-
     public int getOccupiedRoomsCount() throws SQLException {
         return roomDAO.findByStatus(Room.RoomStatus.OCCUPIED).size();
     }
@@ -137,6 +140,10 @@ public class RoomService {
 
     public long getAvailableRoomsCount() throws SQLException {
         return roomDAO.countAvailableRooms();
+    }
+
+    public double getMonthlyRevenue(int month, int year) throws SQLException {
+        return reservationDAO.getTotalRevenueByMonth(year, month);
     }
 
     private void validateRoom(Room room) {

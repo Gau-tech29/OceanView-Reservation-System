@@ -45,7 +45,7 @@ public class GuestDAOImpl implements GuestDAO {
             ps.setString(10, guest.getIdCardNumber());
             ps.setString(11, guest.getIdCardType() != null ? guest.getIdCardType().name() : null);
             ps.setBoolean(12, guest.isVip());
-            ps.setInt(13, guest.getLoyaltyPoints());
+            ps.setInt(13, guest.getLoyaltyPoints() != null ? guest.getLoyaltyPoints() : 0);
             ps.setString(14, guest.getNotes());
             ps.setTimestamp(15, Timestamp.valueOf(LocalDateTime.now()));
             ps.setTimestamp(16, Timestamp.valueOf(LocalDateTime.now()));
@@ -87,7 +87,7 @@ public class GuestDAOImpl implements GuestDAO {
             ps.setString(9, guest.getIdCardNumber());
             ps.setString(10, guest.getIdCardType() != null ? guest.getIdCardType().name() : null);
             ps.setBoolean(11, guest.isVip());
-            ps.setInt(12, guest.getLoyaltyPoints());
+            ps.setInt(12, guest.getLoyaltyPoints() != null ? guest.getLoyaltyPoints() : 0);
             ps.setString(13, guest.getNotes());
             ps.setTimestamp(14, Timestamp.valueOf(LocalDateTime.now()));
             ps.setLong(15, guest.getId());
@@ -114,7 +114,6 @@ public class GuestDAOImpl implements GuestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setLong(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToGuest(rs));
@@ -131,7 +130,6 @@ public class GuestDAOImpl implements GuestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, guestNumber);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToGuest(rs));
@@ -148,7 +146,6 @@ public class GuestDAOImpl implements GuestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToGuest(rs));
@@ -165,7 +162,6 @@ public class GuestDAOImpl implements GuestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, phone);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToGuest(rs));
@@ -176,9 +172,101 @@ public class GuestDAOImpl implements GuestDAO {
     }
 
     @Override
+    public List<Guest> findByName(String firstName, String lastName) throws SQLException {
+        List<Guest> guests = new ArrayList<>();
+        String sql = "SELECT * FROM guests WHERE first_name LIKE ? AND last_name LIKE ? ORDER BY last_name, first_name";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + firstName + "%");
+            ps.setString(2, "%" + lastName + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    guests.add(mapResultSetToGuest(rs));
+                }
+            }
+        }
+        return guests;
+    }
+
+    @Override
+    public List<Guest> searchGuests(String keyword) throws SQLException {
+        List<Guest> guests = new ArrayList<>();
+        String sql = "SELECT * FROM guests WHERE first_name LIKE ? OR last_name LIKE ? " +
+                "OR email LIKE ? OR phone LIKE ? OR guest_number LIKE ? " +
+                "ORDER BY last_name, first_name LIMIT 50";
+
+        String searchPattern = "%" + keyword + "%";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, searchPattern);
+            ps.setString(2, searchPattern);
+            ps.setString(3, searchPattern);
+            ps.setString(4, searchPattern);
+            ps.setString(5, searchPattern);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    guests.add(mapResultSetToGuest(rs));
+                }
+            }
+        }
+        return guests;
+    }
+
+    @Override
+    public List<Guest> findRecentGuests(int limit) throws SQLException {
+        List<Guest> guests = new ArrayList<>();
+        String sql = "SELECT * FROM guests ORDER BY created_at DESC LIMIT ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    guests.add(mapResultSetToGuest(rs));
+                }
+            }
+        }
+        return guests;
+    }
+
+    /**
+     * Returns the top N guests ranked by their total number of reservations.
+     * Falls back to ordering by loyalty_points if no reservations exist yet.
+     */
+    @Override
+    public List<Guest> findTopGuests(int limit) throws SQLException {
+        List<Guest> guests = new ArrayList<>();
+        String sql = "SELECT g.*, COUNT(r.id) AS stay_count " +
+                "FROM guests g " +
+                "LEFT JOIN reservations r ON r.guest_id = g.id " +
+                "   AND r.reservation_status NOT IN ('CANCELLED', 'NO_SHOW') " +
+                "GROUP BY g.id " +
+                "ORDER BY stay_count DESC, g.loyalty_points DESC " +
+                "LIMIT ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    guests.add(mapResultSetToGuest(rs));
+                }
+            }
+        }
+        return guests;
+    }
+
+    @Override
     public List<Guest> findAll() throws SQLException {
         List<Guest> guests = new ArrayList<>();
-        String sql = "SELECT * FROM guests ORDER BY id DESC";
+        String sql = "SELECT * FROM guests ORDER BY last_name, first_name";
+
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -193,13 +281,13 @@ public class GuestDAOImpl implements GuestDAO {
     @Override
     public List<Guest> findAll(int page, int size) throws SQLException {
         List<Guest> guests = new ArrayList<>();
-        String sql = "SELECT * FROM guests ORDER BY id DESC LIMIT ? OFFSET ?";
+        String sql = "SELECT * FROM guests ORDER BY last_name, first_name LIMIT ? OFFSET ?";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, size);
             ps.setInt(2, (page - 1) * size);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     guests.add(mapResultSetToGuest(rs));
@@ -210,87 +298,18 @@ public class GuestDAOImpl implements GuestDAO {
     }
 
     @Override
-    public List<Guest> findByName(String firstName, String lastName) throws SQLException {
-        List<Guest> guests = new ArrayList<>();
-        String sql = "SELECT * FROM guests WHERE first_name LIKE ? AND last_name LIKE ? ORDER BY id DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, "%" + firstName + "%");
-            ps.setString(2, "%" + lastName + "%");
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    guests.add(mapResultSetToGuest(rs));
-                }
-            }
-        }
-        return guests;
-    }
-
-    @Override
-    public List<Guest> findVipGuests() throws SQLException {
-        List<Guest> guests = new ArrayList<>();
-        String sql = "SELECT * FROM guests WHERE is_vip = true ORDER BY loyalty_points DESC";
+    public long countActiveGuests() throws SQLException {
+        // "active" guests = non-VIP guests or simply count all (adjust logic as needed)
+        String sql = "SELECT COUNT(*) FROM guests";
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
-            while (rs.next()) {
-                guests.add(mapResultSetToGuest(rs));
+            if (rs.next()) {
+                return rs.getLong(1);
             }
         }
-        return guests;
-    }
-
-    @Override
-    public List<Guest> findTopGuests(int limit) throws SQLException {
-        List<Guest> guests = new ArrayList<>();
-        String sql = "SELECT g.*, COUNT(r.id) as booking_count " +
-                "FROM guests g " +
-                "LEFT JOIN reservations r ON g.id = r.guest_id " +
-                "GROUP BY g.id " +
-                "ORDER BY booking_count DESC " +
-                "LIMIT ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, limit);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    guests.add(mapResultSetToGuest(rs));
-                }
-            }
-        }
-        return guests;
-    }
-
-    @Override
-    public boolean updateLoyaltyPoints(Long id, int points) throws SQLException {
-        String sql = "UPDATE guests SET loyalty_points = loyalty_points + ?, updated_at = ? WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, points);
-            ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
-            ps.setLong(3, id);
-
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    @Override
-    public boolean markAsVip(Long id) throws SQLException {
-        String sql = "UPDATE guests SET is_vip = true, updated_at = ? WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
-            ps.setLong(2, id);
-
-            return ps.executeUpdate() > 0;
-        }
+        return 0;
     }
 
     @Override
@@ -314,7 +333,6 @@ public class GuestDAOImpl implements GuestDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setLong(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -336,7 +354,7 @@ public class GuestDAOImpl implements GuestDAO {
         guest.setIdCardNumber(rs.getString("id_card_number"));
 
         String idCardType = rs.getString("id_card_type");
-        if (idCardType != null) {
+        if (idCardType != null && !idCardType.isEmpty()) {
             guest.setIdCardType(Guest.IdCardType.valueOf(idCardType));
         }
 

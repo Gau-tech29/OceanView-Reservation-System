@@ -1,555 +1,269 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.oceanview.model.User" %>
+<%@ page import="com.oceanview.dto.ReservationDTO" %>
+<%@ page import="com.oceanview.service.ReservationService" %>
+<%@ page import="com.oceanview.service.RoomService" %>
+<%@ page import="com.oceanview.service.GuestService" %>
 <%@ page import="java.time.LocalDate" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.List" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard - Ocean View Hotel</title>
-
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         :root {
             --primary-color: #0d6efd;
             --primary-dark: #0b5ed7;
             --secondary-color: #6c757d;
             --success-color: #198754;
-            --info-color: #0dcaf0;
-            --warning-color: #ffc107;
             --danger-color: #dc3545;
             --light-bg: #f8f9fa;
             --dark-color: #212529;
-            --sidebar-width: 250px;
+            --sidebar-width: 260px;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f4f6f9; overflow-x: hidden; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f4f6f9;
-            overflow-x: hidden;
-        }
-
-        /* Sidebar Styles */
+        /* Sidebar */
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
+            position: fixed; top: 0; left: 0; height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            color: white;
-            padding: 20px 0;
-            transition: all 0.3s;
-            z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            background: linear-gradient(180deg, #0b5ed7 0%, #0d6efd 100%);
+            color: white; z-index: 1000;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.15);
+            overflow-y: auto;
         }
-
         .sidebar-brand {
-            padding: 0 20px 20px;
+            padding: 25px 20px 20px;
             border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 20px;
-        }
-
-        .sidebar-brand h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .sidebar-brand p {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin: 5px 0 0;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin-bottom: 5px;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-        }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-left-color: white;
-        }
-
-        .sidebar-menu a i {
-            width: 30px;
-            font-size: 1.2rem;
-        }
-
-        .sidebar-menu a span {
-            font-size: 0.95rem;
-            font-weight: 400;
-        }
-
-        /* Main Content Styles */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 20px 30px;
-            transition: all 0.3s;
-        }
-
-        /* Top Navigation */
-        .top-nav {
-            background: white;
-            border-radius: 15px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .page-title h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin: 0;
-        }
-
-        .page-title p {
-            color: var(--secondary-color);
-            margin: 5px 0 0;
-            font-size: 0.9rem;
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .notifications {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .notifications i {
-            font-size: 1.3rem;
-            color: var(--secondary-color);
-        }
-
-        .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger-color);
-            color: white;
-            border-radius: 50%;
-            padding: 3px 6px;
-            font-size: 0.7rem;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 10px;
-            transition: background 0.3s;
-        }
-
-        .user-profile:hover {
-            background: var(--light-bg);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-
-        .user-info {
-            display: none;
-        }
-
-        @media (min-width: 768px) {
-            .user-info {
-                display: block;
-            }
-        }
-
-        .user-info .name {
-            font-weight: 600;
-            color: var(--dark-color);
-            line-height: 1.2;
-        }
-
-        .user-info .role {
-            font-size: 0.8rem;
-            color: var(--secondary-color);
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .stat-info h3 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--dark-color);
-            margin-bottom: 5px;
-        }
-
-        .stat-info p {
-            color: var(--secondary-color);
-            margin: 0;
-            font-size: 0.9rem;
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stat-icon i {
-            font-size: 30px;
-            color: white;
-        }
-
-        /* Section Styles */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .section-header h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin: 0;
-        }
-
-        .view-all {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .view-all:hover {
-            text-decoration: underline;
-        }
-
-        /* Cards Grid */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .feature-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .card-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .card-icon i {
-            font-size: 30px;
-            color: white;
-        }
-
-        .feature-card h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--dark-color);
             margin-bottom: 10px;
         }
+        .sidebar-brand h3 { font-size: 1.4rem; font-weight: 700; margin: 0; }
+        .sidebar-brand p { font-size: 0.8rem; opacity: 0.8; margin: 4px 0 0; }
+        .sidebar-menu { list-style: none; padding: 5px 10px; margin: 0; }
+        .sidebar-menu li { margin-bottom: 4px; }
+        .sidebar-menu a {
+            display: flex; align-items: center; padding: 11px 15px;
+            color: rgba(255,255,255,0.85); text-decoration: none;
+            transition: all 0.2s; border-radius: 10px;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.15); color: white;
+        }
+        .sidebar-menu a i { width: 28px; font-size: 1.1rem; }
+        .sidebar-menu a span { font-size: 0.9rem; font-weight: 500; }
 
-        .feature-card p {
-            color: var(--secondary-color);
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-            line-height: 1.5;
+        /* Main */
+        .main-content { margin-left: var(--sidebar-width); padding: 20px 28px; }
+        .top-nav {
+            background: white; border-radius: 15px; padding: 14px 22px;
+            margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .page-title h2 { font-size: 1.4rem; font-weight: 600; color: var(--dark-color); margin: 0; }
+        .page-title p { color: var(--secondary-color); margin: 3px 0 0; font-size: 0.85rem; }
+        .user-menu { display: flex; align-items: center; gap: 18px; }
+        .user-avatar {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: 700; font-size: 1rem;
+        }
+        .user-name { font-weight: 600; color: var(--dark-color); font-size: 0.9rem; }
+        .user-role { font-size: 0.75rem; color: var(--secondary-color); }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            color: white; border-radius: 18px; padding: 22px 30px;
+            margin-bottom: 25px; box-shadow: 0 10px 30px rgba(13,110,253,0.25);
+        }
+        .welcome-banner h4 { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
+        .welcome-banner p { opacity: 0.9; margin: 0; font-size: 0.95rem; }
+
+        /* Alert messages */
+        .alert-success-custom {
+            background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+            border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .alert-error-custom {
+            background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+            border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
         }
 
-        .card-link {
-            color: var(--primary-color);
-            font-size: 0.9rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        /* Stats Grid */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 20px; margin-bottom: 25px;
         }
-
-        .card-link i {
-            transition: transform 0.3s;
+        .stat-card {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid var(--primary-color);
         }
-
-        .feature-card:hover .card-link i {
-            transform: translateX(5px);
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 700; color: var(--dark-color); margin-bottom: 4px; }
+        .stat-info p { color: var(--secondary-color); margin: 0; font-size: 0.85rem; }
+        .stat-icon {
+            width: 55px; height: 55px;
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
         }
+        .stat-icon i { font-size: 26px; color: white; }
 
-        /* Tables */
-        .recent-bookings {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
+        /* Quick Actions */
+        .section-title {
+            font-size: 1.1rem; font-weight: 600; color: var(--dark-color);
+            margin-bottom: 15px; padding-left: 10px;
+            border-left: 3px solid var(--primary-color);
         }
-
-        .table {
-            margin: 0;
+        .quick-actions {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 16px; margin-bottom: 25px;
         }
-
-        .table th {
-            border-top: none;
-            color: var(--secondary-color);
-            font-weight: 500;
-            font-size: 0.9rem;
-            padding: 15px 10px;
+        .action-btn {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            text-decoration: none; color: inherit; display: block;
+            transition: all 0.2s; border: 2px solid transparent;
         }
-
-        .table td {
-            padding: 15px 10px;
-            vertical-align: middle;
-            color: var(--dark-color);
+        .action-btn:hover {
+            transform: translateY(-4px); border-color: var(--primary-color);
+            box-shadow: 0 8px 20px rgba(13,110,253,0.15); color: inherit;
         }
-
-        .badge-status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+        .action-btn .action-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; margin-bottom: 12px;
         }
+        .action-btn .action-icon i { font-size: 22px; color: white; }
+        .action-btn h5 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; color: var(--dark-color); }
+        .action-btn p { font-size: 0.8rem; color: var(--secondary-color); margin: 0; }
 
-        .badge-confirmed {
-            background: #d4edda;
-            color: #155724;
+        /* Table */
+        .table-card {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 25px;
         }
-
-        .badge-pending {
-            background: #fff3cd;
-            color: #856404;
+        .table-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
         }
+        .table th { font-size: 0.8rem; font-weight: 600; color: var(--secondary-color);
+            text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 10px; }
+        .table td { padding: 12px 10px; vertical-align: middle; font-size: 0.9rem; }
+        .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; }
+        .badge-confirmed { background: #d4edda; color: #155724; }
+        .badge-checked-in { background: #cce5ff; color: #004085; }
+        .badge-checked-out { background: #e2e3e5; color: #383d41; }
+        .badge-cancelled { background: #f8d7da; color: #721c24; }
+        .badge-pending { background: #fff3cd; color: #856404; }
 
-        .badge-checked-in {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .badge-checked-out {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .btn-action {
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            margin: 0 2px;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-        }
-
-        /* Responsive */
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 <%
-    // Get user from session
     User user = (User) session.getAttribute("user");
     if (user == null) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
 
-    // Get current date
+    // Load live data
+    ReservationService reservationService = new ReservationService();
+    RoomService roomService = new RoomService();
+    GuestService guestService = new GuestService();
+
+    int activeReservations = 0;
+    int availableRooms = 0;
+    long totalGuests = 0;
+    int todayCheckins = 0;
+    List<ReservationDTO> recentReservations = null;
+
+    try {
+        activeReservations = (int) reservationService.getActiveReservationsCount();
+        availableRooms = (int) roomService.getAvailableRoomsCount();
+        totalGuests = guestService.getActiveGuestsCount();
+        todayCheckins = reservationService.getTodaysCheckInsCount();
+        recentReservations = reservationService.getRecentReservations(8);
+    } catch (Exception e) {
+        // log error
+    }
+
     LocalDate today = LocalDate.now();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
     String currentDate = today.format(formatter);
 
-    // Sample data (replace with actual data from database)
-    int activeReservations = 15;
-    int availableRooms = 8;
-    int totalGuests = 24;
-    int todayCheckins = 5;
+    String successMsg = (String) session.getAttribute("success");
+    String errorMsg = (String) session.getAttribute("error");
+    if (successMsg != null) session.removeAttribute("success");
+    if (errorMsg != null) session.removeAttribute("error");
 %>
 
 <!-- Sidebar -->
 <div class="sidebar">
     <div class="sidebar-brand">
-        <h3>Ocean View</h3>
+        <h3><i class="fas fa-hotel me-2"></i>Ocean View</h3>
         <p>Hotel Reservation System</p>
     </div>
-
     <ul class="sidebar-menu">
         <li>
-            <a href="#" class="active">
-                <i class="fas fa-dashboard"></i>
-                <span>Dashboard</span>
+            <a href="<%= request.getContextPath() %>/staff/dashboard" class="active">
+                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-plus-circle"></i>
-                <span>New Reservation</span>
+            <a href="<%= request.getContextPath() %>/staff/reservations/new">
+                <i class="fas fa-plus-circle"></i><span>New Reservation</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-search"></i>
-                <span>View Reservation</span>
+            <a href="<%= request.getContextPath() %>/staff/reservations">
+                <i class="fas fa-list-alt"></i><span>All Reservations</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-receipt"></i>
-                <span>Calculate Bill</span>
+            <a href="<%= request.getContextPath() %>/staff/reservations/search">
+                <i class="fas fa-search"></i><span>Search Reservation</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-list-alt"></i>
-                <span>All Reservations</span>
+            <a href="<%= request.getContextPath() %>/staff/guests">
+                <i class="fas fa-users"></i><span>Guests</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-users"></i>
-                <span>Guests</span>
+            <a href="<%= request.getContextPath() %>/staff/rooms">
+                <i class="fas fa-door-open"></i><span>Rooms</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-door-open"></i>
-                <span>Rooms</span>
+            <a href="<%= request.getContextPath() %>/staff/bills">
+                <i class="fas fa-receipt"></i><span>Bills</span>
             </a>
         </li>
         <li>
-            <a href="#">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports</span>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <i class="fas fa-question-circle"></i>
-                <span>Help</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}/logout">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
+            <a href="<%= request.getContextPath() %>/logout">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
             </a>
         </li>
     </ul>
@@ -557,322 +271,263 @@
 
 <!-- Main Content -->
 <div class="main-content">
-    <!-- Top Navigation -->
+
+    <!-- Top Nav -->
     <div class="top-nav">
         <div class="page-title">
             <h2>Staff Dashboard</h2>
-            <p><i class="fas fa-calendar-alt me-2"></i><%= currentDate %></p>
+            <p><i class="fas fa-calendar-alt me-1"></i><%= currentDate %></p>
         </div>
-
         <div class="user-menu">
-            <div class="notifications">
-                <i class="fas fa-bell"></i>
-                <span class="badge">3</span>
+            <div class="user-avatar">
+                <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
             </div>
-
-            <div class="user-profile" onclick="toggleUserMenu()">
-                <div class="user-avatar">
-                    <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
-                </div>
-                <div class="user-info">
-                    <div class="name"><%= user.getFullName() %></div>
-                    <div class="role"><%= user.getRole() %></div>
-                </div>
-                <i class="fas fa-chevron-down" style="color: var(--secondary-color); font-size: 0.8rem;"></i>
+            <div>
+                <div class="user-name"><%= user.getFullName() %></div>
+                <div class="user-role"><%= user.getRole() %></div>
             </div>
         </div>
     </div>
 
-    <!-- Welcome, Banner -->
-    <div class="alert alert-primary" style="background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%); color: white; border: none; border-radius: 15px; padding: 20px 30px; margin-bottom: 30px;">
+    <!-- Alert Messages -->
+    <% if (successMsg != null) { %>
+    <div class="alert-success-custom">
+        <i class="fas fa-check-circle"></i> <%= successMsg %>
+    </div>
+    <% } %>
+    <% if (errorMsg != null) { %>
+    <div class="alert-error-custom">
+        <i class="fas fa-exclamation-circle"></i> <%= errorMsg %>
+    </div>
+    <% } %>
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
         <div class="row align-items-center">
-            <div class="col-md-8">
-                <h4 style="font-weight: 600; margin-bottom: 10px;">Welcome back, <%= user.getFirstName() %>! 👋</h4>
-                <p style="margin: 0; opacity: 0.9;">You have <%= todayCheckins %> check-ins scheduled for today. Have a great day!</p>
+            <div class="col-md-9">
+                <h4>Welcome back, <%= user.getFirstName() %>! 👋</h4>
+                <p>You have <strong><%= todayCheckins %></strong> check-in(s) scheduled for today. Manage reservations from the actions below.</p>
             </div>
-            <div class="col-md-4 text-md-end">
-                <i class="fas fa-sun" style="font-size: 3rem; opacity: 0.3;"></i>
+            <div class="col-md-3 text-end d-none d-md-block">
+                <i class="fas fa-concierge-bell" style="font-size: 3rem; opacity: 0.3;"></i>
             </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
                 <h3><%= activeReservations %></h3>
                 <p>Active Reservations</p>
             </div>
-            <div class="stat-icon">
-                <i class="fas fa-calendar-check"></i>
-            </div>
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color: #198754;">
             <div class="stat-info">
                 <h3><%= availableRooms %></h3>
                 <p>Available Rooms</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background: linear-gradient(135deg,#198754,#146c43);">
                 <i class="fas fa-door-open"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color: #fd7e14;">
             <div class="stat-info">
                 <h3><%= totalGuests %></h3>
                 <p>Total Guests</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background: linear-gradient(135deg,#fd7e14,#e96c02);">
                 <i class="fas fa-users"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color: #0dcaf0;">
             <div class="stat-info">
                 <h3><%= todayCheckins %></h3>
                 <p>Check-ins Today</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background: linear-gradient(135deg,#0dcaf0,#0aa2c0);">
                 <i class="fas fa-sign-in-alt"></i>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="section-header">
-        <h3>Quick Actions</h3>
-    </div>
-
-    <div class="cards-grid">
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-plus-circle"></i>
-            </div>
-            <h4>New Reservation</h4>
-            <p>Create a new booking for guests with room selection, dates, and special requests.</p>
-            <span class="card-link">Create Reservation <i class="fas fa-arrow-right"></i></span>
+    <div class="section-title">Quick Actions</div>
+    <div class="quick-actions">
+        <a href="<%= request.getContextPath() %>/staff/reservations/new" class="action-btn">
+            <div class="action-icon"><i class="fas fa-plus-circle"></i></div>
+            <h5>New Reservation</h5>
+            <p>Create a booking for a guest</p>
         </a>
-
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-search"></i>
-            </div>
-            <h4>Find Reservation</h4>
-            <p>Search for existing reservations by booking number, guest name, or dates.</p>
-            <span class="card-link">Search Now <i class="fas fa-arrow-right"></i></span>
+        <a href="<%= request.getContextPath() %>/staff/reservations/search" class="action-btn">
+            <div class="action-icon"><i class="fas fa-search"></i></div>
+            <h5>Find Reservation</h5>
+            <p>Search by number, guest, or date</p>
         </a>
-
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-receipt"></i>
-            </div>
-            <h4>Generate Bill</h4>
-            <p>Calculate stay costs and generate bills for check-out guests.</p>
-            <span class="card-link">Calculate Bill <i class="fas fa-arrow-right"></i></span>
+        <a href="<%= request.getContextPath() %>/staff/reservations" class="action-btn">
+            <div class="action-icon"><i class="fas fa-list-alt"></i></div>
+            <h5>All Reservations</h5>
+            <p>View and manage all bookings</p>
         </a>
-
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-door-open"></i>
-            </div>
-            <h4>Check-in Guest</h4>
-            <p>Process guest check-in and assign rooms.</p>
-            <span class="card-link">Check-in <i class="fas fa-arrow-right"></i></span>
+        <a href="<%= request.getContextPath() %>/staff/guests" class="action-btn">
+            <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+            <h5>Manage Guests</h5>
+            <p>Add or search guest profiles</p>
         </a>
-
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-sign-out-alt"></i>
-            </div>
-            <h4>Check-out Guest</h4>
-            <p>Process guest check-out and generate final bills.</p>
-            <span class="card-link">Check-out <i class="fas fa-arrow-right"></i></span>
+        <a href="<%= request.getContextPath() %>/staff/rooms" class="action-btn">
+            <div class="action-icon"><i class="fas fa-door-open"></i></div>
+            <h5>Room Status</h5>
+            <p>View available and occupied rooms</p>
         </a>
-
-        <a href="#" class="feature-card">
-            <div class="card-icon">
-                <i class="fas fa-chart-bar"></i>
-            </div>
-            <h4>View Reports</h4>
-            <p>Access occupancy reports, revenue analysis, and booking trends.</p>
-            <span class="card-link">View Reports <i class="fas fa-arrow-right"></i></span>
+        <a href="<%= request.getContextPath() %>/staff/bills" class="action-btn">
+            <div class="action-icon"><i class="fas fa-receipt"></i></div>
+            <h5>Bills & Payments</h5>
+            <p>Generate bills and record payments</p>
         </a>
     </div>
 
-    <!-- Recent Bookings Table -->
-    <div class="recent-bookings">
-        <div class="section-header">
-            <h3>Recent Bookings</h3>
-            <a href="#" class="view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    <!-- Recent Reservations Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <span class="section-title mb-0">Recent Reservations</span>
+            <a href="<%= request.getContextPath() %>/staff/reservations"
+               class="btn btn-sm btn-outline-primary">
+                View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
         </div>
-
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th>Booking ID</th>
+                    <th>Reservation #</th>
                     <th>Guest Name</th>
-                    <th>Room Type</th>
+                    <th>Room</th>
                     <th>Check-in</th>
                     <th>Check-out</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
+                <% if (recentReservations == null || recentReservations.isEmpty()) { %>
                 <tr>
-                    <td><strong>#BK001</strong></td>
-                    <td>John Smith</td>
-                    <td>Deluxe Suite</td>
-                    <td>2024-02-25</td>
-                    <td>2024-02-28</td>
-                    <td><span class="badge-status badge-confirmed">Confirmed</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action"><i class="fas fa-edit"></i></button>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
+                        No reservations found.
+                        <a href="<%= request.getContextPath() %>/staff/reservations/new">Create one now</a>
                     </td>
                 </tr>
+                <% } else { for (ReservationDTO r : recentReservations) { %>
                 <tr>
-                    <td><strong>#BK002</strong></td>
-                    <td>Emma Wilson</td>
-                    <td>Ocean View</td>
-                    <td>2024-02-26</td>
-                    <td>2024-03-01</td>
-                    <td><span class="badge-status badge-pending">Pending</span></td>
+                    <td><strong><%= r.getReservationNumber() %></strong></td>
+                    <td><%= r.getGuestName() != null ? r.getGuestName() : "-" %></td>
+                    <td><%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
+                        <% if (r.getRoomType() != null) { %>
+                        <small class="text-muted">(<%= r.getRoomType() %>)</small>
+                        <% } %></td>
+                    <td><%= r.getCheckInDate() %></td>
+                    <td><%= r.getCheckOutDate() %></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action"><i class="fas fa-edit"></i></button>
+                        <%
+                            String status = r.getReservationStatus();
+                            String badgeClass = "badge-pending";
+                            String statusLabel = status != null ? status : "PENDING";
+                            if ("CONFIRMED".equals(status)) badgeClass = "badge-confirmed";
+                            else if ("CHECKED_IN".equals(status)) badgeClass = "badge-checked-in";
+                            else if ("CHECKED_OUT".equals(status)) badgeClass = "badge-checked-out";
+                            else if ("CANCELLED".equals(status)) badgeClass = "badge-cancelled";
+                        %>
+                        <span class="badge-status <%= badgeClass %>"><%= statusLabel %></span>
+                    </td>
+                    <td>
+                        <a href="<%= request.getContextPath() %>/staff/reservations/view?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-primary" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="<%= request.getContextPath() %>/staff/reservations/edit?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-secondary" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <% if ("CONFIRMED".equals(status)) { %>
+                        <a href="<%= request.getContextPath() %>/staff/reservations/checkin?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-success" title="Check In"
+                           onclick="return confirm('Check in this guest?')">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </a>
+                        <% } else if ("CHECKED_IN".equals(status)) { %>
+                        <a href="<%= request.getContextPath() %>/staff/reservations/checkout?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-warning" title="Check Out"
+                           onclick="return confirm('Check out this guest?')">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                        <% } %>
                     </td>
                 </tr>
-                <tr>
-                    <td><strong>#BK003</strong></td>
-                    <td>Michael Brown</td>
-                    <td>Standard Room</td>
-                    <td>2024-02-24</td>
-                    <td>2024-02-27</td>
-                    <td><span class="badge-status badge-checked-in">Checked In</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action"><i class="fas fa-edit"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>#BK004</strong></td>
-                    <td>Sarah Davis</td>
-                    <td>Family Room</td>
-                    <td>2024-02-23</td>
-                    <td>2024-02-26</td>
-                    <td><span class="badge-status badge-checked-out">Checked Out</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary btn-action"><i class="fas fa-eye"></i></button>
-                        <button class="btn btn-sm btn-outline-success btn-action"><i class="fas fa-edit"></i></button>
-                    </td>
-                </tr>
+                <% } } %>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Charts and Additional Info -->
+    <!-- Charts -->
     <div class="row">
         <div class="col-md-8">
-            <div class="chart-container">
-                <div class="section-header">
-                    <h3>Weekly Occupancy</h3>
-                </div>
-                <canvas id="occupancyChart"></canvas>
+            <div class="table-card">
+                <div class="section-title">Weekly Occupancy</div>
+                <canvas id="occupancyChart" height="120"></canvas>
             </div>
         </div>
-
         <div class="col-md-4">
-            <div class="chart-container">
-                <div class="section-header">
-                    <h3>Room Type Distribution</h3>
-                </div>
-                <canvas id="roomTypeChart"></canvas>
+            <div class="table-card">
+                <div class="section-title">Room Type Distribution</div>
+                <canvas id="roomTypeChart" height="200"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    // Toggle user menu (you can implement a dropdown menu here)
-    function toggleUserMenu() {
-        // Implement user menu dropdown
-        console.log('User menu clicked');
-    }
-
-    // Initialize charts
-    document.addEventListener('DOMContentLoaded', function() {
-        // Occupancy Chart
-        const ctx1 = document.getElementById('occupancyChart').getContext('2d');
-        new Chart(ctx1, {
+    document.addEventListener('DOMContentLoaded', function () {
+        new Chart(document.getElementById('occupancyChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 datasets: [{
-                    label: 'Occupancy Rate',
+                    label: 'Occupancy %',
                     data: [65, 70, 75, 80, 85, 90, 88],
                     borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    tension: 0.4,
-                    fill: true
+                    backgroundColor: 'rgba(13,110,253,0.08)',
+                    tension: 0.4, fill: true, borderWidth: 2,
+                    pointBackgroundColor: '#0d6efd', pointRadius: 4
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, max: 100 } }
             }
         });
 
-        // Room Type Chart
-        const ctx2 = document.getElementById('roomTypeChart').getContext('2d');
-        new Chart(ctx2, {
+        new Chart(document.getElementById('roomTypeChart').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['Standard', 'Deluxe', 'Suite', 'Ocean View', 'Family'],
                 datasets: [{
                     data: [30, 25, 15, 20, 10],
-                    backgroundColor: [
-                        '#0d6efd',
-                        '#198754',
-                        '#ffc107',
-                        '#dc3545',
-                        '#6c757d'
-                    ]
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#0dcaf0', '#6c757d'],
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
+                plugins: { legend: { position: 'bottom' } },
+                cutout: '60%'
             }
         });
     });
-
-    // Auto-refresh data every 30 seconds (optional)
-    setInterval(function() {
-        // Refresh stats and recent bookings
-        console.log('Refreshing dashboard data...');
-    }, 30000);
 </script>
 </body>
 </html>

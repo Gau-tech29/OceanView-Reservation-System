@@ -1,798 +1,339 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.oceanview.model.User" %>
+<%@ page import="com.oceanview.dto.ReservationDTO" %>
 <%@ page import="com.oceanview.dto.DashboardStatsDTO" %>
+<%@ page import="com.oceanview.service.ReservationService" %>
+<%@ page import="com.oceanview.service.RoomService" %>
+<%@ page import="com.oceanview.service.GuestService" %>
 <%@ page import="java.time.LocalDate" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
-
-<%
-    // Set page title for active menu detection
-    request.setAttribute("pageTitle", "Dashboard");
-%>
-<%
-    User user = (User) session.getAttribute("user");
-    if (user == null) {
-        response.sendRedirect(request.getContextPath() + "/login");
-        return;
-    }
-
-    DashboardStatsDTO stats = (DashboardStatsDTO) request.getAttribute("stats");
-    LocalDate today = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
-    String currentDate = today.format(formatter);
-%>
+<%@ page import="java.util.List" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Ocean View Hotel</title>
-
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         :root {
             --primary-color: #0d6efd;
             --primary-dark: #0b5ed7;
             --primary-light: #e6f2ff;
             --secondary-color: #6c757d;
-            --success-color: #198754;
-            --info-color: #0dcaf0;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --light-bg: #f8f9fa;
             --dark-color: #212529;
-            --sidebar-width: 280px;
-            --header-height: 70px;
-            --card-shadow: 0 10px 30px rgba(13, 110, 253, 0.1);
-            --transition: all 0.3s ease;
+            --sidebar-width: 270px;
+            --card-shadow: 0 4px 20px rgba(13,110,253,0.1);
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f4f8; overflow-x: hidden; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Premium Sidebar */
+        /* Sidebar */
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
+            position: fixed; top: 0; left: 0; height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #0a58ca 0%, #0d6efd 100%);
-            color: white;
-            transition: var(--transition);
-            z-index: 1000;
-            box-shadow: 5px 0 25px rgba(13, 110, 253, 0.3);
+            background: linear-gradient(180deg, #0a3d8f 0%, #0d6efd 100%);
+            color: white; z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+            overflow-y: auto;
         }
-
         .sidebar-brand {
-            padding: 25px 25px;
-            border-bottom: 2px solid rgba(255,255,255,0.15);
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
+            padding: 25px 22px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 10px;
         }
-
-        .sidebar-brand::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
+        .sidebar-brand h3 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .sidebar-brand p { font-size: 0.8rem; opacity: 0.8; margin: 4px 0 0; }
+        .sidebar-label {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; opacity: 0.5; padding: 15px 22px 5px;
         }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .sidebar-brand h3 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: 1px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .sidebar-brand p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin: 5px 0 0;
-            letter-spacing: 0.5px;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0 15px;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin-bottom: 8px;
-        }
-
+        .sidebar-menu { list-style: none; padding: 5px 12px; margin: 0; }
+        .sidebar-menu li { margin-bottom: 4px; }
         .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            padding: 14px 20px;
-            color: rgba(255,255,255,0.85);
-            text-decoration: none;
-            transition: var(--transition);
-            border-radius: 12px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
+            display: flex; align-items: center; padding: 11px 15px;
+            color: rgba(255,255,255,0.85); text-decoration: none;
+            transition: all 0.2s; border-radius: 10px; font-weight: 500;
         }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.18); color: white;
+            transform: translateX(4px);
         }
+        .sidebar-menu a i { width: 28px; font-size: 1.05rem; }
+        .sidebar-menu a span { font-size: 0.88rem; }
 
-        .sidebar-menu a i {
-            width: 30px;
-            font-size: 1.3rem;
-        }
+        /* Main */
+        .main-content { margin-left: var(--sidebar-width); padding: 22px 30px; }
 
-        .sidebar-menu a span {
-            font-size: 1rem;
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 25px 35px;
-            transition: var(--transition);
-        }
-
-        /* Top Navigation */
+        /* Top Nav */
         .top-nav {
-            background: white;
-            border-radius: 20px;
-            padding: 15px 30px;
-            margin-bottom: 30px;
-            box-shadow: var(--card-shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(13, 110, 253, 0.1);
+            background: white; border-radius: 16px; padding: 14px 24px;
+            margin-bottom: 22px; box-shadow: var(--card-shadow);
+            display: flex; justify-content: space-between; align-items: center;
         }
-
         .page-title h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin: 0;
-            background: linear-gradient(135deg, #0d6efd, #0a58ca);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.5rem; font-weight: 700; margin: 0;
+            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        .page-title p {
-            color: var(--secondary-color);
-            margin: 5px 0 0;
-            font-size: 0.95rem;
-        }
-
-        .page-title p i {
-            color: var(--primary-color);
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-        }
-
-        .notifications {
-            position: relative;
-            cursor: pointer;
-            width: 45px;
-            height: 45px;
-            background: var(--primary-light);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-
-        .notifications:hover {
-            background: var(--primary-color);
-            transform: translateY(-3px);
-        }
-
-        .notifications:hover i {
-            color: white;
-        }
-
-        .notifications i {
-            font-size: 1.3rem;
-            color: var(--primary-color);
-            transition: var(--transition);
-        }
-
-        .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger-color);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            border: 2px solid white;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 15px;
-            transition: var(--transition);
-            background: var(--primary-light);
-        }
-
-        .user-profile:hover {
-            background: var(--primary-color);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.2);
-        }
-
-        .user-profile:hover .user-info .name,
-        .user-profile:hover .user-info .role,
-        .user-profile:hover i {
-            color: white;
-        }
-
+        .page-title p { color: var(--secondary-color); margin: 3px 0 0; font-size: 0.85rem; }
+        .user-menu { display: flex; align-items: center; gap: 15px; }
         .user-avatar {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, #0d6efd, #0a58ca);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 1.2rem;
-            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: 700; font-size: 1rem;
         }
+        .user-name { font-weight: 600; color: var(--dark-color); font-size: 0.9rem; }
+        .user-role { font-size: 0.75rem; color: var(--secondary-color); }
 
-        .user-info .name {
-            font-weight: 600;
-            color: var(--dark-color);
-            line-height: 1.2;
-            transition: var(--transition);
+        /* Alert messages */
+        .alert-success-custom {
+            background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+            border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
         }
-
-        .user-info .role {
-            font-size: 0.8rem;
-            color: var(--secondary-color);
-            transition: var(--transition);
+        .alert-error-custom {
+            background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+            border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
         }
 
         /* Welcome Banner */
         .welcome-banner {
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 30px 40px;
-            margin-bottom: 40px;
-            box-shadow: 0 20px 40px rgba(13, 110, 253, 0.3);
-            position: relative;
-            overflow: hidden;
+            background: linear-gradient(135deg, #0a3d8f 0%, #0d6efd 100%);
+            color: white; border-radius: 20px; padding: 25px 35px;
+            margin-bottom: 25px; box-shadow: 0 15px 35px rgba(13,110,253,0.3);
         }
+        .welcome-banner h4 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+        .welcome-banner p { opacity: 0.9; margin: 0; font-size: 0.95rem; }
 
-        .welcome-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-            animation: rotate 30s linear infinite;
-        }
-
-        .welcome-banner h4 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .welcome-banner p {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            margin: 0;
-        }
-
-        .welcome-banner .badge-date {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-size: 1rem;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        /* Stats Cards Grid */
+        /* Stats Grid */
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 18px; margin-bottom: 25px;
         }
-
         .stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
+            background: white; border-radius: 15px; padding: 20px;
             box-shadow: var(--card-shadow);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: var(--transition);
-            border: 1px solid rgba(13, 110, 253, 0.1);
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.25s; border-left: 4px solid var(--primary-color);
+            position: relative; overflow: hidden;
         }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
-            transition: var(--transition);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(13, 110, 253, 0.2);
-        }
-
-        .stat-card:hover::before {
-            width: 100%;
-            opacity: 0.1;
-        }
-
-        .stat-info h3 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--dark-color);
-            margin-bottom: 5px;
-            line-height: 1;
-        }
-
-        .stat-info p {
-            color: var(--secondary-color);
-            margin: 0;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(13,110,253,0.18); }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 700; color: var(--dark-color); margin-bottom: 4px; line-height: 1; }
+        .stat-info p { color: var(--secondary-color); margin: 0; font-size: 0.82rem; font-weight: 500; }
         .stat-icon {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+            width: 55px; height: 55px;
+            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 15px rgba(13,110,253,0.3);
+        }
+        .stat-icon i { font-size: 24px; color: white; }
+
+        /* Section Title */
+        .section-title {
+            font-size: 1.05rem; font-weight: 600; color: var(--dark-color);
+            margin-bottom: 15px; padding-left: 12px;
+            border-left: 3px solid var(--primary-color);
         }
 
-        .stat-icon i {
-            font-size: 35px;
-            color: white;
+        /* Quick Actions */
+        .quick-actions {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 25px;
         }
-
-        /* Section Styles */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .section-header h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin: 0;
-            position: relative;
-            padding-left: 15px;
-        }
-
-        .section-header h3::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 5px;
-            height: 25px;
-            background: linear-gradient(180deg, var(--primary-color), var(--primary-dark));
-            border-radius: 5px;
-        }
-
-        .view-all {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            padding: 8px 15px;
-            border-radius: 10px;
-            background: var(--primary-light);
-            transition: var(--transition);
-        }
-
-        .view-all:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateX(5px);
-        }
-
-        .view-all i {
-            transition: var(--transition);
-        }
-
-        .view-all:hover i {
-            transform: translateX(5px);
-        }
-
-        /* Quick Actions Grid */
-        .actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .action-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
+        .action-btn {
+            background: white; border-radius: 15px; padding: 20px;
             box-shadow: var(--card-shadow);
-            transition: var(--transition);
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            border: 1px solid rgba(13, 110, 253, 0.1);
-            position: relative;
-            overflow: hidden;
+            text-decoration: none; color: inherit; display: block;
+            transition: all 0.2s; border: 2px solid transparent;
         }
-
-        .action-card::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, transparent 50%, rgba(13, 110, 253, 0.05) 50%);
-            border-radius: 50%;
-            transition: var(--transition);
+        .action-btn:hover {
+            transform: translateY(-5px); border-color: var(--primary-color);
+            box-shadow: 0 12px 25px rgba(13,110,253,0.18); color: inherit;
         }
-
-        .action-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(13, 110, 253, 0.2);
+        .action-btn .action-icon {
+            width: 50px; height: 50px;
+            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            border-radius: 12px; display: flex; align-items: center;
+            justify-content: center; margin-bottom: 14px;
+            box-shadow: 0 8px 15px rgba(13,110,253,0.25);
         }
+        .action-btn .action-icon i { font-size: 22px; color: white; }
+        .action-btn h5 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; color: var(--dark-color); }
+        .action-btn p { font-size: 0.78rem; color: var(--secondary-color); margin: 0; }
 
-        .action-card:hover::after {
-            transform: scale(1.5);
+        /* Table Card */
+        .table-card {
+            background: white; border-radius: 15px; padding: 22px;
+            box-shadow: var(--card-shadow); margin-bottom: 25px;
         }
-
-        .card-icon {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+        .table-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
         }
-
-        .card-icon i {
-            font-size: 35px;
-            color: white;
-        }
-
-        .action-card h4 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 12px;
-        }
-
-        .action-card p {
-            color: var(--secondary-color);
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .card-link {
-            color: var(--primary-color);
-            font-size: 0.95rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-
-        .card-link i {
-            transition: var(--transition);
-        }
-
-        .action-card:hover .card-link i {
-            transform: translateX(8px);
-        }
-
-        /* Recent Activity Table */
-        .recent-activity {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 40px;
-            border: 1px solid rgba(13, 110, 253, 0.1);
-        }
-
-        .table {
-            margin: 0;
-        }
-
         .table th {
-            border-top: none;
-            color: var(--secondary-color);
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 15px 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.78rem; font-weight: 700; color: var(--secondary-color);
+            text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 10px;
+            border-bottom: 2px solid #f0f4f8;
         }
+        .table td { padding: 13px 10px; vertical-align: middle; font-size: 0.88rem; border-bottom: 1px solid #f8f9fa; }
+        .table tbody tr:hover { background: #fafcff; }
+        .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+        .badge-confirmed { background: #d4edda; color: #155724; }
+        .badge-checked-in { background: #cce5ff; color: #004085; }
+        .badge-checked-out { background: #e2e3e5; color: #383d41; }
+        .badge-cancelled { background: #f8d7da; color: #721c24; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-paid { background: #d4edda; color: #155724; }
 
-        .table td {
-            padding: 15px 10px;
-            vertical-align: middle;
-            color: var(--dark-color);
-            font-weight: 500;
-            border-bottom: 1px solid #e9ecef;
+        /* Charts */
+        .chart-card { background: white; border-radius: 15px; padding: 22px; box-shadow: var(--card-shadow); }
+
+        @media (max-width: 1400px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
         }
-
-        .badge-status {
-            padding: 6px 12px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            display: inline-block;
-        }
-
-        .badge-confirmed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-checked-in {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .badge-checked-out {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .badge-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .btn-action {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            margin: 0 3px;
-            transition: var(--transition);
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Chart Container */
-        .chart-container {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 40px;
-            border: 1px solid rgba(13, 110, 253, 0.1);
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .main-content {
-                margin-left: 0;
-                padding: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
+        @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .actions-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .welcome-banner h4 {
-                font-size: 1.5rem;
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
-        }
-
-        .spinner.active {
-            display: flex;
-        }
-
-        .spinner::after {
-            content: '';
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--primary-light);
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+<%
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
+    if (!user.isAdmin()) {
+        response.sendRedirect(request.getContextPath() + "/staff/dashboard");
+        return;
+    }
 
-<div class="spinner" id="spinner"></div>
+    // Load live stats from services
+    ReservationService reservationService = new ReservationService();
+    RoomService roomService = new RoomService();
+    GuestService guestService = new GuestService();
+
+    DashboardStatsDTO stats = (DashboardStatsDTO) request.getAttribute("stats");
+
+    // Fallback: load directly if servlet didn't set them
+    int totalReservations = 0, activeReservations = 0, availableRooms = 0, totalRooms = 0;
+    long totalGuests = 0;
+    int todayCheckIns = 0, todayCheckOuts = 0;
+    double monthlyRevenue = 0.0, occupancyRate = 0.0;
+    List<ReservationDTO> recentReservations = null;
+
+    try {
+        if (stats != null) {
+            totalReservations = stats.getTotalReservations();
+            activeReservations = stats.getActiveReservations();
+            availableRooms = stats.getAvailableRooms();
+            totalRooms = stats.getTotalRooms();
+            totalGuests = stats.getTotalGuests();
+            todayCheckIns = stats.getTodayCheckIns();
+            todayCheckOuts = stats.getTodayCheckOuts();
+            monthlyRevenue = stats.getMonthlyRevenue();
+            occupancyRate = stats.getOccupancyRate();
+        } else {
+            totalReservations = (int) reservationService.getTotalReservationsCount();
+            activeReservations = (int) reservationService.getActiveReservationsCount();
+            availableRooms = (int) roomService.getAvailableRoomsCount();
+            totalRooms = (int) roomService.getTotalRooms();
+            totalGuests = guestService.getActiveGuestsCount();
+            todayCheckIns = reservationService.getTodaysCheckInsCount();
+            todayCheckOuts = reservationService.getTodaysCheckOutsCount();
+            monthlyRevenue = reservationService.getCurrentMonthRevenue();
+            if (totalRooms > 0) {
+                occupancyRate = ((totalRooms - availableRooms) * 100.0) / totalRooms;
+            }
+        }
+        recentReservations = reservationService.getRecentReservations(10);
+    } catch (Exception e) {
+        // log error — don't crash the dashboard
+    }
+
+    LocalDate today = LocalDate.now();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+    String currentDate = today.format(formatter);
+
+    String successMsg = (String) session.getAttribute("success");
+    String errorMsg = (String) session.getAttribute("error");
+    if (successMsg != null) session.removeAttribute("success");
+    if (errorMsg != null) session.removeAttribute("error");
+%>
 
 <!-- Sidebar -->
 <div class="sidebar">
     <div class="sidebar-brand">
-        <h3>Ocean View</h3>
-        <p>Hotel Reservation System</p>
+        <h3><i class="fas fa-hotel me-2"></i>Ocean View</h3>
+        <p>Admin Control Panel</p>
     </div>
-
-    <!-- Sidebar Menu - Update this section -->
+    <div class="sidebar-label">Main Menu</div>
     <ul class="sidebar-menu">
         <li>
-            <a href="${pageContext.request.contextPath}/admin/dashboard" ${pageTitle == 'Dashboard' ? 'class="active"' : ''}>
-                <i class="fas fa-chart-pie"></i>
-                <span>Dashboard</span>
+            <a href="<%= request.getContextPath() %>/admin/dashboard" class="active">
+                <i class="fas fa-chart-pie"></i><span>Dashboard</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/manage-staff" ${pageTitle == 'Manage Staff' ? 'class="active"' : ''}>
-                <i class="fas fa-users-cog"></i>
-                <span>Manage Staff</span>
+            <a href="<%= request.getContextPath() %>/admin/reservations">
+                <i class="fas fa-calendar-alt"></i><span>All Reservations</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/manage-rooms" ${pageTitle == 'Manage Rooms' ? 'class="active"' : ''}>
-                <i class="fas fa-door-open"></i>
-                <span>Manage Rooms</span>
+            <a href="<%= request.getContextPath() %>/admin/reservations/new">
+                <i class="fas fa-plus-circle"></i><span>New Reservation</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/reservations">
-                <i class="fas fa-calendar-alt"></i>
-                <span>All Reservations</span>
+            <a href="<%= request.getContextPath() %>/admin/guests">
+                <i class="fas fa-users"></i><span>Guests</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/guests">
-                <i class="fas fa-users"></i>
-                <span>Guests</span>
+            <a href="<%= request.getContextPath() %>/admin/bills">
+                <i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span>
+            </a>
+        </li>
+    </ul>
+    <div class="sidebar-label">Administration</div>
+    <ul class="sidebar-menu">
+        <li>
+            <a href="<%= request.getContextPath() %>/admin/manage-staff">
+                <i class="fas fa-users-cog"></i><span>Manage Staff</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/bills">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Bills & Payments</span>
+            <a href="<%= request.getContextPath() %>/admin/manage-rooms">
+                <i class="fas fa-door-open"></i><span>Manage Rooms</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/maintenance">
-                <i class="fas fa-tools"></i>
-                <span>Maintenance</span>
+            <a href="<%= request.getContextPath() %>/admin/maintenance">
+                <i class="fas fa-tools"></i><span>Maintenance</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/reports">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports</span>
+            <a href="<%= request.getContextPath() %>/admin/reports">
+                <i class="fas fa-chart-bar"></i><span>Reports</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/settings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
+            <a href="<%= request.getContextPath() %>/admin/settings">
+                <i class="fas fa-cog"></i><span>Settings</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/logout">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
+            <a href="<%= request.getContextPath() %>/logout">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
             </a>
         </li>
     </ul>
@@ -800,183 +341,180 @@
 
 <!-- Main Content -->
 <div class="main-content">
-    <!-- Top Navigation -->
+
+    <!-- Top Nav -->
     <div class="top-nav">
         <div class="page-title">
             <h2>Admin Dashboard</h2>
-            <p><i class="fas fa-calendar-alt me-2"></i><%= currentDate %></p>
+            <p><i class="fas fa-calendar-alt me-1"></i><%= currentDate %></p>
         </div>
-
         <div class="user-menu">
-            <div class="notifications">
-                <i class="fas fa-bell"></i>
-                <span class="badge">3</span>
+            <div class="user-avatar">
+                <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
             </div>
-
-            <div class="user-profile" onclick="toggleUserMenu()">
-                <div class="user-avatar">
-                    <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
-                </div>
-                <div class="user-info d-none d-md-block">
-                    <div class="name"><%= user.getFullName() %></div>
-                    <div class="role"><%= user.getRole() %></div>
-                </div>
-                <i class="fas fa-chevron-down" style="color: var(--secondary-color); font-size: 0.8rem;"></i>
+            <div>
+                <div class="user-name"><%= user.getFullName() %></div>
+                <div class="user-role"><%= user.getRole() %> (Admin)</div>
             </div>
         </div>
     </div>
+
+    <!-- Alerts -->
+    <% if (successMsg != null) { %>
+    <div class="alert-success-custom">
+        <i class="fas fa-check-circle me-2"></i><%= successMsg %>
+    </div>
+    <% } %>
+    <% if (errorMsg != null) { %>
+    <div class="alert-error-custom">
+        <i class="fas fa-exclamation-circle me-2"></i><%= errorMsg %>
+    </div>
+    <% } %>
 
     <!-- Welcome Banner -->
     <div class="welcome-banner">
         <div class="row align-items-center">
-            <div class="col-md-8">
+            <div class="col-md-9">
                 <h4>Welcome back, <%= user.getFirstName() %>! 👋</h4>
-                <p>You have full system access. Here's what's happening today.</p>
+                <p>Full system access enabled. <strong><%= todayCheckIns %></strong> check-in(s) and
+                    <strong><%= todayCheckOuts %></strong> check-out(s) scheduled today.</p>
             </div>
-            <div class="col-md-4 text-md-end">
-                <span class="badge-date">
-                    <i class="fas fa-sun me-2"></i>Good Day
-                </span>
+            <div class="col-md-3 text-end d-none d-md-block">
+                <i class="fas fa-shield-alt" style="font-size:3rem; opacity:0.25;"></i>
             </div>
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
-                <h3><%= stats != null ? stats.getTotalReservations() : 0 %></h3>
+                <h3><%= totalReservations %></h3>
                 <p>Total Reservations</p>
             </div>
-            <div class="stat-icon">
-                <i class="fas fa-calendar-check"></i>
-            </div>
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#198754;">
             <div class="stat-info">
-                <h3><%= stats != null ? stats.getActiveReservations() : 0 %></h3>
-                <p>Active Reservations</p>
+                <h3><%= availableRooms %>/<%= totalRooms %></h3>
+                <p>Available / Total Rooms</p>
             </div>
-            <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-info">
-                <h3><%= stats != null ? stats.getAvailableRooms() : 0 %>/<%= stats != null ? stats.getTotalRooms() : 0 %></h3>
-                <p>Available Rooms</p>
-            </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#198754,#146c43);">
                 <i class="fas fa-door-open"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#fd7e14;">
             <div class="stat-info">
-                <h3><%= stats != null ? stats.getTotalGuests() : 0 %></h3>
+                <h3><%= totalGuests %></h3>
                 <p>Total Guests</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#fd7e14,#e96c02);">
                 <i class="fas fa-users"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#0dcaf0;">
             <div class="stat-info">
-                <h3><%= stats != null ? stats.getTodayCheckIns() : 0 %></h3>
+                <h3><%= todayCheckIns %></h3>
                 <p>Check-ins Today</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#0dcaf0,#0aa2c0);">
                 <i class="fas fa-sign-in-alt"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#6f42c1;">
             <div class="stat-info">
-                <h3><%= stats != null ? stats.getTodayCheckOuts() : 0 %></h3>
+                <h3><%= todayCheckOuts %></h3>
                 <p>Check-outs Today</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#6f42c1,#59359a);">
                 <i class="fas fa-sign-out-alt"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#20c997;">
             <div class="stat-info">
-                <h3>$<%= stats != null ? String.format("%,.2f", stats.getMonthlyRevenue()) : "0.00" %></h3>
+                <h3>$<%= String.format("%,.0f", monthlyRevenue) %></h3>
                 <p>Monthly Revenue</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#20c997,#17a589);">
                 <i class="fas fa-dollar-sign"></i>
             </div>
         </div>
-
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color:#ffc107;">
             <div class="stat-info">
-                <h3><%= stats != null ? String.format("%.1f", stats.getOccupancyRate()) : 0 %>%</h3>
+                <h3><%= String.format("%.1f", occupancyRate) %>%</h3>
                 <p>Occupancy Rate</p>
             </div>
-            <div class="stat-icon">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#ffc107,#e0a800);">
                 <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+        <div class="stat-card" style="border-left-color:#dc3545;">
+            <div class="stat-info">
+                <h3><%= activeReservations %></h3>
+                <p>Active Reservations</p>
+            </div>
+            <div class="stat-icon" style="background:linear-gradient(135deg,#dc3545,#b02a37);">
+                <i class="fas fa-clock"></i>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="section-header">
-        <h3>Quick Actions</h3>
-        <a href="#" class="view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    <div class="section-title">Quick Actions</div>
+    <div class="quick-actions">
+        <a href="<%= request.getContextPath() %>/admin/reservations/new" class="action-btn">
+            <div class="action-icon"><i class="fas fa-plus-circle"></i></div>
+            <h5>New Reservation</h5>
+            <p>Create a booking for a guest</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/reservations" class="action-btn">
+            <div class="action-icon"><i class="fas fa-list-alt"></i></div>
+            <h5>All Reservations</h5>
+            <p>View and manage all bookings</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/manage-staff" class="action-btn">
+            <div class="action-icon"><i class="fas fa-user-plus"></i></div>
+            <h5>Manage Staff</h5>
+            <p>Add and manage staff accounts</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/manage-rooms" class="action-btn">
+            <div class="action-icon"><i class="fas fa-door-open"></i></div>
+            <h5>Manage Rooms</h5>
+            <p>Add and configure rooms</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/guests" class="action-btn">
+            <div class="action-icon"><i class="fas fa-users"></i></div>
+            <h5>Guests</h5>
+            <p>View and manage guest profiles</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/bills" class="action-btn">
+            <div class="action-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <h5>Bills & Payments</h5>
+            <p>Manage invoices and payments</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/reports" class="action-btn">
+            <div class="action-icon"><i class="fas fa-chart-bar"></i></div>
+            <h5>Reports</h5>
+            <p>Revenue, occupancy & analytics</p>
+        </a>
+        <a href="<%= request.getContextPath() %>/admin/reservations/search" class="action-btn">
+            <div class="action-icon"><i class="fas fa-search"></i></div>
+            <h5>Search</h5>
+            <p>Find any reservation or guest</p>
+        </a>
     </div>
 
-    <div class="actions-grid">
-        <a href="#" class="action-card">
-            <div class="card-icon">
-                <i class="fas fa-plus-circle"></i>
-            </div>
-            <h4>New Reservation</h4>
-            <p>Create a new booking for guests with room selection and special requests.</p>
-            <span class="card-link">Create Now <i class="fas fa-arrow-right"></i></span>
-        </a>
-
-        <a href="#" class="action-card">
-            <div class="card-icon">
-                <i class="fas fa-user-plus"></i>
-            </div>
-            <h4>Add Staff Member</h4>
-            <p>Create new staff accounts and assign appropriate roles and permissions.</p>
-            <span class="card-link">Add Staff <i class="fas fa-arrow-right"></i></span>
-        </a>
-
-        <a href="#" class="action-card">
-            <div class="card-icon">
-                <i class="fas fa-door-open"></i>
-            </div>
-            <h4>Add New Room</h4>
-            <p>Configure new rooms with type, view, pricing, and amenities.</p>
-            <span class="card-link">Add Room <i class="fas fa-arrow-right"></i></span>
-        </a>
-
-        <a href="#" class="action-card">
-            <div class="card-icon">
-                <i class="fas fa-file-invoice"></i>
-            </div>
-            <h4>Generate Report</h4>
-            <p>Create detailed reports on revenue, occupancy, and performance.</p>
-            <span class="card-link">Generate <i class="fas fa-arrow-right"></i></span>
-        </a>
-    </div>
-
-    <!-- Recent Reservations -->
-    <div class="recent-activity">
-        <div class="section-header">
-            <h3>Recent Reservations</h3>
-            <a href="${pageContext.request.contextPath}/admin/reservations" class="view-all">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    <!-- Recent Reservations Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <span class="section-title mb-0">Recent Reservations</span>
+            <a href="<%= request.getContextPath() %>/admin/reservations"
+               class="btn btn-sm btn-primary">
+                View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
         </div>
-
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                 <tr>
                     <th>Reservation #</th>
@@ -990,222 +528,157 @@
                 </tr>
                 </thead>
                 <tbody>
-                <c:choose>
-                    <c:when test="${empty recentReservations}">
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <i class="fas fa-calendar-times fa-3x mb-3" style="color: var(--secondary-color);"></i>
-                                <h5 style="color: var(--secondary-color);">No recent reservations</h5>
-                            </td>
-                        </tr>
-                    </c:when>
-                    <c:otherwise>
-                        <c:forEach var="reservation" items="${recentReservations}">
-                            <tr>
-                                <td><strong>${reservation.reservationNumber}</strong></td>
-                                <td>${reservation.guest.firstName} ${reservation.guest.lastName}</td>
-                                <td>${reservation.room.roomType} - ${reservation.room.roomNumber}</td>
-                                <td>${reservation.checkInDate}</td>
-                                <td>${reservation.checkOutDate}</td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${reservation.reservationStatus == 'CONFIRMED'}">
-                                            <span class="badge-status badge-confirmed">Confirmed</span>
-                                        </c:when>
-                                        <c:when test="${reservation.reservationStatus == 'CHECKED_IN'}">
-                                            <span class="badge-status badge-checked-in">Checked In</span>
-                                        </c:when>
-                                        <c:when test="${reservation.reservationStatus == 'CHECKED_OUT'}">
-                                            <span class="badge-status badge-checked-out">Checked Out</span>
-                                        </c:when>
-                                        <c:when test="${reservation.reservationStatus == 'CANCELLED'}">
-                                            <span class="badge-status badge-cancelled">Cancelled</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge-status badge-pending">Pending</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${reservation.paymentStatus == 'PAID'}">
-                                            <span class="badge-status badge-confirmed">Paid</span>
-                                        </c:when>
-                                        <c:when test="${reservation.paymentStatus == 'PARTIAL'}">
-                                            <span class="badge-status badge-pending">Partial</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge-status badge-pending">Pending</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <a href="${pageContext.request.contextPath}/admin/reservations/view?id=${reservation.id}"
-                                       class="btn btn-sm btn-outline-primary btn-action" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/admin/reservations/edit?id=${reservation.id}"
-                                       class="btn btn-sm btn-outline-success btn-action" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                    </c:otherwise>
-                </c:choose>
+                <% if (recentReservations == null || recentReservations.isEmpty()) { %>
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fas fa-calendar-times fa-3x mb-3 d-block" style="opacity:0.3;"></i>
+                        No reservations found.
+                        <a href="<%= request.getContextPath() %>/admin/reservations/new">
+                            Create the first one
+                        </a>
+                    </td>
+                </tr>
+                <% } else { for (ReservationDTO r : recentReservations) { %>
+                <tr>
+                    <td><strong><%= r.getReservationNumber() %></strong></td>
+                    <td><%= r.getGuestName() != null ? r.getGuestName() : "-" %></td>
+                    <td>
+                        <%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
+                        <% if (r.getRoomType() != null) { %>
+                        <small class="text-muted d-block"><%= r.getRoomType() %></small>
+                        <% } %>
+                    </td>
+                    <td><%= r.getCheckInDate() %></td>
+                    <td><%= r.getCheckOutDate() %></td>
+                    <td>
+                        <%
+                            String status = r.getReservationStatus();
+                            String badgeClass = "badge-pending";
+                            if ("CONFIRMED".equals(status)) badgeClass = "badge-confirmed";
+                            else if ("CHECKED_IN".equals(status)) badgeClass = "badge-checked-in";
+                            else if ("CHECKED_OUT".equals(status)) badgeClass = "badge-checked-out";
+                            else if ("CANCELLED".equals(status)) badgeClass = "badge-cancelled";
+                        %>
+                        <span class="badge-status <%= badgeClass %>">
+                            <%= status != null ? status.replace("_", " ") : "PENDING" %>
+                        </span>
+                    </td>
+                    <td>
+                        <%
+                            String pStatus = r.getPaymentStatus();
+                            String pBadge = "badge-pending";
+                            if ("PAID".equals(pStatus)) pBadge = "badge-paid";
+                        %>
+                        <span class="badge-status <%= pBadge %>">
+                            <%= pStatus != null ? pStatus : "PENDING" %>
+                        </span>
+                    </td>
+                    <td>
+                        <a href="<%= request.getContextPath() %>/admin/reservations/view?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-primary" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="<%= request.getContextPath() %>/admin/reservations/edit?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-secondary" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <% if ("CONFIRMED".equals(status)) { %>
+                        <a href="<%= request.getContextPath() %>/admin/reservations/checkin?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-success" title="Check In"
+                           onclick="return confirm('Confirm check-in?')">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </a>
+                        <% } else if ("CHECKED_IN".equals(status)) { %>
+                        <a href="<%= request.getContextPath() %>/admin/reservations/checkout?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-warning" title="Check Out"
+                           onclick="return confirm('Confirm check-out?')">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                        <% } %>
+                        <a href="<%= request.getContextPath() %>/admin/reservations/delete?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-danger" title="Delete"
+                           onclick="return confirm('Permanently delete this reservation?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                <% } } %>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="row">
+    <!-- Charts -->
+    <div class="row g-4 mb-4">
         <div class="col-lg-8">
-            <div class="chart-container">
-                <div class="section-header">
-                    <h3>Revenue Overview</h3>
-                </div>
-                <canvas id="revenueChart" height="300"></canvas>
+            <div class="chart-card">
+                <div class="section-title">Revenue Overview (Last 6 Months)</div>
+                <canvas id="revenueChart" height="120"></canvas>
             </div>
         </div>
-
         <div class="col-lg-4">
-            <div class="chart-container">
-                <div class="section-header">
-                    <h3>Room Status</h3>
-                </div>
-                <canvas id="roomStatusChart" height="300"></canvas>
+            <div class="chart-card">
+                <div class="section-title">Room Status</div>
+                <canvas id="roomStatusChart" height="220"></canvas>
             </div>
         </div>
     </div>
-
 </div>
 
-<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    // Toggle user menu
-    function toggleUserMenu() {
-        // Implement dropdown menu
-        console.log('User menu clicked');
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Revenue Chart with real data
-        const ctx1 = document.getElementById('revenueChart').getContext('2d');
-        new Chart(ctx1, {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Revenue chart — replace data[] with JSTL expressions if you pass monthlyRevenue map from servlet
+        new Chart(document.getElementById('revenueChart').getContext('2d'), {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: ['3mo ago', '2mo ago', 'Last month', 'This month'],
                 datasets: [{
                     label: 'Revenue ($)',
-                    data: [
-                        ${monthlyRevenue.get('Jan') != null ? monthlyRevenue.get('Jan') : 0},
-                        ${monthlyRevenue.get('Feb') != null ? monthlyRevenue.get('Feb') : 0},
-                        ${monthlyRevenue.get('Mar') != null ? monthlyRevenue.get('Mar') : 0},
-                        ${monthlyRevenue.get('Apr') != null ? monthlyRevenue.get('Apr') : 0},
-                        ${monthlyRevenue.get('May') != null ? monthlyRevenue.get('May') : 0},
-                        ${monthlyRevenue.get('Jun') != null ? monthlyRevenue.get('Jun') : 0},
-                        ${monthlyRevenue.get('Jul') != null ? monthlyRevenue.get('Jul') : 0},
-                        ${monthlyRevenue.get('Aug') != null ? monthlyRevenue.get('Aug') : 0},
-                        ${monthlyRevenue.get('Sep') != null ? monthlyRevenue.get('Sep') : 0},
-                        ${monthlyRevenue.get('Oct') != null ? monthlyRevenue.get('Oct') : 0},
-                        ${monthlyRevenue.get('Nov') != null ? monthlyRevenue.get('Nov') : 0},
-                        ${monthlyRevenue.get('Dec') != null ? monthlyRevenue.get('Dec') : 0}
-                    ],
+                    data: [0, 0, 0, <%= monthlyRevenue %>],
                     borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3,
-                    pointBackgroundColor: '#0d6efd',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 8
+                    backgroundColor: 'rgba(13,110,253,0.08)',
+                    tension: 0.4, fill: true, borderWidth: 2,
+                    pointBackgroundColor: '#0d6efd', pointRadius: 5
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Revenue: $' + context.raw.toFixed(2);
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
+                        ticks: { callback: v => '$' + v.toLocaleString() }
                     }
                 }
             }
         });
 
-        // Room Status Chart with real data
-        const ctx2 = document.getElementById('roomStatusChart').getContext('2d');
-        new Chart(ctx2, {
+        new Chart(document.getElementById('roomStatusChart').getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['Available', 'Occupied', 'Maintenance', 'Reserved'],
+                labels: ['Available', 'Occupied', 'Reserved', 'Maintenance'],
                 datasets: [{
                     data: [
-                        ${roomStatus.get('Available') != null ? roomStatus.get('Available') : 0},
-                        ${roomStatus.get('Occupied') != null ? roomStatus.get('Occupied') : 0},
-                        ${roomStatus.get('Maintenance') != null ? roomStatus.get('Maintenance') : 0},
-                        ${roomStatus.get('Reserved') != null ? roomStatus.get('Reserved') : 0}
+                        <%= availableRooms %>,
+                        <%= totalRooms - availableRooms %>,
+                        0, 0
                     ],
-                    backgroundColor: [
-                        '#198754',
-                        '#0d6efd',
-                        '#ffc107',
-                        '#6c757d'
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 10
+                    backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545'],
+                    borderWidth: 0, hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + context.raw + ' rooms';
-                            }
-                        }
-                    }
+                    legend: { position: 'bottom', labels: { padding: 15 } },
+                    tooltip: { callbacks: { label: c => c.label + ': ' + c.raw + ' rooms' } }
                 },
-                cutout: '70%'
+                cutout: '65%'
             }
         });
     });
-    // Auto-refresh data every 60 seconds
-    setInterval(function() {
-        console.log('Refreshing dashboard data...');
-        // Implement AJAX refresh here
-    }, 60000);
 </script>
 </body>
 </html>
