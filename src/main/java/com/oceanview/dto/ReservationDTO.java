@@ -3,6 +3,7 @@ package com.oceanview.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 public class ReservationDTO {
@@ -12,7 +13,7 @@ public class ReservationDTO {
 
     // Guest info (from join)
     private Long guestId;
-    private String guestName;       // firstName + lastName
+    private String guestName;
     private String guestEmail;
     private String guestPhone;
     private String guestNumber;
@@ -36,34 +37,64 @@ public class ReservationDTO {
     private Integer children;
 
     // Pricing
-    private BigDecimal roomPrice;       // price per night
+    private BigDecimal roomPrice;
     private BigDecimal taxAmount;
     private BigDecimal discountAmount;
     private BigDecimal subtotal;
     private BigDecimal totalAmount;
 
     // Status
-    private String paymentStatus;       // PENDING, PARTIAL, PAID
-    private String reservationStatus;   // PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW
+    private String paymentStatus;
+    private String reservationStatus;
 
     // Meta
     private String specialRequests;
-    private String source;              // WALK_IN, PHONE, EMAIL, WEBSITE, AGENT
+    private String source;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     // ─── Constructors ───────────────────────────────────────────────
     public ReservationDTO() {}
 
+    // ─── Formatted date helpers (safe for JSP/EL, no fmt:formatDate needed) ──
+
+    public String getFormattedCheckInDate() {
+        if (checkInDate == null) return "";
+        return checkInDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
+    }
+
+    public String getFormattedCheckOutDate() {
+        if (checkOutDate == null) return "";
+        return checkOutDate.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
+    }
+
+    public String getFormattedCheckInDateShort() {
+        if (checkInDate == null) return "";
+        return checkInDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+    }
+
+    public String getFormattedCheckOutDateShort() {
+        if (checkOutDate == null) return "";
+        return checkOutDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+    }
+
+    public String getFormattedCreatedAt() {
+        if (createdAt == null) return "";
+        return createdAt.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"));
+    }
+
+    public String getFormattedCreatedAtLong() {
+        if (createdAt == null) return "";
+        return createdAt.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"));
+    }
+
     // ─── Computed helpers ───────────────────────────────────────────
 
-    /** Auto-calculate nights if both dates are present */
     public int computeNights() {
         if (checkInDate == null || checkOutDate == null) return 0;
         return (int) ChronoUnit.DAYS.between(checkInDate, checkOutDate);
     }
 
-    /** Ensure totalNights is always returned (fall back to computed) */
     public Integer getTotalNights() {
         if (totalNights != null && totalNights > 0) return totalNights;
         return computeNights();

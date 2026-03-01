@@ -3,6 +3,7 @@ package com.oceanview.service;
 import com.oceanview.dao.*;
 import com.oceanview.dao.impl.*;
 import com.oceanview.dto.DashboardStatsDTO;
+import com.oceanview.dto.ReservationDTO;
 import com.oceanview.model.*;
 
 import java.sql.SQLException;
@@ -40,9 +41,9 @@ public class ReportService {
 
         // Basic counts
         stats.setTotalReservations((int) reservationDAO.count());
-        stats.setActiveReservations(reservationDAO.findActiveReservations().size());
+        stats.setActiveReservations((int) reservationDAO.findActiveReservations().size());
         stats.setTotalRooms((int) roomDAO.count());
-        stats.setAvailableRooms(roomDAO.findAvailableRooms().size());
+        stats.setAvailableRooms((int) roomDAO.findAvailableRooms().size());
         stats.setTotalGuests((int) guestDAO.count());
         stats.setTotalStaff((int) userDAO.count() - 1); // Exclude admin maybe
 
@@ -83,14 +84,14 @@ public class ReportService {
         report.put("totalPayments", totalPayments);
         report.put("outstandingBalance", totalRevenue - totalPayments);
 
-        // Reservation stats
-        List<Reservation> monthReservations = reservationDAO.findByDateRange(startDate, endDate);
+        // Reservation stats - Using DTOs instead of Reservation entities
+        List<ReservationDTO> monthReservations = reservationDAO.findByDateRange(startDate, endDate);
         long confirmedCount = monthReservations.stream()
-                .filter(r -> r.getReservationStatus() == Reservation.ReservationStatus.CONFIRMED).count();
+                .filter(r -> "CONFIRMED".equals(r.getReservationStatus())).count();
         long checkedInCount = monthReservations.stream()
-                .filter(r -> r.getReservationStatus() == Reservation.ReservationStatus.CHECKED_IN).count();
+                .filter(r -> "CHECKED_IN".equals(r.getReservationStatus())).count();
         long cancelledCount = monthReservations.stream()
-                .filter(r -> r.getReservationStatus() == Reservation.ReservationStatus.CANCELLED).count();
+                .filter(r -> "CANCELLED".equals(r.getReservationStatus())).count();
 
         report.put("totalReservations", monthReservations.size());
         report.put("confirmedReservations", confirmedCount);

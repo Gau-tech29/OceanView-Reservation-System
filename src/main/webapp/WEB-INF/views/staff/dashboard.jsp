@@ -1,11 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.oceanview.model.User" %>
 <%@ page import="com.oceanview.dto.ReservationDTO" %>
-<%@ page import="com.oceanview.service.ReservationService" %>
-<%@ page import="com.oceanview.service.RoomService" %>
-<%@ page import="com.oceanview.service.GuestService" %>
-<%@ page import="java.time.LocalDate" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
@@ -25,14 +20,12 @@
             --secondary-color: #6c757d;
             --success-color: #198754;
             --danger-color: #dc3545;
-            --light-bg: #f8f9fa;
-            --dark-color: #212529;
             --sidebar-width: 260px;
+            --dark-color: #212529;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background: #f4f6f9; overflow-x: hidden; }
 
-        /* Sidebar */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100vh;
             width: var(--sidebar-width);
@@ -41,11 +34,7 @@
             box-shadow: 3px 0 15px rgba(0,0,0,0.15);
             overflow-y: auto;
         }
-        .sidebar-brand {
-            padding: 25px 20px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 10px;
-        }
+        .sidebar-brand { padding: 25px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; }
         .sidebar-brand h3 { font-size: 1.4rem; font-weight: 700; margin: 0; }
         .sidebar-brand p { font-size: 0.8rem; opacity: 0.8; margin: 4px 0 0; }
         .sidebar-menu { list-style: none; padding: 5px 10px; margin: 0; }
@@ -55,13 +44,10 @@
             color: rgba(255,255,255,0.85); text-decoration: none;
             transition: all 0.2s; border-radius: 10px;
         }
-        .sidebar-menu a:hover, .sidebar-menu a.active {
-            background: rgba(255,255,255,0.15); color: white;
-        }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(255,255,255,0.15); color: white; }
         .sidebar-menu a i { width: 28px; font-size: 1.1rem; }
         .sidebar-menu a span { font-size: 0.9rem; font-weight: 500; }
 
-        /* Main */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 28px; }
         .top-nav {
             background: white; border-radius: 15px; padding: 14px 22px;
@@ -80,7 +66,6 @@
         .user-name { font-weight: 600; color: var(--dark-color); font-size: 0.9rem; }
         .user-role { font-size: 0.75rem; color: var(--secondary-color); }
 
-        /* Welcome Banner */
         .welcome-banner {
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
             color: white; border-radius: 18px; padding: 22px 30px;
@@ -89,7 +74,6 @@
         .welcome-banner h4 { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
         .welcome-banner p { opacity: 0.9; margin: 0; font-size: 0.95rem; }
 
-        /* Alert messages */
         .alert-success-custom {
             background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
             border-radius: 10px; padding: 12px 18px; margin-bottom: 20px;
@@ -101,7 +85,6 @@
             display: flex; align-items: center; gap: 10px;
         }
 
-        /* Stats Grid */
         .stats-grid {
             display: grid; grid-template-columns: repeat(4, 1fr);
             gap: 20px; margin-bottom: 25px;
@@ -123,7 +106,6 @@
         }
         .stat-icon i { font-size: 26px; color: white; }
 
-        /* Quick Actions */
         .section-title {
             font-size: 1.1rem; font-weight: 600; color: var(--dark-color);
             margin-bottom: 15px; padding-left: 10px;
@@ -153,16 +135,15 @@
         .action-btn h5 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; color: var(--dark-color); }
         .action-btn p { font-size: 0.8rem; color: var(--secondary-color); margin: 0; }
 
-        /* Table */
         .table-card {
             background: white; border-radius: 14px; padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 25px;
         }
-        .table-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .table th {
+            font-size: 0.8rem; font-weight: 600; color: var(--secondary-color);
+            text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 10px;
         }
-        .table th { font-size: 0.8rem; font-weight: 600; color: var(--secondary-color);
-            text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 10px; }
         .table td { padding: 12px 10px; vertical-align: middle; font-size: 0.9rem; }
         .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; }
         .badge-confirmed { background: #d4edda; color: #155724; }
@@ -188,29 +169,21 @@
         return;
     }
 
-    // Load live data
-    ReservationService reservationService = new ReservationService();
-    RoomService roomService = new RoomService();
-    GuestService guestService = new GuestService();
+    // Read stats set by StaffDashboardServlet
+    int activeReservations = request.getAttribute("activeReservations") != null
+            ? (int) request.getAttribute("activeReservations") : 0;
+    int availableRooms = request.getAttribute("availableRooms") != null
+            ? (int) request.getAttribute("availableRooms") : 0;
+    long totalGuests = request.getAttribute("totalGuests") != null
+            ? (long) request.getAttribute("totalGuests") : 0L;
+    int todayCheckins = request.getAttribute("todayCheckins") != null
+            ? (int) request.getAttribute("todayCheckins") : 0;
 
-    int activeReservations = 0;
-    int availableRooms = 0;
-    long totalGuests = 0;
-    int todayCheckins = 0;
-    List<ReservationDTO> recentReservations = null;
+    @SuppressWarnings("unchecked")
+    List<ReservationDTO> recentReservations = (List<ReservationDTO>) request.getAttribute("recentReservations");
 
-    try {
-        activeReservations = (int) reservationService.getActiveReservationsCount();
-        availableRooms = (int) roomService.getAvailableRoomsCount();
-        totalGuests = guestService.getActiveGuestsCount();
-        todayCheckins = reservationService.getTodaysCheckInsCount();
-        recentReservations = reservationService.getRecentReservations(8);
-    } catch (Exception e) {
-        // log error
-    }
-
-    LocalDate today = LocalDate.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+    java.time.LocalDate today = java.time.LocalDate.now();
+    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
     String currentDate = today.format(formatter);
 
     String successMsg = (String) session.getAttribute("success");
@@ -226,53 +199,27 @@
         <p>Hotel Reservation System</p>
     </div>
     <ul class="sidebar-menu">
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/dashboard" class="active">
-                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/reservations/new">
-                <i class="fas fa-plus-circle"></i><span>New Reservation</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/reservations">
-                <i class="fas fa-list-alt"></i><span>All Reservations</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/reservations/search">
-                <i class="fas fa-search"></i><span>Search Reservation</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/guests">
-                <i class="fas fa-users"></i><span>Guests</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/rooms">
-                <i class="fas fa-door-open"></i><span>Rooms</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/staff/bills">
-                <i class="fas fa-receipt"></i><span>Bills</span>
-            </a>
-        </li>
-        <li>
-            <a href="<%= request.getContextPath() %>/logout">
-                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-            </a>
-        </li>
+        <li><a href="<%= request.getContextPath() %>/staff/dashboard" class="active">
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/reservations/new">
+            <i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/reservations">
+            <i class="fas fa-list-alt"></i><span>All Reservations</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/reservations/search">
+            <i class="fas fa-search"></i><span>Search Reservation</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/guests">
+            <i class="fas fa-users"></i><span>Guests</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/rooms">
+            <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/staff/bills">
+            <i class="fas fa-receipt"></i><span>Bills</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/logout">
+            <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
 </div>
 
-<!-- Main Content -->
 <div class="main-content">
 
-    <!-- Top Nav -->
     <div class="top-nav">
         <div class="page-title">
             <h2>Staff Dashboard</h2>
@@ -289,7 +236,6 @@
         </div>
     </div>
 
-    <!-- Alert Messages -->
     <% if (successMsg != null) { %>
     <div class="alert-success-custom">
         <i class="fas fa-check-circle"></i> <%= successMsg %>
@@ -301,7 +247,6 @@
     </div>
     <% } %>
 
-    <!-- Welcome Banner -->
     <div class="welcome-banner">
         <div class="row align-items-center">
             <div class="col-md-9">
@@ -314,7 +259,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats - now properly reading from request attributes set by servlet -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
@@ -352,7 +297,6 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
     <div class="section-title">Quick Actions</div>
     <div class="quick-actions">
         <a href="<%= request.getContextPath() %>/staff/reservations/new" class="action-btn">
@@ -422,17 +366,19 @@
                 <tr>
                     <td><strong><%= r.getReservationNumber() %></strong></td>
                     <td><%= r.getGuestName() != null ? r.getGuestName() : "-" %></td>
-                    <td><%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
+                    <td>
+                        <%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
                         <% if (r.getRoomType() != null) { %>
                         <small class="text-muted">(<%= r.getRoomType() %>)</small>
-                        <% } %></td>
+                        <% } %>
+                    </td>
                     <td><%= r.getCheckInDate() %></td>
                     <td><%= r.getCheckOutDate() %></td>
                     <td>
                         <%
                             String status = r.getReservationStatus();
                             String badgeClass = "badge-pending";
-                            String statusLabel = status != null ? status : "PENDING";
+                            String statusLabel = status != null ? status.replace("_", " ") : "PENDING";
                             if ("CONFIRMED".equals(status)) badgeClass = "badge-confirmed";
                             else if ("CHECKED_IN".equals(status)) badgeClass = "badge-checked-in";
                             else if ("CHECKED_OUT".equals(status)) badgeClass = "badge-checked-out";
@@ -462,6 +408,11 @@
                             <i class="fas fa-sign-out-alt"></i>
                         </a>
                         <% } %>
+                        <a href="<%= request.getContextPath() %>/staff/reservations/delete?id=<%= r.getId() %>"
+                           class="btn btn-sm btn-outline-danger" title="Delete"
+                           onclick="return confirm('Delete this reservation?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
                     </td>
                 </tr>
                 <% } } %>
@@ -470,7 +421,6 @@
         </div>
     </div>
 
-    <!-- Charts -->
     <div class="row">
         <div class="col-md-8">
             <div class="table-card">

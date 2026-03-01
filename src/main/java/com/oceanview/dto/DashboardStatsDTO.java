@@ -5,6 +5,8 @@ public class DashboardStatsDTO {
     private int activeReservations;
     private int totalRooms;
     private int availableRooms;
+    private int occupiedRooms;
+    private int maintenanceRooms;
     private int totalGuests;
     private int totalStaff;
     private int todayCheckIns;
@@ -25,6 +27,12 @@ public class DashboardStatsDTO {
 
     public int getAvailableRooms() { return availableRooms; }
     public void setAvailableRooms(int availableRooms) { this.availableRooms = availableRooms; }
+
+    public int getOccupiedRooms() { return occupiedRooms; }
+    public void setOccupiedRooms(int occupiedRooms) { this.occupiedRooms = occupiedRooms; }
+
+    public int getMaintenanceRooms() { return maintenanceRooms; }
+    public void setMaintenanceRooms(int maintenanceRooms) { this.maintenanceRooms = maintenanceRooms; }
 
     public int getTotalGuests() { return totalGuests; }
     public void setTotalGuests(int totalGuests) { this.totalGuests = totalGuests; }

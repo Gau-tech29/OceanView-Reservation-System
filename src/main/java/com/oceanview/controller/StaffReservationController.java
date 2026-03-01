@@ -44,6 +44,9 @@ public class StaffReservationController extends ReservationController {
                 checkOutReservation(request, response);
             } else if (pathInfo.equals("/cancel")) {
                 cancelReservation(request, response);
+            } else if (pathInfo.equals("/delete")) {
+                // DELETE via GET link (from table action buttons)
+                deleteReservation(request, response);
             } else if (pathInfo.equals("/print-bill")) {
                 printBill(request, response);
             } else {
@@ -51,8 +54,8 @@ public class StaffReservationController extends ReservationController {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/staff/reservations");
         }
     }
 
@@ -73,13 +76,17 @@ public class StaffReservationController extends ReservationController {
                 saveReservation(request, response);
             } else if ("/update".equals(pathInfo)) {
                 updateReservation(request, response);
+            } else if ("/delete".equals(pathInfo)) {
+                deleteReservation(request, response);
+            } else if ("/search".equals(pathInfo)) {
+                searchReservations(request, response);
             } else {
-                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/staff/reservations");
         }
     }
 
@@ -100,7 +107,7 @@ public class StaffReservationController extends ReservationController {
         request.setAttribute("pageTitle", "All Reservations");
         request.setAttribute("isStaff", true);
 
-        request.getRequestDispatcher("/WEB-INF/views/staff/reservations/list.jsp")
+        request.getRequestDispatcher("/WEB-INF/views/reservations/list.jsp")
                 .forward(request, response);
     }
 }

@@ -59,8 +59,8 @@ public class AdminReservationController extends ReservationController {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/admin/reservations");
         }
     }
 
@@ -90,12 +90,12 @@ public class AdminReservationController extends ReservationController {
             } else if ("/delete".equals(pathInfo)) {
                 deleteReservation(request, response);
             } else {
-                super.doPost(request, response);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/admin/reservations");
         }
     }
 
@@ -116,7 +116,7 @@ public class AdminReservationController extends ReservationController {
         request.setAttribute("pageTitle", "Manage Reservations");
         request.setAttribute("isAdmin", true);
 
-        request.getRequestDispatcher("/WEB-INF/views/admin/reservations/list.jsp")
+        request.getRequestDispatcher("/WEB-INF/views/reservations/list.jsp")
                 .forward(request, response);
     }
 }

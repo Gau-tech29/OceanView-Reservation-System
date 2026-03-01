@@ -1,10 +1,11 @@
 package com.oceanview.service;
 
 import com.oceanview.dao.BillDAO;
+import com.oceanview.dao.ReservationDAO;
 import com.oceanview.dao.impl.BillDAOImpl;
+import com.oceanview.dao.impl.ReservationDAOImpl;
 import com.oceanview.model.Bill;
 import com.oceanview.model.Reservation;
-import com.oceanview.util.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -16,20 +17,21 @@ import java.util.UUID;
 public class BillService {
 
     private final BillDAO billDAO;
-    private final ReservationService reservationService;
+    private final ReservationDAO reservationDAO;
 
     public BillService() {
         this.billDAO = BillDAOImpl.getInstance();
-        this.reservationService = new ReservationService();
+        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
-    public BillService(BillDAO billDAO, ReservationService reservationService) {
+    public BillService(BillDAO billDAO, ReservationDAO reservationDAO) {
         this.billDAO = billDAO;
-        this.reservationService = reservationService;
+        this.reservationDAO = reservationDAO;
     }
 
     public Bill createBill(Long reservationId, Long userId) throws SQLException, IllegalArgumentException {
-        Optional<Reservation> reservationOpt = reservationService.getReservationById(reservationId);
+        // Use DAO directly to get the Reservation model (not DTO)
+        Optional<Reservation> reservationOpt = reservationDAO.findById(reservationId);
 
         if (!reservationOpt.isPresent()) {
             throw new IllegalArgumentException("Reservation not found");
@@ -49,7 +51,7 @@ public class BillService {
         bill.setGuestId(reservation.getGuestId());
         bill.setUserId(userId);
         bill.setIssueDate(LocalDate.now());
-        bill.setDueDate(LocalDate.now().plusDays(7)); // Due in 7 days
+        bill.setDueDate(LocalDate.now().plusDays(7));
         bill.setCheckInDate(reservation.getCheckInDate());
         bill.setCheckOutDate(reservation.getCheckOutDate());
 
@@ -60,18 +62,19 @@ public class BillService {
 
         // Calculate tax (12%)
         BigDecimal subtotal = bill.getRoomCharges().add(bill.getAdditionalCharges());
-        bill.setTaxAmount(subtotal.multiply(new BigDecimal("0.12")).setScale(2, BigDecimal.ROUND_HALF_UP));
-        bill.setDiscountAmount(BigDecimal.ZERO);
+        bill.setTaxAmount(subtotal.multiply(new BigDecimal("0.12"))
+                .setScale(2, BigDecimal.ROUND_HALF_UP));
+        bill.setDiscountAmount(reservation.getDiscountAmount() != null
+                ? reservation.getDiscountAmount()
+                : BigDecimal.ZERO);
 
         // Calculate total
         bill.calculateTotals();
-
         bill.setBillStatus(Bill.BillStatus.PENDING);
 
         return billDAO.save(bill);
     }
 
-    // Rest of your BillService methods remain the same...
     public Optional<Bill> getBillById(Long id) throws SQLException {
         return billDAO.findById(id);
     }
@@ -112,10 +115,7 @@ public class BillService {
         if (bill.getId() == null) {
             throw new IllegalArgumentException("Bill ID is required for update");
         }
-
-        // Recalculate totals
         bill.calculateTotals();
-
         return billDAO.update(bill);
     }
 
@@ -123,7 +123,6 @@ public class BillService {
             throws SQLException, IllegalArgumentException {
 
         Optional<Bill> billOpt = billDAO.findById(billId);
-
         if (!billOpt.isPresent()) {
             throw new IllegalArgumentException("Bill not found");
         }
@@ -145,9 +144,10 @@ public class BillService {
         return billDAO.update(bill);
     }
 
-    public Bill markAsPaid(Long billId, Bill.PaymentMethod method) throws SQLException, IllegalArgumentException {
-        Optional<Bill> billOpt = billDAO.findById(billId);
+    public Bill markAsPaid(Long billId, Bill.PaymentMethod method)
+            throws SQLException, IllegalArgumentException {
 
+        Optional<Bill> billOpt = billDAO.findById(billId);
         if (!billOpt.isPresent()) {
             throw new IllegalArgumentException("Bill not found");
         }
@@ -162,9 +162,10 @@ public class BillService {
         return billDAO.update(bill);
     }
 
-    public Bill updateBillStatus(Long id, Bill.BillStatus status) throws SQLException, IllegalArgumentException {
-        Optional<Bill> billOpt = billDAO.findById(id);
+    public Bill updateBillStatus(Long id, Bill.BillStatus status)
+            throws SQLException, IllegalArgumentException {
 
+        Optional<Bill> billOpt = billDAO.findById(id);
         if (!billOpt.isPresent()) {
             throw new IllegalArgumentException("Bill not found");
         }
@@ -175,21 +176,16 @@ public class BillService {
         return billDAO.update(bill);
     }
 
-// In BillService.java, update the printBill method from:
-
     public void printBill(Long id) throws SQLException, IllegalArgumentException {
         Optional<Bill> billOpt = billDAO.findById(id);
-
         if (!billOpt.isPresent()) {
             throw new IllegalArgumentException("Bill not found");
         }
-
-        billDAO.incrementPrintedCount(id);  // No need to check return value
+        billDAO.incrementPrintedCount(id);
     }
 
     public Bill cancelBill(Long id) throws SQLException, IllegalArgumentException {
         Optional<Bill> billOpt = billDAO.findById(id);
-
         if (!billOpt.isPresent()) {
             throw new IllegalArgumentException("Bill not found");
         }

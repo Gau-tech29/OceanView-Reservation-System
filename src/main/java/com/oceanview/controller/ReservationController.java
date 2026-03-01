@@ -18,8 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -77,8 +75,9 @@ public class ReservationController extends HttpServlet {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            String base = getUserBase(request);
+            response.sendRedirect(request.getContextPath() + base + "/reservations");
         }
     }
 
@@ -106,28 +105,21 @@ public class ReservationController extends HttpServlet {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Database error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Error: " + e.getMessage());
-            request.getRequestDispatcher("/WEB-INF/views/error/500.jsp").forward(request, response);
+            session.setAttribute("error", "Database error: " + e.getMessage());
+            String base = getUserBase(request);
+            response.sendRedirect(request.getContextPath() + base + "/reservations");
         }
     }
-
-    // ===================== PROTECTED METHODS (subclass-accessible) =====================
 
     protected void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
-        // Get available rooms and convert to DTOs
         List<Room> rooms = roomService.getAvailableRooms();
         List<RoomDTO> roomDTOs = RoomMapper.getInstance().toDTOList(rooms);
 
         request.setAttribute("rooms", roomDTOs);
         request.setAttribute("pageTitle", "New Reservation");
 
-        // Pre-select guest if guestId param provided
         String guestId = request.getParameter("guestId");
         if (guestId != null && !guestId.isEmpty()) {
             try {
@@ -175,12 +167,14 @@ public class ReservationController extends HttpServlet {
                 .orElseThrow(() -> new ServletException("Reservation not found"));
 
         request.setAttribute("reservation", reservation);
+        request.setAttribute("pageTitle", "Edit Reservation");
 
+        // Load all rooms (not just available, since we're editing)
         List<Room> rooms = roomService.getAllRooms();
         List<RoomDTO> roomDTOs = RoomMapper.getInstance().toDTOList(rooms);
         request.setAttribute("rooms", roomDTOs);
-        request.setAttribute("pageTitle", "Edit Reservation");
 
+        // Load guest info
         if (reservation.getGuestId() != null) {
             guestService.getGuestById(reservation.getGuestId())
                     .ifPresent(g -> request.setAttribute("selectedGuest", g));
@@ -230,27 +224,18 @@ public class ReservationController extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/reservations/search.jsp").forward(request, response);
     }
 
-    /**
-     * Fixed saveReservation method - ensures both guest and reservation are saved
-     */
     protected void saveReservation(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         try {
-            System.out.println("=== Starting saveReservation ===");
-
             String guestMode = request.getParameter("guestMode");
-            System.out.println("Guest mode: " + guestMode);
-
             Long resolvedGuestId;
 
             if ("new".equals(guestMode)) {
-                // --- Create new guest ---
-                System.out.println("Creating new guest...");
-
                 GuestDTO newGuest = new GuestDTO();
                 newGuest.setFirstName(required(request, "firstName", "First name is required"));
                 newGuest.setLastName(required(request, "lastName", "Last name is required"));
@@ -267,16 +252,11 @@ public class ReservationController extends HttpServlet {
 
                 GuestDTO savedGuest = guestService.createGuest(newGuest);
                 resolvedGuestId = savedGuest.getId();
-                System.out.println("New guest created with ID: " + resolvedGuestId);
 
             } else {
-                // --- Use existing guest ---
                 String guestIdStr = request.getParameter("guestId");
-                System.out.println("Existing guest ID from form: " + guestIdStr);
-
                 if (guestIdStr == null || guestIdStr.trim().isEmpty()) {
-                    throw new IllegalArgumentException(
-                            "Please select an existing guest or choose 'New Guest'.");
+                    throw new IllegalArgumentException("Please select an existing guest or choose 'New Guest'.");
                 }
 
                 try {
@@ -285,49 +265,32 @@ public class ReservationController extends HttpServlet {
                     throw new IllegalArgumentException("Invalid guest ID format");
                 }
 
-                // Verify guest exists
                 Optional<GuestDTO> existingGuest = guestService.getGuestById(resolvedGuestId);
                 if (!existingGuest.isPresent()) {
                     throw new IllegalArgumentException("Guest not found. Please search again.");
                 }
-                System.out.println("Using existing guest ID: " + resolvedGuestId);
             }
-
-            // --- Create reservation ---
-            System.out.println("Creating reservation...");
 
             ReservationDTO reservation = new ReservationDTO();
             reservation.setGuestId(resolvedGuestId);
             reservation.setUserId(user.getId());
 
-            // Room selection
             String roomIdStr = request.getParameter("roomId");
-            System.out.println("Room ID from form: " + roomIdStr);
-
             if (roomIdStr == null || roomIdStr.trim().isEmpty()) {
                 throw new IllegalArgumentException("Please select a room");
             }
+            reservation.setRoomId(Long.parseLong(roomIdStr));
 
-            try {
-                reservation.setRoomId(Long.parseLong(roomIdStr));
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid room ID format");
-            }
-
-            // Dates
             reservation.setCheckInDate(parseDate(request, "checkInDate"));
             reservation.setCheckOutDate(parseDate(request, "checkOutDate"));
 
-            // Validate dates
             if (!reservation.getCheckOutDate().isAfter(reservation.getCheckInDate())) {
                 throw new IllegalArgumentException("Check-out date must be after check-in date.");
             }
 
-            // Guest count
             reservation.setAdults(getIntParam(request, "adults", 1));
             reservation.setChildren(getIntParam(request, "children", 0));
 
-            // Discount
             String discountStr = request.getParameter("discountAmount");
             if (discountStr != null && !discountStr.trim().isEmpty()) {
                 try {
@@ -339,48 +302,18 @@ public class ReservationController extends HttpServlet {
                 reservation.setDiscountAmount(BigDecimal.ZERO);
             }
 
-            // Other details
             reservation.setSpecialRequests(request.getParameter("specialRequests"));
             reservation.setSource(request.getParameter("source"));
 
-            System.out.println("Saving reservation to database...");
-
-            // Save reservation
             ReservationDTO saved = reservationService.createReservation(reservation);
+            session.setAttribute("success", "Reservation created successfully! Number: " + saved.getReservationNumber());
 
-            System.out.println("Reservation saved successfully with ID: " + saved.getId());
-            System.out.println("Reservation number: " + saved.getReservationNumber());
-
-            session.setAttribute("success",
-                    "Reservation created successfully! Number: " + saved.getReservationNumber());
-
-            // Redirect based on user role
-            String base = user.isAdmin() ? "/admin/reservations" : "/staff/reservations";
-            response.sendRedirect(request.getContextPath() + base + "/view?id=" + saved.getId());
+            response.sendRedirect(request.getContextPath() + base + "/reservations/view?id=" + saved.getId());
+            return;
 
         } catch (IllegalArgumentException e) {
-            // Handle validation errors
-            System.err.println("Validation error: " + e.getMessage());
-            e.printStackTrace();
-
-            request.setAttribute("error", e.getMessage());
-
-            // Reload form data
-            List<Room> rooms = roomService.getAvailableRooms();
-            List<RoomDTO> roomDTOs = RoomMapper.getInstance().toDTOList(rooms);
-            request.setAttribute("rooms", roomDTOs);
-            request.setAttribute("pageTitle", "New Reservation");
-
-            request.getRequestDispatcher("/WEB-INF/views/reservations/form.jsp").forward(request, response);
-
-        } catch (SQLException e) {
-            System.err.println("SQL error: " + e.getMessage());
-            e.printStackTrace();
-            throw e; // Let the caller handle it
-        } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
-            throw new ServletException("Error creating reservation", e);
+            session.setAttribute("error", e.getMessage());
+            response.sendRedirect(request.getContextPath() + base + "/reservations/new");
         }
     }
 
@@ -389,6 +322,7 @@ public class ReservationController extends HttpServlet {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         try {
             Long id = Long.parseLong(request.getParameter("id"));
@@ -411,13 +345,12 @@ public class ReservationController extends HttpServlet {
             ReservationDTO updated = reservationService.updateReservation(reservation);
             session.setAttribute("success", "Reservation updated successfully!");
 
-            String base = user.isAdmin() ? "/admin/reservations" : "/staff/reservations";
-            response.sendRedirect(request.getContextPath() + base + "/view?id=" + updated.getId());
+            response.sendRedirect(request.getContextPath() + base + "/reservations/view?id=" + updated.getId());
+            return;
 
         } catch (Exception e) {
             session.setAttribute("error", "Update failed: " + e.getMessage());
-            response.sendRedirect(request.getContextPath() +
-                    "/reservations/edit?id=" + request.getParameter("id"));
+            response.sendRedirect(request.getContextPath() + base + "/reservations/edit?id=" + request.getParameter("id"));
         }
     }
 
@@ -427,23 +360,31 @@ public class ReservationController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         String idStr = request.getParameter("id");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         if (idStr != null && !idStr.isEmpty()) {
-            boolean deleted = reservationService.deleteReservation(Long.parseLong(idStr));
-            session.setAttribute(deleted ? "success" : "error",
-                    deleted ? "Reservation deleted." : "Failed to delete reservation.");
+            try {
+                boolean deleted = reservationService.deleteReservation(Long.parseLong(idStr));
+                if (deleted) {
+                    session.setAttribute("success", "Reservation deleted successfully.");
+                } else {
+                    session.setAttribute("error", "Failed to delete reservation.");
+                }
+            } catch (Exception e) {
+                session.setAttribute("error", "Error: " + e.getMessage());
+            }
         }
 
-        String base = (user != null && user.isAdmin()) ? "/admin/reservations" : "/staff/reservations";
-        response.sendRedirect(request.getContextPath() + base);
+        response.sendRedirect(request.getContextPath() + base + "/reservations");
     }
 
     protected void checkInReservation(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, SQLException, ServletException {
+            throws IOException, SQLException {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         String idStr = request.getParameter("id");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         if (idStr != null && !idStr.isEmpty()) {
             Long id = Long.parseLong(idStr);
@@ -453,19 +394,19 @@ public class ReservationController extends HttpServlet {
             } catch (IllegalArgumentException e) {
                 session.setAttribute("error", e.getMessage());
             }
-            String base = (user != null && user.isAdmin()) ? "/admin/reservations" : "/staff/reservations";
-            response.sendRedirect(request.getContextPath() + base + "/view?id=" + id);
+            response.sendRedirect(request.getContextPath() + base + "/reservations/view?id=" + id);
         } else {
-            response.sendRedirect(request.getContextPath() + "/reservations");
+            response.sendRedirect(request.getContextPath() + base + "/reservations");
         }
     }
 
     protected void checkOutReservation(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, SQLException, ServletException {
+            throws IOException, SQLException {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         String idStr = request.getParameter("id");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         if (idStr != null && !idStr.isEmpty()) {
             Long id = Long.parseLong(idStr);
@@ -475,32 +416,31 @@ public class ReservationController extends HttpServlet {
             } catch (IllegalArgumentException e) {
                 session.setAttribute("error", e.getMessage());
             }
-            String base = (user != null && user.isAdmin()) ? "/admin/reservations" : "/staff/reservations";
-            response.sendRedirect(request.getContextPath() + base + "/view?id=" + id);
+            response.sendRedirect(request.getContextPath() + base + "/reservations/view?id=" + id);
         } else {
-            response.sendRedirect(request.getContextPath() + "/reservations");
+            response.sendRedirect(request.getContextPath() + base + "/reservations");
         }
     }
 
     protected void cancelReservation(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, SQLException, ServletException {
+            throws IOException, SQLException {
 
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
         String idStr = request.getParameter("id");
+        String base = user.isAdmin() ? "/admin" : "/staff";
 
         if (idStr != null && !idStr.isEmpty()) {
             Long id = Long.parseLong(idStr);
             try {
                 reservationService.cancelReservation(id);
-                session.setAttribute("success", "Reservation cancelled.");
+                session.setAttribute("success", "Reservation cancelled successfully.");
             } catch (IllegalArgumentException e) {
                 session.setAttribute("error", e.getMessage());
             }
-            String base = (user != null && user.isAdmin()) ? "/admin/reservations" : "/staff/reservations";
-            response.sendRedirect(request.getContextPath() + base + "/view?id=" + id);
+            response.sendRedirect(request.getContextPath() + base + "/reservations/view?id=" + id);
         } else {
-            response.sendRedirect(request.getContextPath() + "/reservations");
+            response.sendRedirect(request.getContextPath() + base + "/reservations");
         }
     }
 
@@ -522,8 +462,6 @@ public class ReservationController extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/reservations/bill.jsp").forward(request, response);
     }
 
-    // ===================== HELPERS =====================
-
     protected int getIntParam(HttpServletRequest request, String name, int defaultValue) {
         String val = request.getParameter(name);
         try {
@@ -531,6 +469,17 @@ public class ReservationController extends HttpServlet {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    protected String getUserBase(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            User user = (User) session.getAttribute("user");
+            if (user != null) {
+                return user.isAdmin() ? "/admin" : "/staff";
+            }
+        }
+        return "";
     }
 
     private String required(HttpServletRequest request, String name, String errMsg) {

@@ -18,21 +18,20 @@ public class GuestService {
 
     private final GuestDAO guestDAO;
     private final GuestMapper guestMapper;
-    private ReservationDAO reservationDAO; // Added this field
+    private ReservationDAO reservationDAO;
 
     public GuestService() {
         this.guestDAO = GuestDAOImpl.getInstance();
         this.guestMapper = GuestMapper.getInstance();
-        this.reservationDAO = ReservationDAOImpl.getInstance(); // Initialize
+        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
     public GuestService(GuestDAO guestDAO) {
         this.guestDAO = guestDAO;
         this.guestMapper = GuestMapper.getInstance();
-        this.reservationDAO = ReservationDAOImpl.getInstance(); // Initialize
+        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
-    // Fixed deleteGuest method
     public boolean deleteGuest(Long id) throws SQLException {
         // Check if guest has any reservations
         List<ReservationDTO> reservations = reservationDAO.findByGuestId(id);
@@ -49,7 +48,6 @@ public class GuestService {
         return guestDAO.delete(id);
     }
 
-    // Create new guest
     public GuestDTO createGuest(GuestDTO guestDTO) throws SQLException, IllegalArgumentException {
         // Only check uniqueness when the field is actually provided
         String email = guestDTO.getEmail();
@@ -88,7 +86,6 @@ public class GuestService {
         return guestMapper.toDTO(savedGuest);
     }
 
-    // Update guest
     public GuestDTO updateGuest(GuestDTO guestDTO) throws SQLException, IllegalArgumentException {
         if (guestDTO.getId() == null) {
             throw new IllegalArgumentException("Guest ID is required for update");
@@ -122,27 +119,22 @@ public class GuestService {
         return guestMapper.toDTO(updatedGuest);
     }
 
-    // Get guest by ID
     public Optional<GuestDTO> getGuestById(Long id) throws SQLException {
         return guestDAO.findById(id).map(guestMapper::toDTO);
     }
 
-    // Get guest by email
     public Optional<GuestDTO> getGuestByEmail(String email) throws SQLException {
         return guestDAO.findByEmail(email).map(guestMapper::toDTO);
     }
 
-    // Get guest by phone
     public Optional<GuestDTO> getGuestByPhone(String phone) throws SQLException {
         return guestDAO.findByPhone(phone).map(guestMapper::toDTO);
     }
 
-    // Get guest by number
     public Optional<GuestDTO> getGuestByNumber(String guestNumber) throws SQLException {
         return guestDAO.findByGuestNumber(guestNumber).map(guestMapper::toDTO);
     }
 
-    // Search guests
     public List<GuestDTO> searchGuests(String keyword) throws SQLException {
         if (keyword == null || keyword.trim().isEmpty()) {
             return guestMapper.toDTOList(guestDAO.findAll());
@@ -150,27 +142,22 @@ public class GuestService {
         return guestMapper.toDTOList(guestDAO.searchGuests(keyword));
     }
 
-    // Get all guests
     public List<GuestDTO> getAllGuests() throws SQLException {
         return guestMapper.toDTOList(guestDAO.findAll());
     }
 
-    // Get guests with pagination
     public List<GuestDTO> getGuests(int page, int size) throws SQLException {
         return guestMapper.toDTOList(guestDAO.findAll(page, size));
     }
 
-    // Get recent guests
     public List<GuestDTO> getRecentGuests(int limit) throws SQLException {
         return guestMapper.toDTOList(guestDAO.findRecentGuests(limit));
     }
 
-    // Count active guests
     public long getActiveGuestsCount() throws SQLException {
-        return guestDAO.countActiveGuests();
+        return guestDAO.count(); // Count all guests since they're all active
     }
 
-    // Generate unique guest number
     private String generateGuestNumber() {
         return "GST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }

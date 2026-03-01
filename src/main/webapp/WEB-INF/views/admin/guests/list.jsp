@@ -28,11 +28,10 @@
         }
         body { font-family: 'Poppins', sans-serif; background: #f4f6f9; overflow-x: hidden; }
 
-        /* Sidebar Styles */
         .sidebar {
             position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width);
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            color: white; padding: 20px 0; transition: all 0.3s; z-index: 1000;
+            color: white; padding: 20px 0; z-index: 1000;
         }
         .sidebar-brand { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; }
         .sidebar-brand h3 { font-size: 1.5rem; font-weight: 600; margin: 0; }
@@ -47,7 +46,6 @@
         }
         .sidebar-menu a i { width: 30px; font-size: 1.2rem; }
 
-        /* Main Content */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 30px; }
         .top-nav {
             background: white; border-radius: 15px; padding: 15px 25px;
@@ -61,7 +59,9 @@
             color: white; font-weight: 600;
         }
 
-        /* Content Card */
+        .alert-success { background: #d4edda; color: #155724; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+        .alert-danger { background: #f8d7da; color: #721c24; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+
         .content-card {
             background: white; border-radius: 15px; padding: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -72,7 +72,6 @@
         }
         .card-header h3 { font-size: 1.3rem; font-weight: 600; color: #212529; margin: 0; }
 
-        /* Search Box */
         .search-box {
             display: flex; gap: 10px; margin-bottom: 20px;
         }
@@ -89,7 +88,6 @@
             border: none; border-radius: 10px; font-weight: 500;
         }
 
-        /* Table */
         .table th {
             background: #f8f9fa; color: #495057; font-weight: 600;
             font-size: 0.9rem; text-transform: uppercase;
@@ -97,6 +95,9 @@
         .table td { vertical-align: middle; }
         .badge-vip { background: #ffc107; color: #212529; padding: 5px 10px; border-radius: 20px; }
         .btn-action { padding: 5px 10px; border-radius: 5px; margin: 0 2px; }
+        .pagination { margin-top: 20px; justify-content: center; }
+        .page-link { color: var(--primary-color); border-radius: 5px; margin: 0 3px; }
+        .page-item.active .page-link { background: var(--primary-color); border-color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -128,6 +129,25 @@
             <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
         </div>
     </div>
+
+    <!-- Alert Messages -->
+    <% if(session.getAttribute("success") != null) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <%= session.getAttribute("success") %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% session.removeAttribute("success"); %>
+    <% } %>
+
+    <% if(session.getAttribute("error") != null) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <%= session.getAttribute("error") %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% session.removeAttribute("error"); %>
+    <% } %>
 
     <!-- Search Box -->
     <div class="search-box">
@@ -188,9 +208,23 @@
                                class="btn btn-sm btn-outline-info btn-action" title="New Reservation">
                                 <i class="fas fa-plus-circle"></i>
                             </a>
+                            <a href="${pageContext.request.contextPath}/admin/guests/delete?id=${guest.id}"
+                               class="btn btn-sm btn-outline-danger btn-action"
+                               onclick="return confirm('Are you sure you want to delete this guest?')"
+                               title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </td>
                     </tr>
                 </c:forEach>
+                <c:if test="${empty guests}">
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-2 d-block"></i>
+                            No guests found.
+                        </td>
+                    </tr>
+                </c:if>
                 </tbody>
             </table>
         </div>
@@ -198,7 +232,7 @@
         <!-- Pagination -->
         <c:if test="${totalPages > 1}">
             <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
+                <ul class="pagination">
                     <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
                         <a class="page-link" href="?page=${currentPage - 1}&size=10">Previous</a>
                     </li>

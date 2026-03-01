@@ -34,7 +34,6 @@
         }
         .required-star { color:#dc3545; }
 
-        /* --- Guest mode tabs --- */
         .guest-tabs { display:flex; border-radius:10px; overflow:hidden; border:2px solid #0d6efd; margin-bottom:20px; }
         .guest-tab {
             flex:1; padding:10px; text-align:center; cursor:pointer;
@@ -44,7 +43,6 @@
         .guest-tab.active { background:#0d6efd; color:white; }
         .guest-tab:not(.active):hover { background:#e6f2ff; }
 
-        /* --- Guest search --- */
         .search-wrap { position:relative; }
         .search-results {
             position:absolute; top:100%; left:0; right:0; z-index:1050;
@@ -52,15 +50,12 @@
             border-radius:0 0 10px 10px; max-height:260px; overflow-y:auto;
             box-shadow:0 8px 20px rgba(0,0,0,.14); display:none;
         }
-        .sr-item {
-            padding:11px 16px; cursor:pointer; transition:.15s; border-bottom:1px solid #f0f4f8;
-        }
+        .sr-item { padding:11px 16px; cursor:pointer; transition:.15s; border-bottom:1px solid #f0f4f8; }
         .sr-item:hover { background:#e6f2ff; }
         .sr-item:last-child { border-bottom:none; }
         .sr-name { font-weight:600; font-size:.9rem; }
         .sr-info { font-size:.78rem; color:#6c757d; }
 
-        /* --- Selected guest box --- */
         .selected-guest {
             background:#f0f9ff; border:2px solid #0d6efd; border-radius:10px;
             padding:13px 16px; display:none; position:relative;
@@ -70,7 +65,6 @@
         .selected-guest p { margin:0; font-size:.84rem; color:#495057; }
         .sg-clear { position:absolute; top:10px; right:12px; cursor:pointer; color:#dc3545; font-size:1.1rem; }
 
-        /* --- Room cards --- */
         .room-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
         .room-card {
             border:2px solid #dee2e6; border-radius:10px; padding:13px;
@@ -82,7 +76,6 @@
         .room-card .rt { font-size:.75rem; text-transform:uppercase; color:#6c757d; }
         .room-card .rp { font-weight:700; color:#0d6efd; margin-top:5px; }
 
-        /* --- Bill preview --- */
         .bill-box { background:#f8f9fa; border-radius:10px; padding:16px; border:1px solid #e9ecef; }
         .bill-row { display:flex; justify-content:space-between; padding:4px 0; font-size:.87rem; }
         .bill-row.total { font-weight:700; font-size:.98rem; border-top:2px solid #dee2e6; margin-top:8px; padding-top:10px; color:#0d6efd; }
@@ -98,16 +91,39 @@
     if (user == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
 
     ReservationDTO reservation = (ReservationDTO) request.getAttribute("reservation");
-    GuestDTO selectedGuest  = (GuestDTO) request.getAttribute("selectedGuest");
-    List<?> rooms = (List<?>) request.getAttribute("rooms");
+    GuestDTO selectedGuest    = (GuestDTO) request.getAttribute("selectedGuest");
     boolean isEdit = (reservation != null && reservation.getId() != null);
 
-    String roleBase = user.isAdmin() ? "/admin/reservations" : "/staff/reservations";
+    String roleBase   = user.isAdmin() ? "/admin/reservations" : "/staff/reservations";
     String formAction = request.getContextPath() + roleBase + (isEdit ? "/update" : "/save");
     String backUrl    = request.getContextPath() + roleBase;
 
     String errorMsg = (String) request.getAttribute("error");
-    String today = LocalDate.now().toString();
+    String today    = LocalDate.now().toString();
+
+    // In edit mode, resolve the selected guest from the reservation's guestId
+    // The servlet should set selectedGuest, but we also handle it here
+    String preGuestId   = "";
+    String preGuestName = "";
+    String preGuestInfo = "";
+
+    if (isEdit && reservation.getGuestId() != null) {
+        preGuestId   = String.valueOf(reservation.getGuestId());
+        preGuestName = reservation.getGuestName() != null ? reservation.getGuestName() : "Guest #" + reservation.getGuestId();
+        String email = reservation.getGuestEmail() != null ? reservation.getGuestEmail() : "";
+        String phone = reservation.getGuestPhone() != null ? " | " + reservation.getGuestPhone() : "";
+        String gnum  = reservation.getGuestNumber() != null ? " | #" + reservation.getGuestNumber() : "";
+        preGuestInfo = email + phone + gnum;
+    } else if (selectedGuest != null) {
+        preGuestId   = String.valueOf(selectedGuest.getId());
+        preGuestName = selectedGuest.getFullName() != null ? selectedGuest.getFullName() : "";
+        String email = selectedGuest.getEmail() != null ? selectedGuest.getEmail() : "";
+        String phone = selectedGuest.getPhone() != null ? " | " + selectedGuest.getPhone() : "";
+        String gnum  = selectedGuest.getGuestNumber() != null ? " | #" + selectedGuest.getGuestNumber() : "";
+        preGuestInfo = email + phone + gnum;
+    }
+
+    boolean hasPreGuest = !preGuestId.isEmpty();
 %>
 
 <div class="form-container">
@@ -130,14 +146,14 @@
         <input type="hidden" name="id" value="<%= reservation.getId() %>">
         <% } %>
 
-        <%-- ══════════════════════ GUEST ══════════════════════ --%>
+        <%-- ══════════ GUEST ══════════ --%>
         <div class="card">
             <div class="card-header">
                 <h4><i class="fas fa-user me-2"></i>Guest Information</h4>
             </div>
             <div class="card-body">
                 <% if (!isEdit) { %>
-                <%-- Mode toggle --%>
+                <%-- Mode toggle only shown for new reservations --%>
                 <div class="guest-tabs" id="guestTabs">
                     <div class="guest-tab active" id="tab-existing" onclick="switchMode('existing')">
                         <i class="fas fa-search me-1"></i>Existing Guest
@@ -153,34 +169,24 @@
                     <div class="search-wrap mb-3">
                         <label class="form-label">Search Guest <span class="required-star">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text bg-white">
-                                <i class="fas fa-search text-primary"></i>
-                            </span>
+                            <span class="input-group-text bg-white"><i class="fas fa-search text-primary"></i></span>
                             <input type="text" id="guestSearchInput" class="form-control"
                                    placeholder="Name, email, phone or guest number..." autocomplete="off">
                             <button type="button" class="btn btn-outline-primary"
-                                    onclick="doSearch(document.getElementById('guestSearchInput').value)">
-                                Search
-                            </button>
+                                    onclick="doSearch(document.getElementById('guestSearchInput').value)">Search</button>
                         </div>
                         <div class="search-results" id="searchResults"></div>
                     </div>
-                    <input type="hidden" name="guestId" id="guestId"
-                           value="<%= selectedGuest != null ? selectedGuest.getId() : "" %>">
-                    <div class="selected-guest <%= selectedGuest != null ? "show" : "" %>" id="selectedGuest">
+                    <input type="hidden" name="guestId" id="guestId" value="<%= hasPreGuest ? preGuestId : "" %>">
+                    <div class="selected-guest <%= hasPreGuest ? "show" : "" %>" id="selectedGuest">
                         <span class="sg-clear" onclick="clearGuest()" title="Clear selection">
                             <i class="fas fa-times-circle"></i>
                         </span>
-                        <h6 id="sgName"><%= selectedGuest != null ? selectedGuest.getFullName() : "" %></h6>
-                        <p id="sgInfo"><%= selectedGuest != null
-                                ? (selectedGuest.getEmail() != null ? selectedGuest.getEmail() : "")
-                                + (selectedGuest.getPhone() != null ? " | " + selectedGuest.getPhone() : "")
-                                + " | #" + selectedGuest.getGuestNumber()
-                                : "" %></p>
+                        <h6 id="sgName"><%= hasPreGuest ? preGuestName : "" %></h6>
+                        <p id="sgInfo"><%= hasPreGuest ? preGuestInfo : "" %></p>
                     </div>
                     <small class="text-muted d-block mt-2">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Type at least 2 characters to search. Click on a result to select.
+                        <i class="fas fa-info-circle me-1"></i>Type at least 2 characters to search. Click a result to select.
                     </small>
                 </div>
 
@@ -189,23 +195,19 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">First Name <span class="required-star">*</span></label>
-                            <input type="text" name="firstName" id="newFirstName" class="form-control"
-                                   placeholder="First name">
+                            <input type="text" name="firstName" id="newFirstName" class="form-control" placeholder="First name">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Last Name <span class="required-star">*</span></label>
-                            <input type="text" name="lastName" id="newLastName" class="form-control"
-                                   placeholder="Last name">
+                            <input type="text" name="lastName" id="newLastName" class="form-control" placeholder="Last name">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
-                            <input type="email" name="guestEmail" class="form-control"
-                                   placeholder="guest@email.com">
+                            <input type="email" name="guestEmail" class="form-control" placeholder="guest@email.com">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Phone</label>
-                            <input type="text" name="guestPhone" class="form-control"
-                                   placeholder="+1 234 567 8900">
+                            <input type="text" name="guestPhone" class="form-control" placeholder="+1 234 567 8900">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">ID Type</label>
@@ -218,13 +220,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">ID Number</label>
-                            <input type="text" name="idCardNumber" class="form-control"
-                                   placeholder="ID card number">
+                            <input type="text" name="idCardNumber" class="form-control" placeholder="ID card number">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Address</label>
-                            <input type="text" name="address" class="form-control"
-                                   placeholder="Street address">
+                            <input type="text" name="address" class="form-control" placeholder="Street address">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">City</label>
@@ -236,39 +236,26 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Postal Code</label>
-                            <input type="text" name="postalCode" class="form-control"
-                                   placeholder="Postal code">
+                            <input type="text" name="postalCode" class="form-control" placeholder="Postal code">
                         </div>
                     </div>
                     <small class="text-muted d-block mt-2">
-                        <i class="fas fa-info-circle me-1"></i>
-                        A guest profile will be created automatically on submission.
+                        <i class="fas fa-info-circle me-1"></i>A guest profile will be created automatically on submission.
                     </small>
                 </div>
 
-                <% } else { /* EDIT MODE — show guest read-only */ %>
+                <% } else { /* EDIT MODE – guest read-only */ %>
                 <input type="hidden" name="guestMode" value="existing">
-                <input type="hidden" name="guestId" value="<%= reservation.getGuestId() %>">
+                <input type="hidden" name="guestId" value="<%= preGuestId %>">
                 <div class="selected-guest show">
-                    <h6><i class="fas fa-user me-2"></i>
-                        <%= reservation.getGuestName() != null ? reservation.getGuestName()
-                                : "Guest #" + reservation.getGuestId() %>
-                    </h6>
-                    <p>
-                        <%= reservation.getGuestEmail() != null ? reservation.getGuestEmail() : "" %>
-                        <% if (reservation.getGuestPhone() != null && !reservation.getGuestPhone().isEmpty()) { %>
-                        &nbsp;|&nbsp;<%= reservation.getGuestPhone() %>
-                        <% } %>
-                        <% if (reservation.getGuestNumber() != null) { %>
-                        &nbsp;|&nbsp;#<%= reservation.getGuestNumber() %>
-                        <% } %>
-                    </p>
+                    <h6><i class="fas fa-user me-2"></i><%= preGuestName %></h6>
+                    <p><%= preGuestInfo %></p>
                 </div>
                 <% } %>
             </div>
         </div>
 
-        <%-- ══════════════════════ ROOM ══════════════════════ --%>
+        <%-- ══════════ ROOM ══════════ --%>
         <div class="card">
             <div class="card-header">
                 <h4><i class="fas fa-door-open me-2"></i>Room Selection <span class="required-star">*</span></h4>
@@ -277,19 +264,21 @@
                 <input type="hidden" name="roomId" id="roomId"
                        value="<%= isEdit && reservation.getRoomId() != null ? reservation.getRoomId() : "" %>">
 
-                <% if (rooms != null && !rooms.isEmpty()) { %>
+                <%
+                    @SuppressWarnings("unchecked")
+                    List<RoomDTO> roomList = (List<RoomDTO>) request.getAttribute("rooms");
+                    if (roomList != null && !roomList.isEmpty()) {
+                %>
                 <div class="room-grid">
-                    <%
-                        List<RoomDTO> roomList = (List<RoomDTO>) request.getAttribute("rooms");
-                        for (RoomDTO room : roomList) {
-                            boolean selected = isEdit && reservation.getRoomId() != null
-                                    && reservation.getRoomId().equals(room.getId());
-                            double basePrice = room.getBasePrice() != null ? room.getBasePrice().doubleValue() : 0;
+                    <% for (RoomDTO room : roomList) {
+                        boolean sel = isEdit && reservation.getRoomId() != null
+                                && reservation.getRoomId().equals(room.getId());
+                        double basePrice = room.getBasePrice() != null ? room.getBasePrice().doubleValue() : 0;
                     %>
-                    <div class="room-card <%= selected ? "selected" : "" %>"
+                    <div class="room-card <%= sel ? "selected" : "" %>"
                          id="rc-<%= room.getId() %>"
-                         onclick="pickRoom(<%= room.getId() %>,'<%= room.getRoomNumber().replace("'", "\\'") %>',
-                                 '<%= room.getRoomType().replace("'", "\\'") %>',<%= basePrice %>)">
+                         onclick="pickRoom(<%= room.getId() %>,'<%= room.getRoomNumber().replace("'","\'") %>',
+                                 '<%= room.getRoomType().replace("'","\'") %>',<%= basePrice %>)">
                         <div class="rn">Room <%= room.getRoomNumber() %></div>
                         <div class="rt">
                             <%= room.getRoomType() %>
@@ -297,37 +286,32 @@
                         </div>
                         <div class="rp">$<%= String.format("%.2f", basePrice) %>/night</div>
                         <% if (room.getRoomView() != null && !room.getRoomView().isEmpty()) { %>
-                        <small class="text-muted"><i class="fas fa-eye me-1"></i><%= room.getRoomView().replace("_", " ") %></small>
+                        <small class="text-muted"><i class="fas fa-eye me-1"></i><%= room.getRoomView().replace("_"," ") %></small>
                         <% } %>
                         <% if (room.getCapacity() != null && room.getCapacity() > 0) { %>
-                        <small class="text-muted d-block">
-                            <i class="fas fa-users me-1"></i>Cap. <%= room.getCapacity() %>
-                        </small>
+                        <small class="text-muted d-block"><i class="fas fa-users me-1"></i>Cap. <%= room.getCapacity() %></small>
                         <% } %>
                     </div>
                     <% } %>
                 </div>
                 <% } else { %>
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    No available rooms found.
-                    <a href="<%= request.getContextPath() %>/admin/manage-rooms">Add rooms</a>
+                    <i class="fas fa-exclamation-triangle me-2"></i>No rooms available.
                 </div>
                 <% } %>
 
                 <div id="roomInfo" class="mt-3" style="display:<%= isEdit ? "block" : "none" %>">
                     <small class="text-primary fw-semibold">
                         <i class="fas fa-check-circle me-1"></i>
-                        Selected: Room <span id="ri-num"><%= isEdit ? reservation.getRoomNumber() : "" %></span>
-                        — <span id="ri-type"><%= isEdit ? reservation.getRoomType() : "" %></span>
-                        @ $<span id="ri-price"><%= isEdit && reservation.getRoomPrice() != null
-                            ? reservation.getRoomPrice() : "0.00" %></span>/night
+                        Selected: Room <span id="ri-num"><%= isEdit && reservation.getRoomNumber() != null ? reservation.getRoomNumber() : "" %></span>
+                        — <span id="ri-type"><%= isEdit && reservation.getRoomType() != null ? reservation.getRoomType() : "" %></span>
+                        @ $<span id="ri-price"><%= isEdit && reservation.getRoomPrice() != null ? reservation.getRoomPrice() : "0.00" %></span>/night
                     </small>
                 </div>
             </div>
         </div>
 
-        <%-- ══════════════════════ STAY DETAILS ══════════════════════ --%>
+        <%-- ══════════ STAY DETAILS ══════════ --%>
         <div class="card">
             <div class="card-header">
                 <h4><i class="fas fa-calendar-alt me-2"></i>Stay Details</h4>
@@ -338,56 +322,51 @@
                         <label class="form-label">Check-in Date <span class="required-star">*</span></label>
                         <input type="date" name="checkInDate" id="checkInDate" class="form-control" required
                                min="<%= today %>"
-                               value="<%= isEdit && reservation.getCheckInDate() != null
-                                   ? reservation.getCheckInDate() : "" %>"
+                               value="<%= isEdit && reservation.getCheckInDate() != null ? reservation.getCheckInDate() : "" %>"
                                onchange="recalc()">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Check-out Date <span class="required-star">*</span></label>
                         <input type="date" name="checkOutDate" id="checkOutDate" class="form-control" required
                                min="<%= today %>"
-                               value="<%= isEdit && reservation.getCheckOutDate() != null
-                                   ? reservation.getCheckOutDate() : "" %>"
+                               value="<%= isEdit && reservation.getCheckOutDate() != null ? reservation.getCheckOutDate() : "" %>"
                                onchange="recalc()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Adults <span class="required-star">*</span></label>
                         <input type="number" name="adults" class="form-control" min="1" max="10"
-                               value="<%= isEdit && reservation.getAdults() != null
-                                   ? reservation.getAdults() : 1 %>" required>
+                               value="<%= isEdit && reservation.getAdults() != null ? reservation.getAdults() : 1 %>" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Children</label>
                         <input type="number" name="children" class="form-control" min="0" max="10"
-                               value="<%= isEdit && reservation.getChildren() != null
-                                   ? reservation.getChildren() : 0 %>">
+                               value="<%= isEdit && reservation.getChildren() != null ? reservation.getChildren() : 0 %>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Discount ($)</label>
                         <input type="number" name="discountAmount" id="discountAmount"
                                class="form-control" min="0" step="0.01"
-                               value="<%= isEdit && reservation.getDiscountAmount() != null
-                                   ? reservation.getDiscountAmount() : "0" %>"
+                               value="<%= isEdit && reservation.getDiscountAmount() != null ? reservation.getDiscountAmount() : "0" %>"
                                onchange="recalc()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Source</label>
                         <select name="source" class="form-select">
-                            <option value="WALK_IN"  <%= isEdit && "WALK_IN".equals(reservation.getSource())  ? "selected" : "" %>>Walk-in</option>
-                            <option value="PHONE"    <%= isEdit && "PHONE".equals(reservation.getSource())    ? "selected" : "" %>>Phone</option>
-                            <option value="EMAIL"    <%= isEdit && "EMAIL".equals(reservation.getSource())    ? "selected" : "" %>>Email</option>
-                            <option value="WEBSITE"  <%= isEdit && "WEBSITE".equals(reservation.getSource())  ? "selected" : "" %>>Website</option>
-                            <option value="AGENT"    <%= isEdit && "AGENT".equals(reservation.getSource())    ? "selected" : "" %>>Agent</option>
+                            <option value="WALK_IN" <%= isEdit && "WALK_IN".equals(reservation.getSource()) ? "selected" : "" %>>Walk-in</option>
+                            <option value="PHONE"   <%= isEdit && "PHONE".equals(reservation.getSource())   ? "selected" : "" %>>Phone</option>
+                            <option value="EMAIL"   <%= isEdit && "EMAIL".equals(reservation.getSource())   ? "selected" : "" %>>Email</option>
+                            <option value="WEBSITE" <%= isEdit && "WEBSITE".equals(reservation.getSource()) ? "selected" : "" %>>Website</option>
+                            <option value="AGENT"   <%= isEdit && "AGENT".equals(reservation.getSource())   ? "selected" : "" %>>Agent</option>
                         </select>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Special Requests</label>
                         <textarea name="specialRequests" class="form-control" rows="3"
-                                  placeholder="Dietary needs, room preferences, accessibility requirements..."><%= isEdit && reservation.getSpecialRequests() != null ? reservation.getSpecialRequests() : "" %></textarea>
+                                  placeholder="Dietary needs, room preferences..."><%= isEdit && reservation.getSpecialRequests() != null ? reservation.getSpecialRequests() : "" %></textarea>
                     </div>
                 </div>
 
-                <%-- Bill preview --%>
+                <%-- Bill Preview --%>
                 <div class="bill-box mt-4" id="billBox">
                     <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#0d6efd;margin-bottom:12px;">
                         Bill Preview
@@ -402,11 +381,8 @@
             </div>
         </div>
 
-        <%-- Submit buttons --%>
         <div class="d-flex gap-3 justify-content-end">
-            <a href="<%= backUrl %>" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i>Cancel
-            </a>
+            <a href="<%= backUrl %>" class="btn btn-secondary"><i class="fas fa-times me-1"></i>Cancel</a>
             <button type="submit" class="btn btn-primary" onclick="return validateForm()">
                 <i class="fas fa-save me-1"></i>
                 <%= isEdit ? "Update Reservation" : "Create Reservation" %>
@@ -417,20 +393,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ══════════════════════════════════════════════════════════
-    // 1. Guest mode toggle
-    // ══════════════════════════════════════════════════════════
+    // ─── 1. Guest mode toggle ──────────────────────────────────────────────
     function switchMode(mode) {
         document.getElementById('guestMode').value = mode;
         document.getElementById('tab-existing').classList.toggle('active', mode === 'existing');
         document.getElementById('tab-new').classList.toggle('active', mode === 'new');
         document.getElementById('panelExisting').style.display = mode === 'existing' ? 'block' : 'none';
-        document.getElementById('panelNew').style.display      = mode === 'new' ? 'block' : 'none';
+        document.getElementById('panelNew').style.display      = mode === 'new'      ? 'block' : 'none';
     }
 
-    // ══════════════════════════════════════════════════════════
-    // 2. Guest search (calls /api/guests/search)
-    // ══════════════════════════════════════════════════════════
+    // ─── 2. Guest search ──────────────────────────────────────────────────
     var _searchTimer;
     var _ctxPath = '<%= request.getContextPath() %>';
 
@@ -439,41 +411,33 @@
         inp.addEventListener('input', function() {
             clearTimeout(_searchTimer);
             var q = this.value.trim();
-            if (q.length >= 2) {
-                _searchTimer = setTimeout(function() { doSearch(q); }, 350);
-            } else {
-                hideResults();
-            }
+            if (q.length >= 2) _searchTimer = setTimeout(function(){ doSearch(q); }, 350);
+            else hideResults();
         });
     }
 
     function doSearch(q) {
         if (!q || q.trim().length < 1) return;
         fetch(_ctxPath + '/api/guests/search?keyword=' + encodeURIComponent(q.trim()))
-            .then(function(r) { return r.json(); })
-            .then(function(data) { renderResults(data); })
-            .catch(function() { showError('Search failed. Please try again.'); });
+            .then(function(r){ return r.json(); })
+            .then(function(data){ renderResults(data); })
+            .catch(function(){ showSearchError('Search failed. Please try again.'); });
     }
 
     function renderResults(guests) {
         var box = document.getElementById('searchResults');
         if (!guests || guests.length === 0) {
-            box.innerHTML = '<div class="sr-item text-muted">' +
-                '<i class="fas fa-info-circle me-1"></i>' +
-                'No guests found. Switch to "New Guest" to create one.</div>';
+            box.innerHTML = '<div class="sr-item text-muted"><i class="fas fa-info-circle me-1"></i>No guests found. Switch to "New Guest" to create one.</div>';
         } else {
             box.innerHTML = guests.map(function(g) {
                 var info = [];
-                if (g.email)  info.push(g.email);
-                if (g.phone)  info.push(g.phone);
+                if (g.email) info.push(g.email);
+                if (g.phone) info.push(g.phone);
                 if (g.guestNumber) info.push('#' + g.guestNumber);
                 return '<div class="sr-item" onclick="pickGuest(' + g.id + ',\'' +
-                    escapeJS(g.fullName) + '\',\'' +
-                    escapeJS(g.email || '') + '\',\'' +
-                    escapeJS(g.phone || '') + '\',\'' +
-                    escapeJS(g.guestNumber || '') + '\')">' +
-                    '<div class="sr-name"><i class="fas fa-user me-1 text-primary"></i>' +
-                    escapeHtml(g.fullName) + '</div>' +
+                    escapeJS(g.fullName) + '\',\'' + escapeJS(g.email||'') + '\',\'' +
+                    escapeJS(g.phone||'') + '\',\'' + escapeJS(g.guestNumber||'') + '\')">' +
+                    '<div class="sr-name"><i class="fas fa-user me-1 text-primary"></i>' + escapeHtml(g.fullName) + '</div>' +
                     '<div class="sr-info">' + escapeHtml(info.join(' | ')) + '</div>' +
                     '</div>';
             }).join('');
@@ -483,15 +447,13 @@
 
     function escapeJS(s) {
         if (!s) return '';
-        return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');
     }
-
     function escapeHtml(s) {
         if (!s) return '';
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-
-    function showError(msg) {
+    function showSearchError(msg) {
         var box = document.getElementById('searchResults');
         box.innerHTML = '<div class="sr-item text-danger"><i class="fas fa-exclamation-circle me-1"></i>' + msg + '</div>';
         box.style.display = 'block';
@@ -525,9 +487,7 @@
         if (!e.target.closest('.search-wrap')) hideResults();
     });
 
-    // ══════════════════════════════════════════════════════════
-    // 3. Room selection
-    // ══════════════════════════════════════════════════════════
+    // ─── 3. Room selection ────────────────────────────────────────────────
     var _roomPrice = 0;
     <% if (isEdit && reservation.getRoomPrice() != null) { %>
     _roomPrice = parseFloat('<%= reservation.getRoomPrice() %>');
@@ -537,7 +497,7 @@
     function pickRoom(id, num, type, price) {
         document.getElementById('roomId').value = id;
         _roomPrice = price;
-        document.querySelectorAll('.room-card').forEach(function(c) { c.classList.remove('selected'); });
+        document.querySelectorAll('.room-card').forEach(function(c){ c.classList.remove('selected'); });
         var card = document.getElementById('rc-' + id);
         if (card) card.classList.add('selected');
         document.getElementById('ri-num').textContent   = num;
@@ -547,15 +507,13 @@
         recalc();
     }
 
-    // ══════════════════════════════════════════════════════════
-    // 4. Bill calculation
-    // ══════════════════════════════════════════════════════════
+    // ─── 4. Bill calculation ──────────────────────────────────────────────
     function recalc() {
-        var ci = document.getElementById('checkInDate').value;
-        var co = document.getElementById('checkOutDate').value;
+        var ci   = document.getElementById('checkInDate').value;
+        var co   = document.getElementById('checkOutDate').value;
         var disc = parseFloat(document.getElementById('discountAmount').value) || 0;
         if (!ci || !co || _roomPrice <= 0) return;
-        var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+        var nights  = Math.round((new Date(co) - new Date(ci)) / 86400000);
         if (nights <= 0) return;
         var charges = _roomPrice * nights;
         var taxable = charges - disc;
@@ -569,12 +527,10 @@
         document.getElementById('b-total').textContent   = '$' + total.toFixed(2);
     }
 
-    // ══════════════════════════════════════════════════════════
-    // 5. Form validation before submit
-    // ══════════════════════════════════════════════════════════
+    // ─── 5. Form validation ───────────────────────────────────────────────
     function validateForm() {
         var modeEl = document.getElementById('guestMode');
-        var mode = modeEl ? modeEl.value : 'existing';
+        var mode   = modeEl ? modeEl.value : 'existing';
 
         if (mode === 'existing') {
             var gid = document.getElementById('guestId');
@@ -585,10 +541,7 @@
         } else {
             var fn = document.getElementById('newFirstName').value.trim();
             var ln = document.getElementById('newLastName').value.trim();
-            if (!fn || !ln) {
-                alert('First name and last name are required for a new guest.');
-                return false;
-            }
+            if (!fn || !ln) { alert('First name and last name are required for a new guest.'); return false; }
         }
 
         var rid = document.getElementById('roomId').value;
@@ -597,32 +550,23 @@
         var ci = document.getElementById('checkInDate').value;
         var co = document.getElementById('checkOutDate').value;
         if (!ci || !co) { alert('Check-in and check-out dates are required.'); return false; }
-        if (new Date(co) <= new Date(ci)) {
-            alert('Check-out date must be after check-in date.');
-            return false;
-        }
+        if (new Date(co) <= new Date(ci)) { alert('Check-out date must be after check-in date.'); return false; }
         return true;
     }
 
-    // Set check-out min date when check-in changes
+    // ─── Date min constraints ─────────────────────────────────────────────
     var ciEl = document.getElementById('checkInDate');
     var coEl = document.getElementById('checkOutDate');
     if (ciEl) {
-        if (!ciEl.value) ciEl.min = '<%= today %>';
         ciEl.addEventListener('change', function() {
             if (coEl) {
                 coEl.min = this.value;
-                if (coEl.value && new Date(coEl.value) <= new Date(this.value)) {
-                    coEl.value = '';
-                }
+                if (coEl.value && new Date(coEl.value) <= new Date(this.value)) coEl.value = '';
             }
             recalc();
         });
     }
-
-    if (coEl) {
-        coEl.addEventListener('change', recalc);
-    }
+    if (coEl) coEl.addEventListener('change', recalc);
 </script>
 </body>
 </html>

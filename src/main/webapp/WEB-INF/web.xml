@@ -7,33 +7,64 @@
 
   <display-name>Ocean View Hotel Reservation System</display-name>
 
-  <!-- Session Configuration -->
+  <!-- Session timeout in minutes -->
   <session-config>
     <session-timeout>30</session-timeout>
     <cookie-config>
       <http-only>true</http-only>
-      <secure>false</secure>
     </cookie-config>
-    <tracking-mode>COOKIE</tracking-mode>
   </session-config>
 
-  <!-- Welcome Files -->
+  <!-- Welcome file list -->
   <welcome-file-list>
+    <welcome-file>login.jsp</welcome-file>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
 
-  <!-- Error Pages -->
+  <!-- Error pages -->
   <error-page>
     <error-code>403</error-code>
     <location>/WEB-INF/views/error/403.jsp</location>
   </error-page>
+
   <error-page>
     <error-code>404</error-code>
     <location>/WEB-INF/views/error/404.jsp</location>
   </error-page>
+
   <error-page>
     <error-code>500</error-code>
     <location>/WEB-INF/views/error/500.jsp</location>
   </error-page>
+
+  <error-page>
+    <exception-type>java.lang.Exception</exception-type>
+    <location>/WEB-INF/views/error/500.jsp</location>
+  </error-page>
+
+  <!-- Encoding Filter -->
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>com.oceanview.filter.EncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+  </filter>
+
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!-- Servlet mappings -->
+  <servlet>
+    <servlet-name>ApiServlet</servlet-name>
+    <servlet-class>com.oceanview.api.ApiServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ApiServlet</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+  </servlet-mapping>
 
 </web-app>

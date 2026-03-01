@@ -1,15 +1,20 @@
 package com.oceanview.controller;
 
+import com.oceanview.dto.ReservationDTO;
 import com.oceanview.model.User;
+import com.oceanview.service.GuestService;
 import com.oceanview.service.ReservationService;
 import com.oceanview.service.RoomService;
-import com.oceanview.service.GuestService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 @WebServlet("/staff/dashboard")
 public class StaffDashboardServlet extends HttpServlet {
@@ -35,19 +40,28 @@ public class StaffDashboardServlet extends HttpServlet {
             return;
         }
 
+        User user = (User) session.getAttribute("user");
+
         try {
-            // Pass real stats as attributes so JSP can use them
-            request.setAttribute("activeReservations", reservationService.getActiveReservationsCount());
-            request.setAttribute("availableRooms", roomService.getAvailableRoomsCount());
-            request.setAttribute("totalGuests", guestService.getActiveGuestsCount());
-            request.setAttribute("todayCheckins", reservationService.getTodaysCheckInsCount());
-            request.setAttribute("recentReservations", reservationService.getRecentReservations(8));
+            int activeReservations = (int) reservationService.getActiveReservationsCount();
+            int availableRooms = (int) roomService.getAvailableRoomsCount();
+            long totalGuests = guestService.getActiveGuestsCount();
+            int todayCheckins = reservationService.getTodaysCheckInsCount();
+            int todayCheckouts = reservationService.getTodaysCheckOutsCount();
+            List<ReservationDTO> recentReservations = reservationService.getRecentReservations(8);
+
+            request.setAttribute("activeReservations", activeReservations);
+            request.setAttribute("availableRooms", availableRooms);
+            request.setAttribute("totalGuests", totalGuests);
+            request.setAttribute("todayCheckins", todayCheckins);
+            request.setAttribute("todayCheckouts", todayCheckouts);
+            request.setAttribute("recentReservations", recentReservations);
+
         } catch (SQLException e) {
             e.printStackTrace();
             request.setAttribute("error", "Failed to load dashboard data: " + e.getMessage());
         }
 
-        request.getRequestDispatcher("/WEB-INF/views/staff/dashboard.jsp")
-                .forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/staff/dashboard.jsp").forward(request, response);
     }
 }

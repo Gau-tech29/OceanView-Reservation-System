@@ -118,6 +118,8 @@ public class RoomService {
         return roomDAO.update(room);
     }
 
+// Add these methods to RoomService.java
+
     public int getOccupiedRoomsCount() throws SQLException {
         return roomDAO.findByStatus(Room.RoomStatus.OCCUPIED).size();
     }

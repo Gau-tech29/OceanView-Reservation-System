@@ -241,6 +241,8 @@ public class ReservationService {
         return reservationDAO.countCheckInsByDate(LocalDate.now());
     }
 
+// Add this method to ReservationService.java
+
     public int getTodaysCheckOutsCount() throws SQLException {
         return reservationDAO.countCheckOutsByDate(LocalDate.now());
     }
