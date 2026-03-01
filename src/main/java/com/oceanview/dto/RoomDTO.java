@@ -3,32 +3,24 @@ package com.oceanview.dto;
 import java.math.BigDecimal;
 
 public class RoomDTO {
-    private Long id;
-    private String roomNumber;
-    private String roomType;
-    private String roomView;
-    private Integer floorNumber;
-    private Integer capacity;
-    private BigDecimal basePrice;
-    private String status;
-    private String description;
-    private boolean active;
 
-    // Constructors
+    private Long       id;
+    private String     roomNumber;
+    private String     roomType;
+    private String     roomView;
+    private Integer    floorNumber;
+    private Integer    capacity;
+    private BigDecimal basePrice;
+    private BigDecimal taxRate;
+    private String     amenities;
+    private String     description;
+    private String     status;
+    private boolean    isActive;
+
     public RoomDTO() {}
 
-    public RoomDTO(Long id, String roomNumber, String roomType, String roomView,
-                   Integer floorNumber, Integer capacity, BigDecimal basePrice) {
-        this.id = id;
-        this.roomNumber = roomNumber;
-        this.roomType = roomType;
-        this.roomView = roomView;
-        this.floorNumber = floorNumber;
-        this.capacity = capacity;
-        this.basePrice = basePrice;
-    }
+    // ── Getters & Setters ────────────────────────────────────────────
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -38,7 +30,8 @@ public class RoomDTO {
     public String getRoomType() { return roomType; }
     public void setRoomType(String roomType) { this.roomType = roomType; }
 
-    public String getRoomView() { return roomView; }
+    /** Returns empty string (never null) so JSON serialiser is safe. */
+    public String getRoomView() { return roomView != null ? roomView : ""; }
     public void setRoomView(String roomView) { this.roomView = roomView; }
 
     public Integer getFloorNumber() { return floorNumber; }
@@ -50,12 +43,20 @@ public class RoomDTO {
     public BigDecimal getBasePrice() { return basePrice; }
     public void setBasePrice(BigDecimal basePrice) { this.basePrice = basePrice; }
 
+    public BigDecimal getTaxRate() { return taxRate; }
+    public void setTaxRate(BigDecimal taxRate) { this.taxRate = taxRate; }
+
+    /** Returns empty string (never null) so JSON serialiser is safe. */
+    public String getAmenities() { return amenities != null ? amenities : ""; }
+    public void setAmenities(String amenities) { this.amenities = amenities; }
+
+    /** Returns empty string (never null) so JSON serialiser is safe. */
+    public String getDescription() { return description != null ? description : ""; }
+    public void setDescription(String description) { this.description = description; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
 }
