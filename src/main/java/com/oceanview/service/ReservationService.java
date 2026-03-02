@@ -80,7 +80,7 @@ public class ReservationService {
             Room room = roomService.getRoomById(roomId)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Room ID " + roomId + " not found."));
-            if (!room.isActive())  // Fixed: changed from getIsActive() to isActive()
+            if (!room.isActive())
                 throw new IllegalArgumentException(
                         "Room " + room.getRoomNumber() + " is not available for booking.");
 
@@ -300,9 +300,27 @@ public class ReservationService {
         return reservationDAO.findByDateRange(start, end);
     }
 
+    /**
+     * Search reservations based on criteria
+     * @param criteria The search criteria DTO
+     * @return List of matching ReservationDTOs
+     */
+    /**
+     * Search reservations based on criteria
+     * @param criteria The search criteria DTO
+     * @return List of matching ReservationDTOs
+     */
     public List<ReservationDTO> searchReservations(SearchCriteriaDTO criteria) throws SQLException {
+        String searchValue = criteria.getSearchValue();
+
+        // If search value is empty or null, return empty list
+        if (searchValue == null || searchValue.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Pass all parameters to the DAO which will handle the search
         return reservationDAO.searchDTOs(
-                criteria.getSearchValue(),
+                searchValue,
                 criteria.getStatus(),
                 criteria.getPaymentStatus(),
                 criteria.getCheckInDate(),
@@ -331,6 +349,16 @@ public class ReservationService {
      */
     public int getTodaysCheckOutsCount() throws SQLException {
         return reservationDAO.countCheckOutsByDate(LocalDate.now());
+    }
+    /**
+     * Marks a reservation's payment_status as PAID.
+     * Called after a successful payment is recorded during checkout.
+     */
+    public void markReservationAsPaid(Long reservationId) throws SQLException {
+        Reservation r = reservationDAO.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
+        r.setPaymentStatus(Reservation.PaymentStatus.PAID);
+        reservationDAO.update(r);
     }
 
     /**

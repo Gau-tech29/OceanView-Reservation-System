@@ -35,8 +35,12 @@ public class Bill {
     private Guest guest;
     private User user;
 
+    /**
+     * DB enum values: DRAFT, ISSUED, PAID, 'PARTIALLY PAID'
+     * PENDING and CANCELLED are Java-only — both map to DRAFT in the DB.
+     */
     public enum BillStatus {
-        DRAFT, PENDING, ISSUED, PAID, PARTIALLY_PAID, OVERDUE, CANCELLED
+        DRAFT, ISSUED, PAID, PARTIALLY_PAID, PENDING, CANCELLED
     }
 
     public enum PaymentMethod {
@@ -65,7 +69,6 @@ public class Bill {
         this.billStatus = BillStatus.DRAFT;
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -150,25 +153,37 @@ public class Bill {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
-    // Business methods
+    /**
+     * Recalculates totalAmount from components.
+     * Does NOT set balanceDue — that is a STORED GENERATED column in the DB.
+     */
     public void calculateTotals() {
+        if (roomCharges == null) roomCharges = BigDecimal.ZERO;
+        if (additionalCharges == null) additionalCharges = BigDecimal.ZERO;
+        if (taxAmount == null) taxAmount = BigDecimal.ZERO;
+        if (discountAmount == null) discountAmount = BigDecimal.ZERO;
+        if (paidAmount == null) paidAmount = BigDecimal.ZERO;
+
         this.totalAmount = roomCharges
                 .add(additionalCharges)
                 .add(taxAmount)
                 .subtract(discountAmount)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        this.balanceDue = totalAmount.subtract(paidAmount);
+        // Compute locally for in-memory use; DB generates this automatically
+        this.balanceDue = this.totalAmount.subtract(paidAmount);
     }
 
     public void addPayment(BigDecimal amount) {
+        if (paidAmount == null) paidAmount = BigDecimal.ZERO;
         this.paidAmount = this.paidAmount.add(amount);
-        this.balanceDue = this.totalAmount.subtract(this.paidAmount);
-
-        if (this.balanceDue.compareTo(BigDecimal.ZERO) <= 0) {
-            this.billStatus = BillStatus.PAID;
-        } else if (this.paidAmount.compareTo(BigDecimal.ZERO) > 0) {
-            this.billStatus = BillStatus.PARTIALLY_PAID;
+        if (totalAmount != null) {
+            this.balanceDue = this.totalAmount.subtract(this.paidAmount);
+            if (this.balanceDue.compareTo(BigDecimal.ZERO) <= 0) {
+                this.billStatus = BillStatus.PAID;
+            } else if (this.paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+                this.billStatus = BillStatus.PARTIALLY_PAID;
+            }
         }
     }
 
@@ -177,12 +192,13 @@ public class Bill {
     }
 
     public boolean isOverdue() {
-        return billStatus == BillStatus.ISSUED &&
+        return (billStatus == BillStatus.ISSUED || billStatus == BillStatus.PARTIALLY_PAID) &&
                 dueDate != null &&
                 LocalDate.now().isAfter(dueDate);
     }
 
     public void incrementPrintedCount() {
+        if (printedCount == null) printedCount = 0;
         this.printedCount++;
     }
 
@@ -190,22 +206,15 @@ public class Bill {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Bill bill = (Bill) o;
-        return Objects.equals(id, bill.id);
+        return Objects.equals(id, ((Bill) o).id);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+    public int hashCode() { return Objects.hash(id); }
 
     @Override
     public String toString() {
-        return "Bill{" +
-                "id=" + id +
-                ", billNumber='" + billNumber + '\'' +
-                ", totalAmount=" + totalAmount +
-                ", status=" + billStatus +
-                '}';
+        return "Bill{id=" + id + ", billNumber='" + billNumber + "', totalAmount="
+                + totalAmount + ", status=" + billStatus + '}';
     }
 }

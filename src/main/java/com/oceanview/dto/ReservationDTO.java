@@ -267,7 +267,11 @@ public class ReservationDTO {
                 .distinct()
                 .collect(Collectors.joining(", "));
     }
-
+    /** Long-form formatted createdAt — used by bill.jsp to avoid fmt:formatDate on LocalDateTime */
+    public String getFormattedCreatedAtLong() {
+        if (createdAt == null) return "";
+        return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("MMMM dd, yyyy HH:mm"));
+    }
     /** Readable multi-line room summary. */
     public String getRoomsDetailSummary() {
         if (rooms == null || rooms.isEmpty()) return "N/A";

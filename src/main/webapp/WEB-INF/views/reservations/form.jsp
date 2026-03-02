@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ... (keep all existing styles) ... */
         :root {
             --primary: #0d6efd; --primary-dark: #0b5ed7; --primary-light: #e8f0fe;
             --success: #198754; --success-light: #d4edda;
@@ -27,10 +28,7 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background: #f0f4f8; }
-
         .form-wizard-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 80px; }
-
-        /* ── Wizard Steps ── */
         .wizard-steps { display: flex; align-items: center; justify-content: center; margin-bottom: 32px; }
         .step {
             display: flex; align-items: center; gap: 10px; padding: 10px 18px;
@@ -49,8 +47,6 @@
         .step.done   .step-num { background: var(--success); color: white; }
         .step-line { flex: 1; height: 2px; background: var(--gray-300); max-width: 60px; }
         .step-line.done { background: var(--success); }
-
-        /* ── Cards ── */
         .form-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); margin-bottom: 24px; overflow: hidden; border: 1px solid rgba(13,110,253,0.06); transition: box-shadow 0.2s; }
         .form-card:hover { box-shadow: var(--shadow-lg); }
         .card-head { background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
@@ -58,8 +54,6 @@
         .card-head h4 { margin: 0; font-size: 1rem; font-weight: 600; }
         .card-head p  { margin: 2px 0 0; font-size: 0.78rem; opacity: 0.85; }
         .card-body { padding: 24px; }
-
-        /* ── Form controls ── */
         .form-label { font-weight: 500; font-size: 0.85rem; color: #495057; margin-bottom: 6px; }
         .required-star { color: var(--danger); }
         .form-control, .form-select {
@@ -71,8 +65,6 @@
             border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13,110,253,0.12); outline: none;
         }
         .form-control.is-invalid { border-color: var(--danger); }
-
-        /* ── Guest ── */
         .guest-mode-toggle { display: flex; background: var(--gray-100); border-radius: var(--radius-md); padding: 4px; margin-bottom: 20px; gap: 4px; }
         .guest-mode-btn { flex: 1; padding: 9px 16px; border: none; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--gray-600); }
         .guest-mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -91,8 +83,6 @@
         .sg-info { font-size: 0.8rem; color: var(--gray-600); margin-top: 2px; }
         .sg-clear { position: absolute; top: 10px; right: 12px; cursor: pointer; color: var(--danger); font-size: 1rem; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
         .sg-clear:hover { background: var(--danger-light); }
-
-        /* ── Capacity ── */
         .capacity-checker { background: var(--gray-100); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 16px; border: 1.5px solid var(--gray-300); display: none; }
         .capacity-checker.show { display: block; }
         .capacity-bar-wrap { background: var(--gray-200); border-radius: 20px; height: 8px; overflow: hidden; margin: 8px 0 6px; }
@@ -102,8 +92,6 @@
         .capacity-label { font-size: 0.82rem; font-weight: 600; }
         .capacity-alert { display: none; background: var(--danger-light); border: 1.5px solid var(--danger); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.84rem; color: #721c24; margin-top: 10px; align-items: center; gap: 8px; }
         .capacity-alert.show { display: flex; }
-
-        /* ── Room Slots ── */
         .room-slot-panel {
             border: 1.5px solid var(--gray-300); border-radius: var(--radius-md);
             margin-bottom: 16px; overflow: hidden; transition: border-color 0.2s;
@@ -132,16 +120,12 @@
         .room-slot-body { display: none; padding: 16px; border-top: 1.5px solid var(--gray-300); }
         .room-slot-panel.open .room-slot-body { display: block; }
         .room-slot-panel.has-room .room-slot-body { border-top-color: var(--primary); }
-
-        /* ── Remove room slot button ── */
         .remove-slot-btn {
             background: none; border: none; color: var(--danger); cursor: pointer;
             font-size: 0.78rem; font-weight: 600; padding: 4px 8px; border-radius: 6px;
             border: 1.5px solid var(--danger); transition: all 0.2s; white-space: nowrap;
         }
         .remove-slot-btn:hover { background: var(--danger); color: white; }
-
-        /* ── Filters ── */
         .room-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
         .room-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .filter-chip { padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--gray-300); background: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--gray-600); }
@@ -150,8 +134,6 @@
         .room-search-box input { border-radius: 20px; padding: 7px 14px 7px 34px; border: 1.5px solid var(--gray-300); font-size: 0.8rem; width: 180px; transition: all 0.2s; font-family: 'Poppins',sans-serif; }
         .room-search-box input:focus { border-color: var(--primary); width: 220px; box-shadow: 0 0 0 3px rgba(13,110,253,0.1); outline: none; }
         .room-search-box i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--gray-600); font-size: 0.78rem; }
-
-        /* ── Room Grid ── */
         .rooms-loading { text-align: center; padding: 40px 20px; color: var(--gray-600); }
         .rooms-loading .spinner-border { width: 2.5rem; height: 2.5rem; border-width: 3px; }
         .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -179,8 +161,6 @@
         .no-rooms-msg i { font-size: 3rem; opacity: 0.3; margin-bottom: 10px; display: block; }
         .need-dates-notice { text-align: center; padding: 30px 20px; color: var(--gray-600); }
         .need-dates-notice i { font-size: 2.2rem; opacity: 0.4; display: block; margin-bottom: 8px; }
-
-        /* ── Selected Room Bar ── */
         .selected-room-bar { display: none; background: linear-gradient(135deg, var(--primary-light), #f0f8ff); border: 2px solid var(--primary); border-radius: var(--radius-md); padding: 11px 14px; margin-top: 14px; align-items: center; gap: 12px; }
         .selected-room-bar.show { display: flex; }
         .srb-icon { width: 38px; height: 38px; background: var(--primary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; flex-shrink: 0; }
@@ -188,8 +168,6 @@
         .srb-info { font-size: 0.78rem; color: var(--gray-600); margin-top: 2px; }
         .srb-clear { margin-left: auto; cursor: pointer; color: var(--danger); padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: 1.5px solid var(--danger); transition: all 0.2s; white-space: nowrap; }
         .srb-clear:hover { background: var(--danger); color: white; }
-
-        /* ── Add Room Button ── */
         .add-room-btn {
             display: flex; align-items: center; gap: 8px; justify-content: center;
             padding: 13px; border: 2px dashed var(--primary); border-radius: var(--radius-md);
@@ -198,8 +176,6 @@
             font-family: 'Poppins', sans-serif; margin-top: 4px;
         }
         .add-room-btn:hover { background: var(--primary); color: white; border-style: solid; }
-
-        /* ── Bill Preview ── */
         .bill-preview { background: linear-gradient(135deg, #f8f9fa, #fff); border: 1.5px solid var(--gray-300); border-radius: var(--radius-md); padding: 18px 20px; margin-top: 20px; }
         .bill-preview-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
         .bill-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.84rem; color: var(--dark); border-bottom: 1px dashed var(--gray-200); }
@@ -207,8 +183,6 @@
         .bill-row.total { font-weight: 700; font-size: 0.97rem; color: var(--primary); border-top: 2px solid var(--gray-300); margin-top: 8px; padding-top: 10px; border-bottom: none; }
         .bill-row .label { color: var(--gray-600); }
         .bill-section-divider { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-600); padding: 6px 0 4px; border-bottom: 1px dashed var(--gray-300); margin-top: 4px; }
-
-        /* ── Misc ── */
         .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--gray-600); font-size: 0.85rem; font-weight: 500; text-decoration: none; padding: 7px 14px; border-radius: 20px; background: white; border: 1.5px solid var(--gray-300); margin-bottom: 20px; transition: all 0.2s; }
         .back-link:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
         .err-box { background: var(--danger-light); color: #721c24; border: none; border-radius: var(--radius-md); padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
@@ -224,8 +198,6 @@
             font-weight: 600; color: var(--success);
         }
         .rooms-summary-bar.show { display: flex; }
-
-        /* ── Modal ── */
         .modal-content { border-radius: var(--radius-lg); border: none; }
         .modal-header { background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 16px 24px; }
         .modal-header .btn-close { filter: invert(1); }
@@ -234,7 +206,6 @@
         .rd-label { font-size: 0.75rem; color: var(--gray-600); font-weight: 500; margin-bottom: 4px; }
         .rd-value { font-size: 0.95rem; font-weight: 600; color: var(--dark); }
         .amenity-tag { display: inline-block; background: var(--primary-light); color: var(--primary); border-radius: 10px; padding: 4px 10px; font-size: 0.78rem; font-weight: 500; margin: 3px; }
-
         @media (max-width: 768px) {
             .room-grid { grid-template-columns: 1fr; }
             .room-filters { flex-direction: column; align-items: flex-start; }
@@ -1078,11 +1049,17 @@
 
     function updateStepIndicators() {
         var modeEl  = document.getElementById('guestMode');
-        var mode    = modeEl ? modeEl.value : 'existing';
-        var guestOk = mode === 'existing'
-            ? !!(document.getElementById('guestId') && document.getElementById('guestId').value)
-            : (document.getElementById('newFirstName') && document.getElementById('newLastName') &&
-                document.getElementById('newFirstName').value.trim() && document.getElementById('newLastName').value.trim());
+        var isEditMode = <%= isEdit ? "true" : "false" %>;
+
+        // For edit mode, guest is always valid (pre-selected)
+        var guestOk = isEditMode ? true : (function() {
+            var mode = modeEl ? modeEl.value : 'existing';
+            return mode === 'existing'
+                ? !!(document.getElementById('guestId') && document.getElementById('guestId').value)
+                : (document.getElementById('newFirstName') && document.getElementById('newLastName') &&
+                    document.getElementById('newFirstName').value.trim() && document.getElementById('newLastName').value.trim());
+        })();
+
         var datesOk = !!(document.getElementById('checkInDate').value && document.getElementById('checkOutDate').value);
         var roomOk  = _slots.some(function(s){ return s.selectedRoom; });
 
@@ -1111,14 +1088,20 @@
     // ═══ Validate ═════════════════════════════════════════════════════════════════
 
     function validateForm() {
-        var mode = (document.getElementById('guestMode') || {}).value || 'existing';
-        if (mode === 'existing') {
-            var gid = document.getElementById('guestId');
-            if (!gid || !gid.value) { alert('Please search and select a guest, or switch to "New Guest" tab.'); return false; }
-        } else {
-            var fn = document.getElementById('newFirstName'), ln = document.getElementById('newLastName');
-            if (!fn || !ln || !fn.value.trim() || !ln.value.trim()) { alert('First name and last name are required.'); return false; }
+        var isEditMode = <%= isEdit ? "true" : "false" %>;
+
+        // Skip guest validation for edit mode
+        if (!isEditMode) {
+            var mode = (document.getElementById('guestMode') || {}).value || 'existing';
+            if (mode === 'existing') {
+                var gid = document.getElementById('guestId');
+                if (!gid || !gid.value) { alert('Please search and select a guest, or switch to "New Guest" tab.'); return false; }
+            } else {
+                var fn = document.getElementById('newFirstName'), ln = document.getElementById('newLastName');
+                if (!fn || !ln || !fn.value.trim() || !ln.value.trim()) { alert('First name and last name are required.'); return false; }
+            }
         }
+
         var ci = document.getElementById('checkInDate').value;
         var co = document.getElementById('checkOutDate').value;
         if (!ci || !co) { alert('Please select check-in and check-out dates.'); return false; }

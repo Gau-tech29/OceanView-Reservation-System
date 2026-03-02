@@ -139,13 +139,13 @@
         </li>
         <% if (isAdmin) { %>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/manage-rooms">
-                <i class="fas fa-door-open"></i><span>Rooms</span>
+            <a href="${pageContext.request.contextPath}/admin/guests">
+                <i class="fas fa-users"></i><span>Guests</span>
             </a>
         </li>
         <li>
-            <a href="${pageContext.request.contextPath}/admin/guests">
-                <i class="fas fa-users"></i><span>Guests</span>
+            <a href="${pageContext.request.contextPath}/admin/manage-rooms">
+                <i class="fas fa-door-open"></i><span>Rooms</span>
             </a>
         </li>
         <% } else { %>
@@ -183,7 +183,7 @@
         </div>
     </div>
 
-    <!-- Search Form -->
+    <!-- Search Form - IMPORTANT: Make sure action is correct -->
     <div class="search-card">
         <h4><i class="fas fa-filter me-2"></i>Search Criteria</h4>
         <form action="${pageContext.request.contextPath}<%= basePath %>/reservations/search" method="post" id="searchForm">
@@ -191,11 +191,12 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Search By</label>
                     <select class="form-select" name="searchType">
+                        <option value="all" ${empty criteria.searchType or criteria.searchType == 'all' ? 'selected' : ''}>All Fields</option>
                         <option value="reservationNumber" ${criteria.searchType == 'reservationNumber' ? 'selected' : ''}>Reservation Number</option>
-                        <option value="guestName"         ${criteria.searchType == 'guestName'         ? 'selected' : ''}>Guest Name</option>
-                        <option value="roomNumber"        ${criteria.searchType == 'roomNumber'        ? 'selected' : ''}>Room Number</option>
-                        <option value="guestEmail"        ${criteria.searchType == 'guestEmail'        ? 'selected' : ''}>Guest Email</option>
-                        <option value="guestPhone"        ${criteria.searchType == 'guestPhone'        ? 'selected' : ''}>Guest Phone</option>
+                        <option value="guestName" ${criteria.searchType == 'guestName' ? 'selected' : ''}>Guest Name</option>
+                        <option value="roomNumber" ${criteria.searchType == 'roomNumber' ? 'selected' : ''}>Room Number</option>
+                        <option value="guestEmail" ${criteria.searchType == 'guestEmail' ? 'selected' : ''}>Guest Email</option>
+                        <option value="guestPhone" ${criteria.searchType == 'guestPhone' ? 'selected' : ''}>Guest Phone</option>
                     </select>
                 </div>
                 <div class="col-md-8 mb-3">
@@ -215,17 +216,17 @@
                     <label class="form-label">Status</label>
                     <select class="form-select" name="status">
                         <option value="">All Statuses</option>
-                        <option value="CONFIRMED"   ${criteria.status == 'CONFIRMED'   ? 'selected' : ''}>Confirmed</option>
-                        <option value="CHECKED_IN"  ${criteria.status == 'CHECKED_IN'  ? 'selected' : ''}>Checked In</option>
+                        <option value="CONFIRMED" ${criteria.status == 'CONFIRMED' ? 'selected' : ''}>Confirmed</option>
+                        <option value="CHECKED_IN" ${criteria.status == 'CHECKED_IN' ? 'selected' : ''}>Checked In</option>
                         <option value="CHECKED_OUT" ${criteria.status == 'CHECKED_OUT' ? 'selected' : ''}>Checked Out</option>
-                        <option value="CANCELLED"   ${criteria.status == 'CANCELLED'   ? 'selected' : ''}>Cancelled</option>
+                        <option value="CANCELLED" ${criteria.status == 'CANCELLED' ? 'selected' : ''}>Cancelled</option>
                     </select>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Payment Status</label>
                     <select class="form-select" name="paymentStatus">
                         <option value="">All</option>
-                        <option value="PAID"    ${criteria.paymentStatus == 'PAID'    ? 'selected' : ''}>Paid</option>
+                        <option value="PAID" ${criteria.paymentStatus == 'PAID' ? 'selected' : ''}>Paid</option>
                         <option value="PENDING" ${criteria.paymentStatus == 'PENDING' ? 'selected' : ''}>Pending</option>
                         <option value="PARTIAL" ${criteria.paymentStatus == 'PARTIAL' ? 'selected' : ''}>Partial</option>
                     </select>
@@ -266,7 +267,7 @@
                         <tr>
                             <th>Reservation #</th>
                             <th>Guest Name</th>
-                            <th>Room</th>
+                            <th>Rooms</th>
                             <th>Check-in</th>
                             <th>Check-out</th>
                             <th>Total</th>
@@ -281,12 +282,19 @@
                                 <td><strong>${res.reservationNumber}</strong></td>
                                 <td>${res.guestName}</td>
                                 <td>
-                                        ${res.roomNumber}<br>
-                                    <small class="text-muted">${res.roomType}</small>
+                                    <c:choose>
+                                        <c:when test="${not empty res.rooms}">
+                                            <c:forEach var="room" items="${res.rooms}" varStatus="loop">
+                                                ${room.roomNumber}<c:if test="${not loop.last}">, </c:if>
+                                            </c:forEach>
+                                        </c:when>
+                                        <c:otherwise>
+                                            ${res.roomNumber}
+                                        </c:otherwise>
+                                    </c:choose>
                                 </td>
-                                    <%-- Safe: use formattedCheckInDateShort helper instead of fmt:formatDate(LocalDate) --%>
-                                <td>${res.formattedCheckInDateShort}</td>
-                                <td>${res.formattedCheckOutDateShort}</td>
+                                <td>${res.formattedCheckInDate}</td>
+                                <td>${res.formattedCheckOutDate}</td>
                                 <td>$<fmt:formatNumber value="${res.totalAmount}" pattern="#,##0.00"/></td>
                                 <td>
                                     <c:choose>
@@ -303,7 +311,7 @@
                                             <span class="badge-status badge-cancelled">Cancelled</span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="badge-status badge-pending">Pending</span>
+                                            <span class="badge-status badge-pending">${res.reservationStatus}</span>
                                         </c:otherwise>
                                     </c:choose>
                                 </td>
@@ -330,11 +338,6 @@
                                        class="btn btn-sm btn-outline-info btn-action" title="Print Bill" target="_blank">
                                         <i class="fas fa-print"></i>
                                     </a>
-                                    <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/delete?id=${res.id}"
-                                       class="btn btn-sm btn-outline-danger btn-action" title="Delete"
-                                       onclick="return confirm('Delete this reservation?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -350,7 +353,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function resetSearch() {
-        $('select[name="searchType"]').val('reservationNumber');
+        $('select[name="searchType"]').val('all');
         $('input[name="searchValue"]').val('');
         $('input[name="checkInDate"]').val('');
         $('input[name="checkOutDate"]').val('');
@@ -358,9 +361,13 @@
         $('select[name="paymentStatus"]').val('');
         $('#searchForm').submit();
     }
+
+    // Auto-submit when status or payment status changes
     $('select[name="status"], select[name="paymentStatus"]').on('change', function() {
         $('#searchForm').submit();
     });
+
+    // Auto-submit when both dates are selected
     $('input[name="checkInDate"], input[name="checkOutDate"]').on('change', function() {
         if ($('input[name="checkInDate"]').val() && $('input[name="checkOutDate"]').val()) {
             $('#searchForm').submit();

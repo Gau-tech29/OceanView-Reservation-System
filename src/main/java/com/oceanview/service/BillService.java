@@ -8,6 +8,7 @@ import com.oceanview.model.Bill;
 import com.oceanview.model.Reservation;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,20 +30,22 @@ public class BillService {
         this.reservationDAO = reservationDAO;
     }
 
-    public Bill createBill(Long reservationId, Long userId) throws SQLException, IllegalArgumentException {
-        // Use DAO directly to get the Reservation model (not DTO)
+    /**
+     * Creates a bill for the given reservation.
+     * Uses ISSUED status (PENDING is NOT a valid DB enum value).
+     * If a bill already exists, returns the existing one instead of throwing.
+     */
+    public Bill createBill(Long reservationId, Long userId) throws SQLException {
         Optional<Reservation> reservationOpt = reservationDAO.findById(reservationId);
-
         if (!reservationOpt.isPresent()) {
             throw new IllegalArgumentException("Reservation not found");
         }
-
         Reservation reservation = reservationOpt.get();
 
-        // Check if bill already exists
+        // Return existing bill if present
         List<Bill> existingBills = billDAO.findByReservationId(reservationId);
         if (!existingBills.isEmpty()) {
-            throw new IllegalArgumentException("Bill already exists for this reservation");
+            return existingBills.get(0);
         }
 
         Bill bill = new Bill();
@@ -55,22 +58,29 @@ public class BillService {
         bill.setCheckInDate(reservation.getCheckInDate());
         bill.setCheckOutDate(reservation.getCheckOutDate());
 
-        // Calculate room charges (room price * number of nights)
-        BigDecimal nights = new BigDecimal(reservation.getTotalNights());
-        bill.setRoomCharges(reservation.getRoomPrice().multiply(nights));
+        BigDecimal nights = new BigDecimal(
+                reservation.getTotalNights() != null ? reservation.getTotalNights() : 1);
+        BigDecimal roomPrice = reservation.getRoomPrice() != null
+                ? reservation.getRoomPrice() : BigDecimal.ZERO;
+        bill.setRoomCharges(roomPrice.multiply(nights));
         bill.setAdditionalCharges(BigDecimal.ZERO);
 
-        // Calculate tax (12%)
-        BigDecimal subtotal = bill.getRoomCharges().add(bill.getAdditionalCharges());
-        bill.setTaxAmount(subtotal.multiply(new BigDecimal("0.12"))
-                .setScale(2, BigDecimal.ROUND_HALF_UP));
-        bill.setDiscountAmount(reservation.getDiscountAmount() != null
-                ? reservation.getDiscountAmount()
-                : BigDecimal.ZERO);
+        BigDecimal subtotal = bill.getRoomCharges();
+        BigDecimal discount = reservation.getDiscountAmount() != null
+                ? reservation.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal taxable  = subtotal.subtract(discount);
+        BigDecimal taxAmount = taxable.multiply(new BigDecimal("0.12"))
+                .setScale(2, RoundingMode.HALF_UP);
 
-        // Calculate total
-        bill.calculateTotals();
-        bill.setBillStatus(Bill.BillStatus.PENDING);
+        bill.setTaxAmount(taxAmount);
+        bill.setDiscountAmount(discount);
+
+        BigDecimal total = taxable.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+        bill.setTotalAmount(total);
+        bill.setPaidAmount(BigDecimal.ZERO);
+
+        // ISSUED is a valid DB enum value; PENDING is NOT
+        bill.setBillStatus(Bill.BillStatus.ISSUED);
 
         return billDAO.save(bill);
     }
@@ -111,50 +121,55 @@ public class BillService {
         return billDAO.getTotalRevenueByDateRange(start, end);
     }
 
-    public Bill updateBill(Bill bill) throws SQLException, IllegalArgumentException {
+    public Bill updateBill(Bill bill) throws SQLException {
         if (bill.getId() == null) {
             throw new IllegalArgumentException("Bill ID is required for update");
         }
-        bill.calculateTotals();
         return billDAO.update(bill);
     }
 
     public Bill addPayment(Long billId, BigDecimal amount, Bill.PaymentMethod method)
-            throws SQLException, IllegalArgumentException {
+            throws SQLException {
 
-        Optional<Bill> billOpt = billDAO.findById(billId);
-        if (!billOpt.isPresent()) {
-            throw new IllegalArgumentException("Bill not found");
-        }
-
-        Bill bill = billOpt.get();
+        Bill bill = billDAO.findById(billId)
+                .orElseThrow(() -> new IllegalArgumentException("Bill not found"));
 
         if (bill.isPaid()) {
             throw new IllegalArgumentException("Bill is already paid");
         }
 
-        if (amount.compareTo(bill.getBalanceDue()) > 0) {
+        BigDecimal currentPaid = bill.getPaidAmount() != null ? bill.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal balanceDue  = bill.getTotalAmount().subtract(currentPaid);
+
+        if (amount.compareTo(balanceDue) > 0) {
             throw new IllegalArgumentException("Payment amount exceeds balance due");
         }
 
-        bill.addPayment(amount);
+        BigDecimal newPaid = currentPaid.add(amount);
+        bill.setPaidAmount(newPaid);
         bill.setPaymentMethod(method);
         bill.setPaymentDate(java.time.LocalDateTime.now());
+
+        if (bill.getTotalAmount().subtract(newPaid).compareTo(BigDecimal.ZERO) <= 0) {
+            bill.setBillStatus(Bill.BillStatus.PAID);
+        } else {
+            bill.setBillStatus(Bill.BillStatus.PARTIALLY_PAID);
+        }
 
         return billDAO.update(bill);
     }
 
-    public Bill markAsPaid(Long billId, Bill.PaymentMethod method)
-            throws SQLException, IllegalArgumentException {
+    /**
+     * Marks the bill as fully paid.
+     * Sets paid_amount = total_amount and bill_status = PAID.
+     * Does NOT set balanceDue — it is a STORED GENERATED column in DB.
+     */
+    public Bill markAsPaid(Long billId, Bill.PaymentMethod method) throws SQLException {
+        Bill bill = billDAO.findById(billId)
+                .orElseThrow(() -> new IllegalArgumentException("Bill not found"));
 
-        Optional<Bill> billOpt = billDAO.findById(billId);
-        if (!billOpt.isPresent()) {
-            throw new IllegalArgumentException("Bill not found");
-        }
-
-        Bill bill = billOpt.get();
         bill.setPaidAmount(bill.getTotalAmount());
-        bill.setBalanceDue(BigDecimal.ZERO);
+        // balance_due is STORED GENERATED — DB computes it; we never write it
         bill.setBillStatus(Bill.BillStatus.PAID);
         bill.setPaymentMethod(method);
         bill.setPaymentDate(java.time.LocalDateTime.now());
@@ -162,37 +177,25 @@ public class BillService {
         return billDAO.update(bill);
     }
 
-    public Bill updateBillStatus(Long id, Bill.BillStatus status)
-            throws SQLException, IllegalArgumentException {
-
-        Optional<Bill> billOpt = billDAO.findById(id);
-        if (!billOpt.isPresent()) {
-            throw new IllegalArgumentException("Bill not found");
-        }
-
-        Bill bill = billOpt.get();
+    public Bill updateBillStatus(Long id, Bill.BillStatus status) throws SQLException {
+        Bill bill = billDAO.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bill not found"));
         bill.setBillStatus(status);
-
         return billDAO.update(bill);
     }
 
-    public void printBill(Long id) throws SQLException, IllegalArgumentException {
-        Optional<Bill> billOpt = billDAO.findById(id);
-        if (!billOpt.isPresent()) {
+    public void printBill(Long id) throws SQLException {
+        if (!billDAO.exists(id)) {
             throw new IllegalArgumentException("Bill not found");
         }
         billDAO.incrementPrintedCount(id);
     }
 
-    public Bill cancelBill(Long id) throws SQLException, IllegalArgumentException {
-        Optional<Bill> billOpt = billDAO.findById(id);
-        if (!billOpt.isPresent()) {
-            throw new IllegalArgumentException("Bill not found");
-        }
-
-        Bill bill = billOpt.get();
-        bill.setBillStatus(Bill.BillStatus.CANCELLED);
-
+    public Bill cancelBill(Long id) throws SQLException {
+        Bill bill = billDAO.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Bill not found"));
+        // CANCELLED is not in DB enum; use DRAFT as cancelled state
+        bill.setBillStatus(Bill.BillStatus.DRAFT);
         return billDAO.update(bill);
     }
 

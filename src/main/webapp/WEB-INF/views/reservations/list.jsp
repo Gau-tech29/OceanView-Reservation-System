@@ -45,6 +45,10 @@
             width: 40px; height: 40px; background: linear-gradient(135deg, #0d6efd, #0b5ed7);
             border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;
         }
+        .search-card {
+            background: white; border-radius: 15px; padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
         .table-card {
             background: white; border-radius: 15px; padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -56,13 +60,23 @@
         .badge-cancelled { background: #f8d7da; color: #721c24; }
         .badge-pending { background: #fff3cd; color: #856404; }
         .badge-paid { background: #d4edda; color: #155724; }
+        .btn-search-sm {
+            background: var(--primary-color); color: white; border: none;
+            padding: 8px 20px; border-radius: 10px; font-weight: 500;
+        }
+        .btn-search-sm:hover { background: var(--primary-dark); }
+        .filter-badge {
+            background: #e9ecef; padding: 5px 12px; border-radius: 20px;
+            font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .filter-badge i { cursor: pointer; color: #dc3545; }
         @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
 <%
     User user = (User) session.getAttribute("user");
-    if (user == null) { response.sendRedirect(request.getContextPath() + "/login.jsp"); return; }
+    if (user == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
     boolean isAdmin = user.isAdmin();
     String basePath = isAdmin ? "/admin" : "/staff";
 
@@ -70,6 +84,8 @@
     Integer currentPage = (Integer) request.getAttribute("currentPage");
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Long totalCount = (Long) request.getAttribute("totalCount");
+    String searchKeyword = (String) request.getAttribute("searchKeyword");
+    String searchType = (String) request.getAttribute("searchType");
 
     currentPage = currentPage != null ? currentPage : 1;
     totalPages = totalPages != null ? totalPages : 1;
@@ -100,19 +116,68 @@
     </div>
 
     <% if (session.getAttribute("success") != null) { %>
-    <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i><%= session.getAttribute("success") %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i><%= session.getAttribute("success") %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <% session.removeAttribute("success"); %>
     <% } %>
     <% if (session.getAttribute("error") != null) { %>
-    <div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i><%= session.getAttribute("error") %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i><%= session.getAttribute("error") %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     <% session.removeAttribute("error"); %>
     <% } %>
 
+    <!-- Integrated Search Section - FIXED: Using GET method with correct parameter names -->
+    <div class="search-card">
+        <form action="${pageContext.request.contextPath}<%= basePath %>/reservations" method="get" class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <select name="searchType" class="form-select">
+                    <option value="all" <%= "all".equals(searchType) ? "selected" : "" %>>All Fields</option>
+                    <option value="reservationNumber" <%= "reservationNumber".equals(searchType) ? "selected" : "" %>>Reservation #</option>
+                    <option value="guestName" <%= "guestName".equals(searchType) ? "selected" : "" %>>Guest Name</option>
+                    <option value="roomNumber" <%= "roomNumber".equals(searchType) ? "selected" : "" %>>Room Number</option>
+                    <option value="guestEmail" <%= "guestEmail".equals(searchType) ? "selected" : "" %>>Email</option>
+                    <option value="guestPhone" <%= "guestPhone".equals(searchType) ? "selected" : "" %>>Phone</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Search reservations..." value="<%= searchKeyword != null ? searchKeyword : "" %>">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>New Reservation
+                </a>
+            </div>
+        </form>
+
+        <% if (searchKeyword != null && !searchKeyword.trim().isEmpty()) { %>
+        <div class="mt-3">
+            <span class="filter-badge">
+                <i class="fas fa-filter"></i> Search: "<%= searchKeyword %>"
+                <% if (searchType != null && !"all".equals(searchType)) { %>
+                    in <%= searchType %>
+                <% } %>
+                <a href="${pageContext.request.contextPath}<%= basePath %>/reservations"><i class="fas fa-times"></i></a>
+            </span>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Results Table -->
     <div class="table-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span>Total Reservations: <strong><%= totalCount %></strong></span>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new" class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Reservation</a>
         </div>
+
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
@@ -130,7 +195,10 @@
                 </thead>
                 <tbody>
                 <% if (reservations == null || reservations.isEmpty()) { %>
-                <tr><td colspan="9" class="text-center py-4 text-muted">No reservations found.</td></tr>
+                <tr><td colspan="9" class="text-center py-4 text-muted">
+                    <i class="fas fa-calendar-times fa-2x mb-2"></i><br>
+                    No reservations found.
+                </td></tr>
                 <% } else { for (ReservationDTO r : reservations) {
                     String status = r.getReservationStatus();
                     String badgeClass = "badge-pending";
@@ -152,8 +220,16 @@
                     <td><span class="badge-status <%= pBadge %>"><%= pStatus != null ? pStatus : "PENDING" %></span></td>
                     <td>$<fmt:formatNumber value="<%= r.getTotalAmount() %>" pattern="#,##0.00"/></td>
                     <td>
-                        <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/view?id=<%= r.getId() %>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
-                        <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/edit?id=<%= r.getId() %>" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/view?id=<%= r.getId() %>"
+                               class="btn btn-outline-primary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/edit?id=<%= r.getId() %>"
+                               class="btn btn-outline-secondary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <% } } %>
@@ -165,15 +241,15 @@
         <nav class="mt-3">
             <ul class="pagination justify-content-center">
                 <li class="page-item <%= currentPage == 1 ? "disabled" : "" %>">
-                    <a class="page-link" href="?page=<%= currentPage-1 %>">Previous</a>
+                    <a class="page-link" href="?page=<%= currentPage-1 %><%= searchKeyword != null ? "&search=" + searchKeyword : "" %><%= searchType != null && !"all".equals(searchType) ? "&searchType=" + searchType : "" %>">Previous</a>
                 </li>
                 <% for(int i=1; i<=totalPages; i++) { %>
                 <li class="page-item <%= currentPage == i ? "active" : "" %>">
-                    <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                    <a class="page-link" href="?page=<%= i %><%= searchKeyword != null ? "&search=" + searchKeyword : "" %><%= searchType != null && !"all".equals(searchType) ? "&searchType=" + searchType : "" %>"><%= i %></a>
                 </li>
                 <% } %>
                 <li class="page-item <%= currentPage == totalPages ? "disabled" : "" %>">
-                    <a class="page-link" href="?page=<%= currentPage+1 %>">Next</a>
+                    <a class="page-link" href="?page=<%= currentPage+1 %><%= searchKeyword != null ? "&search=" + searchKeyword : "" %><%= searchType != null && !"all".equals(searchType) ? "&searchType=" + searchType : "" %>">Next</a>
                 </li>
             </ul>
         </nav>
@@ -182,5 +258,17 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-submit search after typing (optional, with debounce)
+    let searchTimer;
+    document.querySelector('input[name="search"]').addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            if (this.value.length >= 2 || this.value.length === 0) {
+                this.form.submit();
+            }
+        }, 500);
+    });
+</script>
 </body>
 </html>

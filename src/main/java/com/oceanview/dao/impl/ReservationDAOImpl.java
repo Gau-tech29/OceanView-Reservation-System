@@ -301,8 +301,11 @@ public class ReservationDAOImpl implements ReservationDAO {
                                            LocalDate checkInDate,
                                            LocalDate checkOutDate) throws SQLException {
         List<ReservationDTO> list = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
 
-        // Note: room_number search now goes through reservation_rooms subquery
+        // You need to get the searchType from somewhere - you might want to pass it as a parameter
+        // For now, this is a generic search across all fields
+
         StringBuilder sql = new StringBuilder(
                 "SELECT DISTINCT r.*, " +
                         "  CONCAT(g.first_name, ' ', g.last_name) AS guest_name, " +
@@ -310,44 +313,79 @@ public class ReservationDAOImpl implements ReservationDAO {
                         "  g.guest_number AS guest_number_col " +
                         "FROM reservations r " +
                         "LEFT JOIN guests g ON r.guest_id = g.id " +
+                        "LEFT JOIN reservation_rooms rr ON r.id = rr.reservation_id " +
+                        "LEFT JOIN rooms rm ON rr.room_id = rm.id " +
                         "WHERE 1=1 ");
 
+        // Add search conditions if keyword is provided
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append("AND (r.reservation_number LIKE ? " +
-                    "OR g.first_name LIKE ? OR g.last_name LIKE ? " +
-                    "OR g.email LIKE ? OR g.phone LIKE ? " +
-                    "OR r.id IN (" +
-                    "  SELECT rr.reservation_id FROM reservation_rooms rr " +
-                    "  JOIN rooms rm ON rr.room_id = rm.id " +
-                    "  WHERE rm.room_number LIKE ?" +
-                    ")) ");
+            String searchPattern = "%" + keyword.trim() + "%";
+            sql.append("AND (r.reservation_number LIKE ? ");
+            sql.append("OR g.first_name LIKE ? ");
+            sql.append("OR g.last_name LIKE ? ");
+            sql.append("OR CONCAT(g.first_name, ' ', g.last_name) LIKE ? ");
+            sql.append("OR g.email LIKE ? ");
+            sql.append("OR g.phone LIKE ? ");
+            sql.append("OR rm.room_number LIKE ?) ");
+
+            // Add 7 parameters for the 7 conditions
+            for (int i = 0; i < 7; i++) {
+                params.add(searchPattern);
+            }
         }
-        if (status        != null && !status.trim().isEmpty())        sql.append("AND r.reservation_status=? ");
-        if (paymentStatus != null && !paymentStatus.trim().isEmpty()) sql.append("AND r.payment_status=? ");
-        if (checkInDate  != null) sql.append("AND r.check_in_date  >= ? ");
-        if (checkOutDate != null) sql.append("AND r.check_out_date <= ? ");
+
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND r.reservation_status = ? ");
+            params.add(status);
+        }
+
+        if (paymentStatus != null && !paymentStatus.trim().isEmpty()) {
+            sql.append("AND r.payment_status = ? ");
+            params.add(paymentStatus);
+        }
+
+        if (checkInDate != null) {
+            sql.append("AND r.check_in_date >= ? ");
+            params.add(checkInDate);
+        }
+
+        if (checkOutDate != null) {
+            sql.append("AND r.check_out_date <= ? ");
+            params.add(checkOutDate);
+        }
+
         sql.append("ORDER BY r.created_at DESC LIMIT 200");
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            int idx = 1;
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                String p = "%" + keyword.trim() + "%";
-                for (int i = 0; i < 6; i++) ps.setString(idx++, p);
+
+            // Set parameters
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof String) {
+                    ps.setString(i + 1, (String) param);
+                } else if (param instanceof LocalDate) {
+                    ps.setDate(i + 1, java.sql.Date.valueOf((LocalDate) param));
+                }
             }
-            if (status        != null && !status.trim().isEmpty())        ps.setString(idx++, status);
-            if (paymentStatus != null && !paymentStatus.trim().isEmpty()) ps.setString(idx++, paymentStatus);
-            if (checkInDate  != null) ps.setDate(idx++, java.sql.Date.valueOf(checkInDate));
-            if (checkOutDate != null) ps.setDate(idx++, java.sql.Date.valueOf(checkOutDate));
 
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapDTO(rs));
+                // Use a map to avoid duplicates due to multiple room matches
+                Map<Long, ReservationDTO> dtoMap = new LinkedHashMap<>();
+                while (rs.next()) {
+                    Long id = rs.getLong("id");
+                    if (!dtoMap.containsKey(id)) {
+                        dtoMap.put(id, mapDTO(rs));
+                    }
+                }
+                list.addAll(dtoMap.values());
             }
         }
+
+        // Enrich all results with their rooms
         enrichWithRooms(list);
         return list;
     }
-
     // ─── Status lists ─────────────────────────────────────────────────────────────
 
     @Override
@@ -455,26 +493,24 @@ public class ReservationDAOImpl implements ReservationDAO {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════════
-    // Multi-room: reservation_rooms junction table
-    // ════════════════════════════════════════════════════════════════════════════
-
     @Override
     public void saveReservationRooms(Long reservationId,
                                      List<Long> roomIds,
                                      Map<Long, BigDecimal> roomPrices) throws SQLException {
         if (roomIds == null || roomIds.isEmpty()) return;
 
-        String sql =
-                "INSERT INTO reservation_rooms (reservation_id, room_id, room_price) " +
-                        "VALUES (?, ?, ?) " +
-                        "ON DUPLICATE KEY UPDATE room_price = VALUES(room_price)";
+        // Convert Long to int for database compatibility
+        int reservationIdInt = reservationId.intValue();
+
+        String sql = "INSERT INTO reservation_rooms (reservation_id, room_id, room_price) " +
+                "VALUES (?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             for (Long roomId : roomIds) {
-                ps.setLong(1, reservationId);
-                ps.setLong(2, roomId);
+                ps.setInt(1, reservationIdInt);           // Convert Long to int
+                ps.setInt(2, roomId.intValue());          // Convert Long to int
                 ps.setBigDecimal(3, roomPrices.getOrDefault(roomId, BigDecimal.ZERO));
                 ps.addBatch();
             }
@@ -485,6 +521,10 @@ public class ReservationDAOImpl implements ReservationDAO {
     @Override
     public List<ReservationRoomDTO> findReservationRooms(Long reservationId) throws SQLException {
         List<ReservationRoomDTO> list = new ArrayList<>();
+
+        // Convert Long to int for database compatibility
+        int reservationIdInt = reservationId.intValue();
+
         String sql =
                 "SELECT rr.id, rr.reservation_id, rr.room_id, rr.room_price, " +
                         "       rm.room_number, rm.room_type, rm.room_view, " +
@@ -496,9 +536,11 @@ public class ReservationDAOImpl implements ReservationDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, reservationId);
+            ps.setInt(1, reservationIdInt);  // Use int instead of Long
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(mapRoomRow(rs));
+                while (rs.next()) {
+                    list.add(mapRoomRow(rs));
+                }
             }
         }
         return list;
@@ -520,6 +562,7 @@ public class ReservationDAOImpl implements ReservationDAO {
                                                     LocalDate checkOut,
                                                     Long excludeReservationId) throws SQLException {
         List<Long> ids = new ArrayList<>();
+
         StringBuilder sql = new StringBuilder(
                 "SELECT DISTINCT rr.reservation_id " +
                         "FROM reservation_rooms rr " +
@@ -528,16 +571,27 @@ public class ReservationDAOImpl implements ReservationDAO {
                         "  AND r.reservation_status IN ('CONFIRMED','CHECKED_IN') " +
                         "  AND r.check_in_date  <  ? " +
                         "  AND r.check_out_date >  ? ");
-        if (excludeReservationId != null) sql.append("AND rr.reservation_id <> ? ");
+
+        if (excludeReservationId != null) {
+            sql.append("AND rr.reservation_id <> ? ");
+        }
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            ps.setLong(1, roomId);
+
+            ps.setInt(1, roomId.intValue());  // Convert Long to int
             ps.setDate(2, java.sql.Date.valueOf(checkOut));
             ps.setDate(3, java.sql.Date.valueOf(checkIn));
-            if (excludeReservationId != null) ps.setLong(4, excludeReservationId);
+
+            if (excludeReservationId != null) {
+                ps.setInt(4, excludeReservationId.intValue());  // Convert Long to int
+            }
+
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) ids.add(rs.getLong(1));
+                while (rs.next()) {
+                    // Return as Long for Java compatibility
+                    ids.add(rs.getLong(1));
+                }
             }
         }
         return ids;
@@ -602,8 +656,6 @@ public class ReservationDAOImpl implements ReservationDAO {
         }
     }
 
-    // ─── Bulk room enrichment (single IN query, no N+1) ───────────────────────────
-
     private void enrichWithRooms(List<ReservationDTO> dtos) throws SQLException {
         if (dtos == null || dtos.isEmpty()) return;
 
@@ -613,7 +665,7 @@ public class ReservationDAOImpl implements ReservationDAO {
             if (dto.getId() != null) {
                 byId.put(dto.getId(), dto);
                 if (inClause.length() > 0) inClause.append(",");
-                inClause.append(dto.getId());
+                inClause.append(dto.getId());  // This will be the int value
             }
         }
         if (byId.isEmpty()) return;
@@ -631,7 +683,7 @@ public class ReservationDAOImpl implements ReservationDAO {
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                long resId = rs.getLong("reservation_id");
+                long resId = rs.getLong("reservation_id");  // Read as long for Java
                 ReservationDTO dto = byId.get(resId);
                 if (dto == null) continue;
                 dto.getRooms().add(mapRoomRow(rs));

@@ -5,6 +5,11 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import com.oceanview.model.Bill;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 public interface BillDAO extends BaseDAO<Bill, Long> {
     Optional<Bill> findByBillNumber(String billNumber) throws SQLException;

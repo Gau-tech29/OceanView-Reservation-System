@@ -27,12 +27,39 @@ public class BillDAOImpl implements BillDAO {
         return instance;
     }
 
+    // ─── Helper: convert BillStatus enum → DB string ─────────────────────────────
+    private String statusToDb(Bill.BillStatus status) {
+        if (status == null) return "DRAFT";
+        switch (status) {
+            case DRAFT:         return "DRAFT";
+            case ISSUED:        return "ISSUED";
+            case PAID:          return "PAID";
+            case PARTIALLY_PAID:return "PARTIALLY PAID";
+            default:            return "DRAFT";
+        }
+    }
+
+    // ─── Helper: convert DB string → BillStatus enum ─────────────────────────────
+    private Bill.BillStatus dbToStatus(String dbStatus) {
+        if (dbStatus == null) return Bill.BillStatus.DRAFT;
+        switch (dbStatus) {
+            case "DRAFT":         return Bill.BillStatus.DRAFT;
+            case "ISSUED":        return Bill.BillStatus.ISSUED;
+            case "PAID":          return Bill.BillStatus.PAID;
+            case "PARTIALLY PAID":return Bill.BillStatus.PARTIALLY_PAID;
+            default:              return Bill.BillStatus.DRAFT;
+        }
+    }
+
     @Override
     public Bill save(Bill bill) throws SQLException {
-        String sql = "INSERT INTO bills (bill_number, reservation_id, guest_id, user_id, issue_date, due_date, " +
-                "check_in_date, check_out_date, room_charges, additional_charges, tax_amount, discount_amount, " +
-                "total_amount, paid_amount, balance_due, bill_status, payment_method, notes, printed_count, " +
-                "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // balance_due is STORED GENERATED — excluded from INSERT
+        String sql = "INSERT INTO bills (" +
+                "bill_number, reservation_id, guest_id, user_id, issue_date, due_date, " +
+                "check_in_date, check_out_date, room_charges, additional_charges, tax_amount, " +
+                "discount_amount, total_amount, paid_amount, bill_status, " +
+                "payment_method, payment_date, notes, printed_count, created_at, updated_at" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -46,14 +73,18 @@ public class BillDAOImpl implements BillDAO {
             ps.setDate(7, Date.valueOf(bill.getCheckInDate()));
             ps.setDate(8, Date.valueOf(bill.getCheckOutDate()));
             ps.setBigDecimal(9, bill.getRoomCharges());
-            ps.setBigDecimal(10, bill.getAdditionalCharges());
+            ps.setBigDecimal(10, bill.getAdditionalCharges() != null
+                    ? bill.getAdditionalCharges() : java.math.BigDecimal.ZERO);
             ps.setBigDecimal(11, bill.getTaxAmount());
-            ps.setBigDecimal(12, bill.getDiscountAmount());
+            ps.setBigDecimal(12, bill.getDiscountAmount() != null
+                    ? bill.getDiscountAmount() : java.math.BigDecimal.ZERO);
             ps.setBigDecimal(13, bill.getTotalAmount());
-            ps.setBigDecimal(14, bill.getPaidAmount());
-            ps.setBigDecimal(15, bill.getBalanceDue());
-            ps.setString(16, bill.getBillStatus().name());
-            ps.setString(17, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
+            ps.setBigDecimal(14, bill.getPaidAmount() != null
+                    ? bill.getPaidAmount() : java.math.BigDecimal.ZERO);
+            ps.setString(15, statusToDb(bill.getBillStatus()));
+            ps.setString(16, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
+            ps.setTimestamp(17, bill.getPaymentDate() != null
+                    ? Timestamp.valueOf(bill.getPaymentDate()) : null);
             ps.setString(18, bill.getNotes());
             ps.setInt(19, bill.getPrintedCount() != null ? bill.getPrintedCount() : 0);
             ps.setTimestamp(20, Timestamp.valueOf(LocalDateTime.now()));
@@ -77,28 +108,34 @@ public class BillDAOImpl implements BillDAO {
 
     @Override
     public Bill update(Bill bill) throws SQLException {
-        String sql = "UPDATE bills SET room_charges = ?, additional_charges = ?, tax_amount = ?, " +
-                "discount_amount = ?, total_amount = ?, paid_amount = ?, balance_due = ?, " +
+        // balance_due is STORED GENERATED — excluded from UPDATE
+        String sql = "UPDATE bills SET " +
+                "room_charges = ?, additional_charges = ?, tax_amount = ?, " +
+                "discount_amount = ?, total_amount = ?, paid_amount = ?, " +
                 "bill_status = ?, payment_method = ?, payment_date = ?, notes = ?, " +
-                "printed_count = ?, updated_at = ? WHERE id = ?";
+                "printed_count = ?, updated_at = ? " +
+                "WHERE id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setBigDecimal(1, bill.getRoomCharges());
-            ps.setBigDecimal(2, bill.getAdditionalCharges());
+            ps.setBigDecimal(2, bill.getAdditionalCharges() != null
+                    ? bill.getAdditionalCharges() : java.math.BigDecimal.ZERO);
             ps.setBigDecimal(3, bill.getTaxAmount());
-            ps.setBigDecimal(4, bill.getDiscountAmount());
+            ps.setBigDecimal(4, bill.getDiscountAmount() != null
+                    ? bill.getDiscountAmount() : java.math.BigDecimal.ZERO);
             ps.setBigDecimal(5, bill.getTotalAmount());
-            ps.setBigDecimal(6, bill.getPaidAmount());
-            ps.setBigDecimal(7, bill.getBalanceDue());
-            ps.setString(8, bill.getBillStatus().name());
-            ps.setString(9, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
-            ps.setTimestamp(10, bill.getPaymentDate() != null ? Timestamp.valueOf(bill.getPaymentDate()) : null);
-            ps.setString(11, bill.getNotes());
-            ps.setInt(12, bill.getPrintedCount() != null ? bill.getPrintedCount() : 0);
-            ps.setTimestamp(13, Timestamp.valueOf(LocalDateTime.now()));
-            ps.setLong(14, bill.getId());
+            ps.setBigDecimal(6, bill.getPaidAmount() != null
+                    ? bill.getPaidAmount() : java.math.BigDecimal.ZERO);
+            ps.setString(7, statusToDb(bill.getBillStatus()));
+            ps.setString(8, bill.getPaymentMethod() != null ? bill.getPaymentMethod().name() : null);
+            ps.setTimestamp(9, bill.getPaymentDate() != null
+                    ? Timestamp.valueOf(bill.getPaymentDate()) : null);
+            ps.setString(10, bill.getNotes());
+            ps.setInt(11, bill.getPrintedCount() != null ? bill.getPrintedCount() : 0);
+            ps.setTimestamp(12, Timestamp.valueOf(LocalDateTime.now()));
+            ps.setLong(13, bill.getId());
 
             ps.executeUpdate();
         }
@@ -120,7 +157,7 @@ public class BillDAOImpl implements BillDAO {
         String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
                 "g.email as guest_email, g.phone as guest_phone, " +
                 "u.first_name as user_first_name, u.last_name as user_last_name, " +
-                "r.reservation_number, r.check_in_date, r.check_out_date " +
+                "r.reservation_number, r.check_in_date as res_check_in, r.check_out_date as res_check_out " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "LEFT JOIN users u ON b.user_id = u.id " +
@@ -129,9 +166,7 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setLong(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToBill(rs));
@@ -146,7 +181,7 @@ public class BillDAOImpl implements BillDAO {
         String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
                 "g.email as guest_email, g.phone as guest_phone, " +
                 "u.first_name as user_first_name, u.last_name as user_last_name, " +
-                "r.reservation_number, r.check_in_date, r.check_out_date " +
+                "r.reservation_number, r.check_in_date as res_check_in, r.check_out_date as res_check_out " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "LEFT JOIN users u ON b.user_id = u.id " +
@@ -155,9 +190,7 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, billNumber);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(mapResultSetToBill(rs));
@@ -170,7 +203,8 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findAll() throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "ORDER BY b.issue_date DESC";
@@ -178,7 +212,6 @@ public class BillDAOImpl implements BillDAO {
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 bills.add(mapResultSetToBill(rs));
             }
@@ -189,17 +222,16 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findAll(int page, int size) throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "ORDER BY b.issue_date DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, size);
             ps.setInt(2, (page - 1) * size);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     bills.add(mapResultSetToBill(rs));
@@ -212,7 +244,8 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findByReservationId(Long reservationId) throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "WHERE b.reservation_id = ? " +
@@ -220,9 +253,7 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setLong(1, reservationId);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     bills.add(mapResultSetToBill(rs));
@@ -235,7 +266,8 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findByGuestId(Long guestId) throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "WHERE b.guest_id = ? " +
@@ -243,9 +275,7 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setLong(1, guestId);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     bills.add(mapResultSetToBill(rs));
@@ -258,7 +288,8 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findByStatus(Bill.BillStatus status) throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "WHERE b.bill_status = ? " +
@@ -266,9 +297,7 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, status.name());
-
+            ps.setString(1, statusToDb(status));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     bills.add(mapResultSetToBill(rs));
@@ -281,7 +310,8 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findByDateRange(LocalDate start, LocalDate end) throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
                 "WHERE b.issue_date BETWEEN ? AND ? " +
@@ -289,10 +319,8 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setDate(1, Date.valueOf(start));
             ps.setDate(2, Date.valueOf(end));
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     bills.add(mapResultSetToBill(rs));
@@ -305,17 +333,17 @@ public class BillDAOImpl implements BillDAO {
     @Override
     public List<Bill> findOverdueBills() throws SQLException {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name " +
+        String sql = "SELECT b.*, g.first_name as guest_first_name, g.last_name as guest_last_name, " +
+                "g.email as guest_email, g.phone as guest_phone " +
                 "FROM bills b " +
                 "LEFT JOIN guests g ON b.guest_id = g.id " +
-                "WHERE b.bill_status IN ('ISSUED', 'PARTIALLY_PAID') " +
+                "WHERE b.bill_status IN ('ISSUED', 'PARTIALLY PAID') " +
                 "AND b.due_date < CURRENT_DATE " +
                 "ORDER BY b.due_date ASC";
 
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 bills.add(mapResultSetToBill(rs));
             }
@@ -330,17 +358,13 @@ public class BillDAOImpl implements BillDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setDate(1, Date.valueOf(start));
             ps.setDate(2, Date.valueOf(end));
-
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getDouble("total");
-                }
+                if (rs.next()) return rs.getDouble("total");
             }
         }
-        return 0;
+        return 0.0;
     }
 
     @Override
@@ -348,11 +372,9 @@ public class BillDAOImpl implements BillDAO {
         String sql = "UPDATE bills SET bill_status = ?, updated_at = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, status.name());
+            ps.setString(1, statusToDb(status));
             ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
             ps.setLong(3, id);
-
             return ps.executeUpdate() > 0;
         }
     }
@@ -362,11 +384,9 @@ public class BillDAOImpl implements BillDAO {
         String sql = "UPDATE bills SET printed_count = printed_count + 1, updated_at = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
             ps.setLong(2, id);
-
-            ps.executeUpdate();  // Don't return anything
+            ps.executeUpdate();
         }
     }
 
@@ -376,10 +396,7 @@ public class BillDAOImpl implements BillDAO {
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
-            if (rs.next()) {
-                return rs.getLong(1);
-            }
+            if (rs.next()) return rs.getLong(1);
         }
         return 0;
     }
@@ -389,14 +406,14 @@ public class BillDAOImpl implements BillDAO {
         String sql = "SELECT 1 FROM bills WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setLong(1, id);
-
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
+
+    // ─── ResultSet → Bill ─────────────────────────────────────────────────────────
 
     private Bill mapResultSetToBill(ResultSet rs) throws SQLException {
         Bill bill = new Bill();
@@ -408,9 +425,7 @@ public class BillDAOImpl implements BillDAO {
         bill.setIssueDate(rs.getDate("issue_date").toLocalDate());
 
         Date dueDate = rs.getDate("due_date");
-        if (dueDate != null) {
-            bill.setDueDate(dueDate.toLocalDate());
-        }
+        if (dueDate != null) bill.setDueDate(dueDate.toLocalDate());
 
         bill.setCheckInDate(rs.getDate("check_in_date").toLocalDate());
         bill.setCheckOutDate(rs.getDate("check_out_date").toLocalDate());
@@ -420,33 +435,32 @@ public class BillDAOImpl implements BillDAO {
         bill.setDiscountAmount(rs.getBigDecimal("discount_amount"));
         bill.setTotalAmount(rs.getBigDecimal("total_amount"));
         bill.setPaidAmount(rs.getBigDecimal("paid_amount"));
+
+        // balance_due is a STORED GENERATED column — read only, never written
         bill.setBalanceDue(rs.getBigDecimal("balance_due"));
-        bill.setBillStatus(Bill.BillStatus.valueOf(rs.getString("bill_status")));
+
+        bill.setBillStatus(dbToStatus(rs.getString("bill_status")));
 
         String paymentMethod = rs.getString("payment_method");
         if (paymentMethod != null) {
-            bill.setPaymentMethod(Bill.PaymentMethod.valueOf(paymentMethod));
+            try {
+                bill.setPaymentMethod(Bill.PaymentMethod.valueOf(paymentMethod));
+            } catch (IllegalArgumentException ignored) {}
         }
 
         Timestamp paymentDate = rs.getTimestamp("payment_date");
-        if (paymentDate != null) {
-            bill.setPaymentDate(paymentDate.toLocalDateTime());
-        }
+        if (paymentDate != null) bill.setPaymentDate(paymentDate.toLocalDateTime());
 
         bill.setNotes(rs.getString("notes"));
         bill.setPrintedCount(rs.getInt("printed_count"));
 
         Timestamp createdAt = rs.getTimestamp("created_at");
-        if (createdAt != null) {
-            bill.setCreatedAt(createdAt.toLocalDateTime());
-        }
+        if (createdAt != null) bill.setCreatedAt(createdAt.toLocalDateTime());
 
         Timestamp updatedAt = rs.getTimestamp("updated_at");
-        if (updatedAt != null) {
-            bill.setUpdatedAt(updatedAt.toLocalDateTime());
-        }
+        if (updatedAt != null) bill.setUpdatedAt(updatedAt.toLocalDateTime());
 
-        // Set guest info
+        // Set guest info (ignore if columns not in result set)
         try {
             Guest guest = new Guest();
             guest.setId(bill.getGuestId());
@@ -455,9 +469,7 @@ public class BillDAOImpl implements BillDAO {
             guest.setEmail(rs.getString("guest_email"));
             guest.setPhone(rs.getString("guest_phone"));
             bill.setGuest(guest);
-        } catch (SQLException e) {
-            // Ignore if columns don't exist
-        }
+        } catch (SQLException ignored) {}
 
         // Set user info
         try {
@@ -466,21 +478,27 @@ public class BillDAOImpl implements BillDAO {
             user.setFirstName(rs.getString("user_first_name"));
             user.setLastName(rs.getString("user_last_name"));
             bill.setUser(user);
-        } catch (SQLException e) {
-            // Ignore if columns don't exist
-        }
+        } catch (SQLException ignored) {}
 
         // Set reservation info
         try {
             Reservation reservation = new Reservation();
             reservation.setId(bill.getReservationId());
             reservation.setReservationNumber(rs.getString("reservation_number"));
-            reservation.setCheckInDate(bill.getCheckInDate());
-            reservation.setCheckOutDate(bill.getCheckOutDate());
+            try {
+                Date resCheckIn = rs.getDate("res_check_in");
+                if (resCheckIn != null) reservation.setCheckInDate(resCheckIn.toLocalDate());
+            } catch (SQLException ignored) {
+                reservation.setCheckInDate(bill.getCheckInDate());
+            }
+            try {
+                Date resCheckOut = rs.getDate("res_check_out");
+                if (resCheckOut != null) reservation.setCheckOutDate(resCheckOut.toLocalDate());
+            } catch (SQLException ignored) {
+                reservation.setCheckOutDate(bill.getCheckOutDate());
+            }
             bill.setReservation(reservation);
-        } catch (SQLException e) {
-            // Ignore if columns don't exist
-        }
+        } catch (SQLException ignored) {}
 
         return bill;
     }
