@@ -1,12 +1,10 @@
 package com.oceanview.service;
 
 import com.oceanview.dao.ReservationDAO;
-import com.oceanview.dao.RoomDAO;
 import com.oceanview.dao.impl.ReservationDAOImpl;
-import com.oceanview.dao.impl.RoomDAOImpl;
 import com.oceanview.dto.ReservationDTO;
+import com.oceanview.dto.ReservationRoomDTO;
 import com.oceanview.dto.SearchCriteriaDTO;
-import com.oceanview.mapper.ReservationMapper;
 import com.oceanview.model.Reservation;
 import com.oceanview.model.Room;
 
@@ -14,163 +12,264 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Set;
 
+/**
+ * Business logic for Reservation operations.
+ *
+ * The reservations table now stores number_of_rooms (count) instead of room_id.
+ * All actual room assignments live in the reservation_rooms junction table.
+ */
 public class ReservationService {
 
     private final ReservationDAO reservationDAO;
-    private final RoomDAO roomDAO;
-    private final ReservationMapper mapper;
+    private final RoomService    roomService;
 
     public ReservationService() {
         this.reservationDAO = ReservationDAOImpl.getInstance();
-        this.roomDAO = RoomDAOImpl.getInstance();
-        this.mapper = ReservationMapper.getInstance();
+        this.roomService    = new RoomService();
     }
 
-    public ReservationService(ReservationDAO reservationDAO, RoomDAO roomDAO) {
-        this.reservationDAO = reservationDAO;
-        this.roomDAO = roomDAO;
-        this.mapper = ReservationMapper.getInstance();
-    }
-
-    // ─── Create ─────────────────────────────────────────────────────
+    // ─── Create ───────────────────────────────────────────────────────────────────
 
     /**
-     * Creates a reservation.
-     * Calculates pricing automatically from the room's base price.
+     * Creates a single reservation for one or more rooms.
+     *
+     * One reservation_number is generated.
+     * One row is inserted in reservations with number_of_rooms = roomIds.size().
+     * N rows are inserted in reservation_rooms (one per room).
+     * The guest makes ONE payment for the combined total.
+     *
+     * @param dto     Reservation data (guest, dates, guests count, discount, etc.)
+     * @param roomIds IDs of all rooms to book under this reservation
+     * @return Fully populated ReservationDTO including all room details
      */
-    public ReservationDTO createReservation(ReservationDTO dto)
-            throws SQLException, IllegalArgumentException {
+    public ReservationDTO createReservation(ReservationDTO dto, List<Long> roomIds)
+            throws SQLException {
 
-        // 1. Validate required fields
-        if (dto.getGuestId() == null)    throw new IllegalArgumentException("Guest is required.");
-        if (dto.getRoomId() == null)     throw new IllegalArgumentException("Room is required.");
-        if (dto.getCheckInDate() == null) throw new IllegalArgumentException("Check-in date is required.");
-        if (dto.getCheckOutDate() == null) throw new IllegalArgumentException("Check-out date is required.");
+        // ── Validate inputs ──────────────────────────────────────────────────────
+        if (dto.getGuestId() == null)
+            throw new IllegalArgumentException("Guest is required.");
+        if (roomIds == null || roomIds.isEmpty())
+            throw new IllegalArgumentException("At least one room must be selected.");
+        if (dto.getCheckInDate() == null || dto.getCheckOutDate() == null)
+            throw new IllegalArgumentException("Check-in and check-out dates are required.");
         if (!dto.getCheckOutDate().isAfter(dto.getCheckInDate()))
-            throw new IllegalArgumentException("Check-out must be after check-in.");
+            throw new IllegalArgumentException("Check-out date must be after check-in date.");
 
-        // 2. Load room to get price
-        Room room = roomDAO.findById(dto.getRoomId())
-                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
-
-        if (!room.isActive()) throw new IllegalArgumentException("Selected room is not available.");
-
-        // 3. Calculate pricing
-        int nights = (int) ChronoUnit.DAYS.between(dto.getCheckInDate(), dto.getCheckOutDate());
-        if (nights <= 0) {
-            throw new IllegalArgumentException("Invalid number of nights.");
+        // ── Prevent duplicate room IDs in selection ──────────────────────────────
+        Set<Long> unique = new HashSet<>();
+        for (Long roomId : roomIds) {
+            if (!unique.add(roomId))
+                throw new IllegalArgumentException(
+                        "Duplicate room selected. Each room can only be added once.");
         }
 
-        BigDecimal roomPrice = room.getBasePrice();
-        BigDecimal roomCharges = roomPrice.multiply(BigDecimal.valueOf(nights));
-        BigDecimal discount = dto.getDiscountAmount() != null ? dto.getDiscountAmount() : BigDecimal.ZERO;
-        BigDecimal taxRate = room.getTaxRate() != null ? room.getTaxRate().divide(new BigDecimal("100")) : new BigDecimal("0.12");
-        BigDecimal taxable = roomCharges.subtract(discount);
-        BigDecimal tax = taxable.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = taxable.add(tax);
+        // ── Load and validate rooms ──────────────────────────────────────────────
+        List<Room> rooms = new ArrayList<>();
+        Map<Long, BigDecimal> roomPrices = new HashMap<>();
 
-        // 4. Build entity
-        Reservation r = new Reservation();
-        r.setReservationNumber(generateReservationNumber());
-        r.setGuestId(dto.getGuestId());
-        r.setUserId(dto.getUserId());
-        r.setRoomId(dto.getRoomId());
-        r.setCheckInDate(dto.getCheckInDate());
-        r.setCheckOutDate(dto.getCheckOutDate());
-        r.setAdults(dto.getAdults() != null ? dto.getAdults() : 1);
-        r.setChildren(dto.getChildren() != null ? dto.getChildren() : 0);
-        r.setTotalNights(nights);
-        r.setRoomPrice(roomPrice);
-        r.setTaxAmount(tax);
-        r.setDiscountAmount(discount);
-        r.setSubtotal(roomCharges);
-        r.setTotalAmount(total);
-        r.setSpecialRequests(dto.getSpecialRequests());
-        r.setPaymentStatus(Reservation.PaymentStatus.PENDING);
-        r.setReservationStatus(Reservation.ReservationStatus.CONFIRMED);
-        r.setSource(dto.getSource() != null
-                ? safeSource(dto.getSource()) : Reservation.ReservationSource.WALK_IN);
-        r.setCreatedAt(LocalDateTime.now());
-        r.setUpdatedAt(LocalDateTime.now());
+        for (Long roomId : roomIds) {
+            Room room = roomService.getRoomById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Room ID " + roomId + " not found."));
+            if (!room.isActive())  // Fixed: changed from getIsActive() to isActive()
+                throw new IllegalArgumentException(
+                        "Room " + room.getRoomNumber() + " is not available for booking.");
 
-        Reservation saved = reservationDAO.save(r);
-        System.out.println("Reservation saved with ID: " + saved.getId()); // Debug log
+            // Check for date conflicts in reservation_rooms
+            List<Long> conflicts = reservationDAO.findConflictingReservationIds(
+                    roomId, dto.getCheckInDate(), dto.getCheckOutDate(), null);
+            if (!conflicts.isEmpty())
+                throw new IllegalArgumentException(
+                        "Room " + room.getRoomNumber() + " is already booked for the selected dates.");
 
-        // Return full DTO with guest+room names via JOIN
-        return reservationDAO.findDTOById(saved.getId()).orElse(mapper.toDTO(saved));
+            rooms.add(room);
+            roomPrices.put(roomId, room.getBasePrice() != null ? room.getBasePrice() : BigDecimal.ZERO);
+        }
+
+        // ── Calculate pricing ────────────────────────────────────────────────────
+        long nights = ChronoUnit.DAYS.between(dto.getCheckInDate(), dto.getCheckOutDate());
+        if (nights <= 0) nights = 1;
+
+        // Combined nightly rate = sum of all rooms' base prices
+        BigDecimal combinedNightlyRate = rooms.stream()
+                .map(r -> r.getBasePrice() != null ? r.getBasePrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal subtotal      = combinedNightlyRate.multiply(BigDecimal.valueOf(nights));
+        BigDecimal discount      = dto.getDiscountAmount() != null ? dto.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal taxable       = subtotal.subtract(discount);
+        BigDecimal taxRate       = rooms.get(0).getTaxRate() != null
+                ? rooms.get(0).getTaxRate()
+                : new BigDecimal("0.12");
+        BigDecimal taxAmount     = taxable.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalAmount   = taxable.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+
+        // ── Build and save Reservation entity ────────────────────────────────────
+        Reservation reservation = new Reservation();
+        reservation.setGuestId(dto.getGuestId());
+        reservation.setUserId(dto.getUserId());
+        // number_of_rooms = count of selected rooms (NO room_id column)
+        reservation.setNumberOfRooms(roomIds.size());
+        reservation.setCheckInDate(dto.getCheckInDate());
+        reservation.setCheckOutDate(dto.getCheckOutDate());
+        reservation.setAdults(dto.getAdults() != null ? dto.getAdults() : 1);
+        reservation.setChildren(dto.getChildren() != null ? dto.getChildren() : 0);
+        reservation.setTotalNights((int) nights);
+        reservation.setRoomPrice(combinedNightlyRate);              // combined nightly rate
+        reservation.setDiscountAmount(discount);
+        reservation.setSubtotal(subtotal);
+        reservation.setTaxAmount(taxAmount);
+        reservation.setTotalAmount(totalAmount);
+        reservation.setSpecialRequests(dto.getSpecialRequests());
+        reservation.setPaymentStatus(Reservation.PaymentStatus.PENDING);
+        reservation.setReservationStatus(Reservation.ReservationStatus.CONFIRMED);
+
+        if (dto.getSource() != null && !dto.getSource().isEmpty()) {
+            try {
+                reservation.setSource(Reservation.ReservationSource.valueOf(dto.getSource()));
+            } catch (IllegalArgumentException ignored) {
+                reservation.setSource(Reservation.ReservationSource.WALK_IN);
+            }
+        }
+
+        // Save ONE reservation row
+        Reservation saved = reservationDAO.save(reservation);
+
+        // Save ALL rooms into reservation_rooms junction table
+        reservationDAO.saveReservationRooms(saved.getId(), roomIds, roomPrices);
+
+        // Return fully populated DTO (with all room details)
+        return reservationDAO.findDTOById(saved.getId())
+                .orElseThrow(() -> new SQLException(
+                        "Failed to reload reservation after save."));
     }
 
-    public double getMonthlyRevenue(int month, int year) throws SQLException {
-        return reservationDAO.getTotalRevenueByMonth(year, month);
+    /**
+     * Convenience overload — single room booking.
+     */
+    public ReservationDTO createReservation(ReservationDTO dto) throws SQLException {
+        List<Long> roomIds = new ArrayList<>();
+        if (dto.getRoomIds() != null && !dto.getRoomIds().isEmpty()) {
+            roomIds.addAll(dto.getRoomIds());
+        }
+        if (roomIds.isEmpty())
+            throw new IllegalArgumentException("At least one room must be selected.");
+        return createReservation(dto, roomIds);
     }
 
-    // ─── Update ─────────────────────────────────────────────────────
+    // ─── Update ───────────────────────────────────────────────────────────────────
 
-    public ReservationDTO updateReservation(ReservationDTO dto)
-            throws SQLException, IllegalArgumentException {
+    /**
+     * Updates an existing reservation with a new set of rooms.
+     * Atomically replaces old room links with the new list.
+     */
+    public ReservationDTO updateReservation(ReservationDTO dto, List<Long> roomIds)
+            throws SQLException {
 
-        if (dto.getId() == null) throw new IllegalArgumentException("Reservation ID required.");
+        if (dto.getId() == null)
+            throw new IllegalArgumentException("Reservation ID is required for update.");
+        if (roomIds == null || roomIds.isEmpty())
+            throw new IllegalArgumentException("At least one room must be selected.");
+        if (!dto.getCheckOutDate().isAfter(dto.getCheckInDate()))
+            throw new IllegalArgumentException("Check-out date must be after check-in date.");
 
+        // Prevent duplicate room selections
+        Set<Long> unique = new HashSet<>();
+        for (Long roomId : roomIds) {
+            if (!unique.add(roomId))
+                throw new IllegalArgumentException(
+                        "Duplicate room selected. Each room can only be added once.");
+        }
+
+        // Validate rooms and availability
+        List<Room> rooms = new ArrayList<>();
+        Map<Long, BigDecimal> roomPrices = new HashMap<>();
+
+        for (Long roomId : roomIds) {
+            Room room = roomService.getRoomById(roomId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Room ID " + roomId + " not found."));
+
+            List<Long> conflicts = reservationDAO.findConflictingReservationIds(
+                    roomId, dto.getCheckInDate(), dto.getCheckOutDate(), dto.getId());
+            if (!conflicts.isEmpty())
+                throw new IllegalArgumentException(
+                        "Room " + room.getRoomNumber() + " is already booked for the selected dates.");
+
+            rooms.add(room);
+            roomPrices.put(roomId, room.getBasePrice() != null ? room.getBasePrice() : BigDecimal.ZERO);
+        }
+
+        // Recalculate pricing
+        long nights = ChronoUnit.DAYS.between(dto.getCheckInDate(), dto.getCheckOutDate());
+        if (nights <= 0) nights = 1;
+
+        BigDecimal combinedNightlyRate = rooms.stream()
+                .map(r -> r.getBasePrice() != null ? r.getBasePrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal subtotal    = combinedNightlyRate.multiply(BigDecimal.valueOf(nights));
+        BigDecimal discount    = dto.getDiscountAmount() != null ? dto.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal taxable     = subtotal.subtract(discount);
+        BigDecimal taxRate     = rooms.get(0).getTaxRate() != null
+                ? rooms.get(0).getTaxRate()
+                : new BigDecimal("0.12");
+        BigDecimal taxAmount   = taxable.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = taxable.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+
+        // Load existing entity to preserve reservation_number etc.
         Reservation existing = reservationDAO.findById(dto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
 
-        // Recalculate if dates/room changed
-        Long roomId = dto.getRoomId() != null ? dto.getRoomId() : existing.getRoomId();
-        LocalDate ci = dto.getCheckInDate() != null ? dto.getCheckInDate() : existing.getCheckInDate();
-        LocalDate co = dto.getCheckOutDate() != null ? dto.getCheckOutDate() : existing.getCheckOutDate();
+        existing.setNumberOfRooms(roomIds.size());
+        existing.setCheckInDate(dto.getCheckInDate());
+        existing.setCheckOutDate(dto.getCheckOutDate());
+        existing.setAdults(dto.getAdults() != null ? dto.getAdults() : 1);
+        existing.setChildren(dto.getChildren() != null ? dto.getChildren() : 0);
+        existing.setTotalNights((int) nights);
+        existing.setRoomPrice(combinedNightlyRate);
+        existing.setDiscountAmount(discount);
+        existing.setSubtotal(subtotal);
+        existing.setTaxAmount(taxAmount);
+        existing.setTotalAmount(totalAmount);
+        existing.setSpecialRequests(dto.getSpecialRequests());
 
-        Room room = roomDAO.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
-
-        int nights = (int) ChronoUnit.DAYS.between(ci, co);
-        if (nights <= 0) {
-            throw new IllegalArgumentException("Check-out date must be after check-in date.");
+        if (dto.getSource() != null && !dto.getSource().isEmpty()) {
+            try {
+                existing.setSource(Reservation.ReservationSource.valueOf(dto.getSource()));
+            } catch (IllegalArgumentException ignored) {}
         }
 
-        BigDecimal roomPrice = room.getBasePrice();
-        BigDecimal roomCharges = roomPrice.multiply(BigDecimal.valueOf(nights));
-        BigDecimal discount = dto.getDiscountAmount() != null ? dto.getDiscountAmount() : existing.getDiscountAmount();
-        if (discount == null) discount = BigDecimal.ZERO;
-
-        BigDecimal taxRate = room.getTaxRate() != null ? room.getTaxRate().divide(new BigDecimal("100")) : new BigDecimal("0.12");
-        BigDecimal taxable = roomCharges.subtract(discount);
-        BigDecimal tax = taxable.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = taxable.add(tax);
-
-        existing.setRoomId(roomId);
-        existing.setCheckInDate(ci);
-        existing.setCheckOutDate(co);
-        existing.setAdults(dto.getAdults() != null ? dto.getAdults() : existing.getAdults());
-        existing.setChildren(dto.getChildren() != null ? dto.getChildren() : existing.getChildren());
-        existing.setTotalNights(nights);
-        existing.setRoomPrice(roomPrice);
-        existing.setTaxAmount(tax);
-        existing.setDiscountAmount(discount);
-        existing.setSubtotal(roomCharges);
-        existing.setTotalAmount(total);
-        existing.setSpecialRequests(dto.getSpecialRequests() != null
-                ? dto.getSpecialRequests() : existing.getSpecialRequests());
-        if (dto.getSource() != null) existing.setSource(safeSource(dto.getSource()));
-        existing.setUpdatedAt(LocalDateTime.now());
-
         reservationDAO.update(existing);
-        return reservationDAO.findDTOById(existing.getId()).orElse(mapper.toDTO(existing));
+
+        // Atomically replace room links
+        reservationDAO.deleteReservationRooms(dto.getId());
+        reservationDAO.saveReservationRooms(dto.getId(), roomIds, roomPrices);
+
+        return reservationDAO.findDTOById(dto.getId())
+                .orElseThrow(() -> new SQLException("Failed to reload reservation after update."));
     }
 
-    // ─── Delete ─────────────────────────────────────────────────────
-
-    public boolean deleteReservation(Long id) throws SQLException {
-        return reservationDAO.delete(id);
+    /**
+     * Convenience overload — reads roomIds from DTO.
+     */
+    public ReservationDTO updateReservation(ReservationDTO dto) throws SQLException {
+        List<Long> roomIds = dto.getRoomIds();
+        if (roomIds == null || roomIds.isEmpty())
+            throw new IllegalArgumentException("At least one room must be selected.");
+        return updateReservation(dto, roomIds);
     }
 
-    // ─── Read ───────────────────────────────────────────────────────
+    // ─── Read ─────────────────────────────────────────────────────────────────────
 
     public Optional<ReservationDTO> getReservationById(Long id) throws SQLException {
         return reservationDAO.findDTOById(id);
@@ -184,8 +283,21 @@ public class ReservationService {
         return reservationDAO.findAllDTOs(page, size);
     }
 
-    public List<ReservationDTO> getRecentReservations(int limit) throws SQLException {
-        return reservationDAO.findRecentDTOs(limit);
+    public long getTotalReservationsCount() throws SQLException {
+        return reservationDAO.count();
+    }
+
+    public List<ReservationDTO> getReservationsByGuest(Long guestId) throws SQLException {
+        return reservationDAO.findByGuestId(guestId);
+    }
+
+    public List<ReservationDTO> getReservationsByRoom(Long roomId) throws SQLException {
+        return reservationDAO.findByRoomId(roomId);
+    }
+
+    public List<ReservationDTO> getReservationsByDateRange(LocalDate start, LocalDate end)
+            throws SQLException {
+        return reservationDAO.findByDateRange(start, end);
     }
 
     public List<ReservationDTO> searchReservations(SearchCriteriaDTO criteria) throws SQLException {
@@ -194,81 +306,95 @@ public class ReservationService {
                 criteria.getStatus(),
                 criteria.getPaymentStatus(),
                 criteria.getCheckInDate(),
-                criteria.getCheckOutDate());
+                criteria.getCheckOutDate()
+        );
     }
 
-    // ─── Status changes ─────────────────────────────────────────────
+    // ─── New methods for dashboard ─────────────────────────────────────────────────
 
-    public void checkIn(Long id) throws SQLException, IllegalArgumentException {
-        Reservation r = requireReservation(id);
-        if (r.getReservationStatus() != Reservation.ReservationStatus.CONFIRMED)
-            throw new IllegalArgumentException("Only CONFIRMED reservations can be checked in.");
-        r.setReservationStatus(Reservation.ReservationStatus.CHECKED_IN);
-        r.setUpdatedAt(LocalDateTime.now());
-        reservationDAO.update(r);
-    }
-
-    public void checkOut(Long id) throws SQLException, IllegalArgumentException {
-        Reservation r = requireReservation(id);
-        if (r.getReservationStatus() != Reservation.ReservationStatus.CHECKED_IN)
-            throw new IllegalArgumentException("Guest must be checked in before checking out.");
-        r.setReservationStatus(Reservation.ReservationStatus.CHECKED_OUT);
-        r.setUpdatedAt(LocalDateTime.now());
-        reservationDAO.update(r);
-    }
-
-    public void cancelReservation(Long id) throws SQLException, IllegalArgumentException {
-        Reservation r = requireReservation(id);
-        if (r.getReservationStatus() == Reservation.ReservationStatus.CHECKED_IN
-                || r.getReservationStatus() == Reservation.ReservationStatus.CHECKED_OUT)
-            throw new IllegalArgumentException("Cannot cancel a reservation that is already checked in/out.");
-        r.setReservationStatus(Reservation.ReservationStatus.CANCELLED);
-        r.setUpdatedAt(LocalDateTime.now());
-        reservationDAO.update(r);
-    }
-
-    // ─── Dashboard stats ────────────────────────────────────────────
-
-    public long getTotalReservationsCount() throws SQLException {
-        return reservationDAO.count();
-    }
-
+    /**
+     * Get count of active reservations (CONFIRMED and CHECKED_IN)
+     */
     public long getActiveReservationsCount() throws SQLException {
-        return reservationDAO.findActiveReservations().size();
+        return reservationDAO.countActiveReservations();
     }
 
+    /**
+     * Get today's check-ins count
+     */
     public int getTodaysCheckInsCount() throws SQLException {
         return reservationDAO.countCheckInsByDate(LocalDate.now());
     }
 
-// Add this method to ReservationService.java
-
+    /**
+     * Get today's check-outs count
+     */
     public int getTodaysCheckOutsCount() throws SQLException {
         return reservationDAO.countCheckOutsByDate(LocalDate.now());
     }
 
-    public List<ReservationDTO> getReservationsByGuestId(Long guestId) throws SQLException {
-        return reservationDAO.findByGuestId(guestId);
-    }
-
+    /**
+     * Get current month's revenue
+     */
     public double getCurrentMonthRevenue() throws SQLException {
-        YearMonth ym = YearMonth.now();
-        return reservationDAO.getTotalRevenueByMonth(ym.getYear(), ym.getMonthValue());
+        LocalDate now = LocalDate.now();
+        return reservationDAO.getTotalRevenueByMonth(now.getYear(), now.getMonthValue());
     }
 
-    // ─── Private helpers ────────────────────────────────────────────
+    // ─── Status changes ───────────────────────────────────────────────────────────
 
-    private Reservation requireReservation(Long id) throws SQLException {
-        return reservationDAO.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found: " + id));
+    public void checkIn(Long reservationId) throws SQLException {
+        Reservation r = reservationDAO.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
+        if (r.getReservationStatus() != Reservation.ReservationStatus.CONFIRMED)
+            throw new IllegalArgumentException(
+                    "Only CONFIRMED reservations can be checked in.");
+        r.setReservationStatus(Reservation.ReservationStatus.CHECKED_IN);
+        reservationDAO.update(r);
     }
 
-    private String generateReservationNumber() {
-        return "RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    public void checkOut(Long reservationId) throws SQLException {
+        Reservation r = reservationDAO.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
+        if (r.getReservationStatus() != Reservation.ReservationStatus.CHECKED_IN)
+            throw new IllegalArgumentException(
+                    "Only CHECKED_IN reservations can be checked out.");
+        r.setReservationStatus(Reservation.ReservationStatus.CHECKED_OUT);
+        reservationDAO.update(r);
     }
 
-    private Reservation.ReservationSource safeSource(String s) {
-        try { return Reservation.ReservationSource.valueOf(s); }
-        catch (Exception e) { return Reservation.ReservationSource.WALK_IN; }
+    public void cancelReservation(Long reservationId) throws SQLException {
+        Reservation r = reservationDAO.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
+        if (r.getReservationStatus() == Reservation.ReservationStatus.CHECKED_OUT)
+            throw new IllegalArgumentException("Cannot cancel a checked-out reservation.");
+        r.setReservationStatus(Reservation.ReservationStatus.CANCELLED);
+        reservationDAO.update(r);
+    }
+
+    public boolean deleteReservation(Long id) throws SQLException {
+        return reservationDAO.delete(id);
+    }
+
+    // ─── Dashboard stats ──────────────────────────────────────────────────────────
+
+    public int getOccupiedRoomsCount(LocalDate date) throws SQLException {
+        return reservationDAO.countOccupiedRoomsByDate(date);
+    }
+
+    public int getTodayCheckInsCount() throws SQLException {
+        return reservationDAO.countCheckInsByDate(LocalDate.now());
+    }
+
+    public int getTodayCheckOutsCount() throws SQLException {
+        return reservationDAO.countCheckOutsByDate(LocalDate.now());
+    }
+
+    public double getMonthlyRevenue(int year, int month) throws SQLException {
+        return reservationDAO.getTotalRevenueByMonth(year, month);
+    }
+
+    public List<ReservationDTO> getRecentReservations(int limit) throws SQLException {
+        return reservationDAO.findRecentDTOs(limit);
     }
 }

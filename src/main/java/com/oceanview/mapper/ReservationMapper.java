@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
  *
  * Guest name / room number fields are populated by ReservationDAOImpl
  * via JOIN queries, so toEntity() only maps core reservation columns.
+ * Note: roomId is no longer a field - rooms are stored in reservation_rooms table.
  */
 public class ReservationMapper {
 
@@ -35,7 +36,8 @@ public class ReservationMapper {
         r.setReservationNumber(dto.getReservationNumber());
         r.setGuestId(dto.getGuestId());
         r.setUserId(dto.getUserId());
-        r.setRoomId(dto.getRoomId());
+        // roomId removed - use numberOfRooms instead
+        r.setNumberOfRooms(dto.getNumberOfRooms());
         r.setCheckInDate(dto.getCheckInDate());
         r.setCheckOutDate(dto.getCheckOutDate());
         r.setAdults(dto.getAdults() != null ? dto.getAdults() : 1);
@@ -74,7 +76,8 @@ public class ReservationMapper {
         dto.setReservationNumber(r.getReservationNumber());
         dto.setGuestId(r.getGuestId());
         dto.setUserId(r.getUserId());
-        dto.setRoomId(r.getRoomId());
+        // roomId removed - use numberOfRooms instead
+        dto.setNumberOfRooms(r.getNumberOfRooms());
         dto.setCheckInDate(r.getCheckInDate());
         dto.setCheckOutDate(r.getCheckOutDate());
         dto.setTotalNights(r.getTotalNights());
@@ -91,6 +94,9 @@ public class ReservationMapper {
         dto.setReservationStatus(r.getReservationStatus() != null ? r.getReservationStatus().name() : null);
         dto.setCreatedAt(r.getCreatedAt());
         dto.setUpdatedAt(r.getUpdatedAt());
+
+        // Note: rooms list and roomIds are not set here - they should be populated
+        // separately by the DAO using the reservation_rooms table
 
         return dto;
     }

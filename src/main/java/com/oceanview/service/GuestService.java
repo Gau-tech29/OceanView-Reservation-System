@@ -1,164 +1,172 @@
 package com.oceanview.service;
 
 import com.oceanview.dao.GuestDAO;
-import com.oceanview.dao.ReservationDAO;
 import com.oceanview.dao.impl.GuestDAOImpl;
-import com.oceanview.dao.impl.ReservationDAOImpl;
 import com.oceanview.dto.GuestDTO;
-import com.oceanview.dto.ReservationDTO;
-import com.oceanview.mapper.GuestMapper;
 import com.oceanview.model.Guest;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
+/**
+ * Business-logic layer for Guest operations.
+ * Called by dashboard servlets and reservation controllers.
+ */
 public class GuestService {
 
     private final GuestDAO guestDAO;
-    private final GuestMapper guestMapper;
-    private ReservationDAO reservationDAO;
 
     public GuestService() {
         this.guestDAO = GuestDAOImpl.getInstance();
-        this.guestMapper = GuestMapper.getInstance();
-        this.reservationDAO = ReservationDAOImpl.getInstance();
     }
 
-    public GuestService(GuestDAO guestDAO) {
-        this.guestDAO = guestDAO;
-        this.guestMapper = GuestMapper.getInstance();
-        this.reservationDAO = ReservationDAOImpl.getInstance();
-    }
+    // ── Create ────────────────────────────────────────────────────────────────────
 
-    public boolean deleteGuest(Long id) throws SQLException {
-        // Check if guest has any reservations
-        List<ReservationDTO> reservations = reservationDAO.findByGuestId(id);
+    /**
+     * Creates a new guest and returns the persisted GuestDTO (with generated id/number).
+     */
+    public GuestDTO createGuest(GuestDTO dto) throws SQLException {
+        validateGuest(dto);
 
-        // Only allow deletion if no active reservations
-        boolean hasActiveReservations = reservations.stream()
-                .anyMatch(r -> !"CANCELLED".equals(r.getReservationStatus()) &&
-                        !"CHECKED_OUT".equals(r.getReservationStatus()));
-
-        if (hasActiveReservations) {
-            throw new SQLException("Cannot delete guest with active reservations");
-        }
-
-        return guestDAO.delete(id);
-    }
-
-    public GuestDTO createGuest(GuestDTO guestDTO) throws SQLException, IllegalArgumentException {
-        // Only check uniqueness when the field is actually provided
-        String email = guestDTO.getEmail();
-        if (email != null && !email.trim().isEmpty()) {
-            Optional<Guest> existingGuest = guestDAO.findByEmail(email.trim());
-            if (existingGuest.isPresent()) {
+        // Check email uniqueness if provided
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            Optional<Guest> existing = guestDAO.findByEmail(dto.getEmail().trim());
+            if (existing.isPresent()) {
                 throw new IllegalArgumentException(
-                        "A guest with email '" + email.trim() + "' already exists. " +
-                                "Please search for the existing guest instead.");
+                        "A guest with email '" + dto.getEmail() + "' already exists.");
             }
         }
-        String phone = guestDTO.getPhone();
-        if (phone != null && !phone.trim().isEmpty()) {
-            Optional<Guest> existingGuest = guestDAO.findByPhone(phone.trim());
-            if (existingGuest.isPresent()) {
+
+        Guest guest = toEntity(dto);
+        Guest saved = guestDAO.save(guest);
+        return toDTO(saved);
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────────
+
+    public GuestDTO updateGuest(GuestDTO dto) throws SQLException {
+        if (dto.getId() == null)
+            throw new IllegalArgumentException("Guest ID is required for update.");
+        validateGuest(dto);
+
+        Guest existing = guestDAO.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Guest not found with ID: " + dto.getId()));
+
+        // If email changed, check uniqueness
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()
+                && !dto.getEmail().trim().equalsIgnoreCase(existing.getEmail())) {
+            Optional<Guest> conflict = guestDAO.findByEmail(dto.getEmail().trim());
+            if (conflict.isPresent()) {
                 throw new IllegalArgumentException(
-                        "A guest with phone '" + phone.trim() + "' already exists. " +
-                                "Please search for the existing guest instead.");
+                        "Email '" + dto.getEmail() + "' is already in use.");
             }
         }
 
-        Guest guest = guestMapper.toEntity(guestDTO);
-
-        // Generate guest number if not provided
-        if (guest.getGuestNumber() == null || guest.getGuestNumber().trim().isEmpty()) {
-            guest.setGuestNumber(generateGuestNumber());
-        }
-
-        // New guests start as non-VIP
-        guest.setVip(false);
-        if (guest.getLoyaltyPoints() == null) {
-            guest.setLoyaltyPoints(0);
-        }
-
-        Guest savedGuest = guestDAO.save(guest);
-        return guestMapper.toDTO(savedGuest);
+        Guest updated = toEntity(dto);
+        updated.setGuestNumber(existing.getGuestNumber()); // preserve auto-generated number
+        guestDAO.update(updated);
+        return toDTO(updated);
     }
 
-    public GuestDTO updateGuest(GuestDTO guestDTO) throws SQLException, IllegalArgumentException {
-        if (guestDTO.getId() == null) {
-            throw new IllegalArgumentException("Guest ID is required for update");
-        }
-
-        Optional<Guest> existingOpt = guestDAO.findById(guestDTO.getId());
-        if (!existingOpt.isPresent()) {
-            throw new IllegalArgumentException("Guest not found with ID: " + guestDTO.getId());
-        }
-
-        Guest existing = existingOpt.get();
-
-        // Check email uniqueness if changed
-        if (guestDTO.getEmail() != null && !guestDTO.getEmail().equals(existing.getEmail())) {
-            Optional<Guest> emailCheck = guestDAO.findByEmail(guestDTO.getEmail());
-            if (emailCheck.isPresent() && !emailCheck.get().getId().equals(guestDTO.getId())) {
-                throw new IllegalArgumentException("Email already in use by another guest");
-            }
-        }
-
-        // Check phone uniqueness if changed
-        if (guestDTO.getPhone() != null && !guestDTO.getPhone().equals(existing.getPhone())) {
-            Optional<Guest> phoneCheck = guestDAO.findByPhone(guestDTO.getPhone());
-            if (phoneCheck.isPresent() && !phoneCheck.get().getId().equals(guestDTO.getId())) {
-                throw new IllegalArgumentException("Phone number already in use by another guest");
-            }
-        }
-
-        Guest guest = guestMapper.toEntity(guestDTO);
-        Guest updatedGuest = guestDAO.update(guest);
-        return guestMapper.toDTO(updatedGuest);
-    }
+    // ── Read ──────────────────────────────────────────────────────────────────────
 
     public Optional<GuestDTO> getGuestById(Long id) throws SQLException {
-        return guestDAO.findById(id).map(guestMapper::toDTO);
+        return guestDAO.findById(id).map(this::toDTO);
     }
 
     public Optional<GuestDTO> getGuestByEmail(String email) throws SQLException {
-        return guestDAO.findByEmail(email).map(guestMapper::toDTO);
+        return guestDAO.findByEmail(email).map(this::toDTO);
     }
 
-    public Optional<GuestDTO> getGuestByPhone(String phone) throws SQLException {
-        return guestDAO.findByPhone(phone).map(guestMapper::toDTO);
-    }
-
-    public Optional<GuestDTO> getGuestByNumber(String guestNumber) throws SQLException {
-        return guestDAO.findByGuestNumber(guestNumber).map(guestMapper::toDTO);
-    }
-
-    public List<GuestDTO> searchGuests(String keyword) throws SQLException {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return guestMapper.toDTOList(guestDAO.findAll());
-        }
-        return guestMapper.toDTOList(guestDAO.searchGuests(keyword));
+    public Optional<GuestDTO> getGuestByNumber(String number) throws SQLException {
+        return guestDAO.findByGuestNumber(number).map(this::toDTO);
     }
 
     public List<GuestDTO> getAllGuests() throws SQLException {
-        return guestMapper.toDTOList(guestDAO.findAll());
+        return guestDAO.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     public List<GuestDTO> getGuests(int page, int size) throws SQLException {
-        return guestMapper.toDTOList(guestDAO.findAll(page, size));
+        return guestDAO.findAll(page, size).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    public List<GuestDTO> getRecentGuests(int limit) throws SQLException {
-        return guestMapper.toDTOList(guestDAO.findRecentGuests(limit));
+    public List<GuestDTO> searchGuests(String keyword) throws SQLException {
+        return guestDAO.searchGuests(keyword).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    // ── Counts (used by dashboards) ───────────────────────────────────────────────
+
+    public long getTotalGuestsCount() throws SQLException {
+        return guestDAO.count();
+    }
+
+    /**
+     * Returns the number of active guests.
+     * Used by StaffDashboardServlet and AdminDashboardServlet.
+     */
     public long getActiveGuestsCount() throws SQLException {
-        return guestDAO.count(); // Count all guests since they're all active
+        return guestDAO.countActiveGuests();
     }
 
-    private String generateGuestNumber() {
-        return "GST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    // ── Delete ────────────────────────────────────────────────────────────────────
+
+    public boolean deleteGuest(Long id) throws SQLException {
+        return guestDAO.delete(id);
+    }
+
+    // ── Mapper helpers ────────────────────────────────────────────────────────────
+
+    private Guest toEntity(GuestDTO dto) {
+        Guest g = new Guest();
+        g.setId(dto.getId());
+        g.setGuestNumber(dto.getGuestNumber());
+        g.setFirstName(dto.getFirstName() != null ? dto.getFirstName().trim() : null);
+        g.setLastName(dto.getLastName()   != null ? dto.getLastName().trim()  : null);
+        g.setEmail(dto.getEmail()         != null ? dto.getEmail().trim()     : null);
+        g.setPhone(dto.getPhone());
+        g.setAddress(dto.getAddress());
+        g.setCity(dto.getCity());
+        g.setCountry(dto.getCountry());
+        g.setPostalCode(dto.getPostalCode());
+        g.setIdCardNumber(dto.getIdCardNumber());
+        g.setIdCardType(dto.getIdCardType());
+        g.setVip(dto.getIsVip() != null && dto.getIsVip());
+        g.setLoyaltyPoints(dto.getLoyaltyPoints() != null ? dto.getLoyaltyPoints() : 0);
+        g.setNotes(dto.getNotes());
+        return g;
+    }
+
+    public GuestDTO toDTO(Guest g) {
+        if (g == null) return null;
+        GuestDTO dto = new GuestDTO();
+        dto.setId(g.getId());
+        dto.setGuestNumber(g.getGuestNumber());
+        dto.setFirstName(g.getFirstName());
+        dto.setLastName(g.getLastName());
+        dto.setEmail(g.getEmail());
+        dto.setPhone(g.getPhone());
+        dto.setAddress(g.getAddress());
+        dto.setCity(g.getCity());
+        dto.setCountry(g.getCountry());
+        dto.setPostalCode(g.getPostalCode());
+        dto.setIdCardNumber(g.getIdCardNumber());
+        dto.setIdCardType(g.getIdCardType());
+        dto.setIsVip(g.isVip());
+        dto.setLoyaltyPoints(g.getLoyaltyPoints());
+        dto.setNotes(g.getNotes());
+        dto.setCreatedAt(g.getCreatedAt());
+        return dto;
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────────────
+
+    private void validateGuest(GuestDTO dto) {
+        if (dto.getFirstName() == null || dto.getFirstName().trim().isEmpty())
+            throw new IllegalArgumentException("First name is required.");
+        if (dto.getLastName() == null || dto.getLastName().trim().isEmpty())
+            throw new IllegalArgumentException("Last name is required.");
     }
 }

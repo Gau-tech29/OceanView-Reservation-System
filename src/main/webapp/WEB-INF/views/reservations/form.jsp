@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.oceanview.model.User" %>
 <%@ page import="com.oceanview.dto.ReservationDTO" %>
+<%@ page import="com.oceanview.dto.ReservationRoomDTO" %>
 <%@ page import="com.oceanview.dto.GuestDTO" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.LocalDate" %>
@@ -102,37 +103,43 @@
         .capacity-alert { display: none; background: var(--danger-light); border: 1.5px solid var(--danger); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.84rem; color: #721c24; margin-top: 10px; align-items: center; gap: 8px; }
         .capacity-alert.show { display: flex; }
 
-        /* ── Room Section ── */
-        .room-section { margin-top: 20px; }
-        .room-section-label {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.9rem; font-weight: 700; color: var(--dark);
-            padding: 10px 14px; background: var(--gray-100);
-            border-radius: var(--radius-md); margin-bottom: 14px;
-            border: 1.5px solid var(--gray-300);
+        /* ── Room Slots ── */
+        .room-slot-panel {
+            border: 1.5px solid var(--gray-300); border-radius: var(--radius-md);
+            margin-bottom: 16px; overflow: hidden; transition: border-color 0.2s;
         }
-        .room-section-label .slot-badge {
-            background: var(--primary); color: white;
-            border-radius: 20px; padding: 2px 10px; font-size: 0.75rem;
+        .room-slot-panel.has-room { border-color: var(--primary); }
+        .room-slot-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 16px; background: var(--gray-100); cursor: pointer;
+            user-select: none;
         }
-        .room-section-label .slot-badge.optional {
-            background: var(--gray-600);
+        .room-slot-panel.has-room .room-slot-header { background: var(--primary-light); }
+        .room-slot-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem; color: var(--dark); }
+        .slot-num-badge {
+            width: 26px; height: 26px; border-radius: 50%; background: var(--gray-300);
+            color: var(--gray-600); display: flex; align-items: center; justify-content: center;
+            font-size: 0.78rem; font-weight: 700;
         }
-        .room-tabs {
-            display: flex; background: var(--gray-100);
-            border-radius: var(--radius-md); padding: 4px; gap: 4px; margin-bottom: 16px;
+        .room-slot-panel.has-room .slot-num-badge { background: var(--primary); color: white; }
+        .slot-check-icon { color: var(--success); display: none; }
+        .room-slot-panel.has-room .slot-check-icon { display: inline; }
+        .slot-required-badge { font-size: 0.72rem; color: var(--danger); font-weight: 700; }
+        .slot-optional-badge { font-size: 0.72rem; color: var(--gray-600); font-weight: 700; }
+        .slot-selected-preview { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
+        .slot-collapse-icon { font-size: 0.8rem; color: var(--gray-600); transition: transform 0.25s; }
+        .room-slot-panel.open .slot-collapse-icon { transform: rotate(180deg); }
+        .room-slot-body { display: none; padding: 16px; border-top: 1.5px solid var(--gray-300); }
+        .room-slot-panel.open .room-slot-body { display: block; }
+        .room-slot-panel.has-room .room-slot-body { border-top-color: var(--primary); }
+
+        /* ── Remove room slot button ── */
+        .remove-slot-btn {
+            background: none; border: none; color: var(--danger); cursor: pointer;
+            font-size: 0.78rem; font-weight: 600; padding: 4px 8px; border-radius: 6px;
+            border: 1.5px solid var(--danger); transition: all 0.2s; white-space: nowrap;
         }
-        .room-tab-btn {
-            flex: 1; padding: 9px 14px; border: none; border-radius: var(--radius-sm);
-            font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-            background: transparent; color: var(--gray-600);
-            display: flex; align-items: center; justify-content: center; gap: 7px;
-        }
-        .room-tab-btn.active {
-            background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .room-tab-btn .tab-check { color: var(--success); font-size: 0.75rem; display: none; }
-        .room-tab-btn.has-room .tab-check { display: inline; }
+        .remove-slot-btn:hover { background: var(--danger); color: white; }
 
         /* ── Filters ── */
         .room-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
@@ -147,7 +154,7 @@
         /* ── Room Grid ── */
         .rooms-loading { text-align: center; padding: 40px 20px; color: var(--gray-600); }
         .rooms-loading .spinner-border { width: 2.5rem; height: 2.5rem; border-width: 3px; }
-        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
         .room-card { border: 2px solid var(--gray-300); border-radius: var(--radius-md); padding: 14px; cursor: pointer; transition: all 0.25s; position: relative; background: white; }
         .room-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(13,110,253,0.15); }
         .room-card.selected { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 4px 20px rgba(13,110,253,0.2); }
@@ -182,6 +189,16 @@
         .srb-clear { margin-left: auto; cursor: pointer; color: var(--danger); padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; border: 1.5px solid var(--danger); transition: all 0.2s; white-space: nowrap; }
         .srb-clear:hover { background: var(--danger); color: white; }
 
+        /* ── Add Room Button ── */
+        .add-room-btn {
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+            padding: 13px; border: 2px dashed var(--primary); border-radius: var(--radius-md);
+            background: var(--primary-light); color: var(--primary); font-weight: 600;
+            font-size: 0.88rem; cursor: pointer; transition: all 0.2s; width: 100%;
+            font-family: 'Poppins', sans-serif; margin-top: 4px;
+        }
+        .add-room-btn:hover { background: var(--primary); color: white; border-style: solid; }
+
         /* ── Bill Preview ── */
         .bill-preview { background: linear-gradient(135deg, #f8f9fa, #fff); border: 1.5px solid var(--gray-300); border-radius: var(--radius-md); padding: 18px 20px; margin-top: 20px; }
         .bill-preview-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
@@ -190,16 +207,6 @@
         .bill-row.total { font-weight: 700; font-size: 0.97rem; color: var(--primary); border-top: 2px solid var(--gray-300); margin-top: 8px; padding-top: 10px; border-bottom: none; }
         .bill-row .label { color: var(--gray-600); }
         .bill-section-divider { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-600); padding: 6px 0 4px; border-bottom: 1px dashed var(--gray-300); margin-top: 4px; }
-
-        /* ── Room Add Button ── */
-        .add-room-btn {
-            display: flex; align-items: center; gap: 8px; justify-content: center;
-            padding: 12px; border: 2px dashed var(--primary); border-radius: var(--radius-md);
-            background: var(--primary-light); color: var(--primary); font-weight: 600;
-            font-size: 0.85rem; cursor: pointer; transition: all 0.2s; margin-top: 14px;
-            width: 100%;
-        }
-        .add-room-btn:hover { background: var(--primary); color: white; }
 
         /* ── Misc ── */
         .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--gray-600); font-size: 0.85rem; font-weight: 500; text-decoration: none; padding: 7px 14px; border-radius: 20px; background: white; border: 1.5px solid var(--gray-300); margin-bottom: 20px; transition: all 0.2s; }
@@ -210,6 +217,13 @@
         .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(13,110,253,0.35); }
         .btn-cancel { background: var(--gray-100); color: var(--gray-600); border: 1.5px solid var(--gray-300); border-radius: var(--radius-md); padding: 12px 28px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Poppins', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .btn-cancel:hover { background: var(--gray-200); color: var(--dark); }
+        .rooms-summary-bar {
+            background: var(--success-light); border: 1.5px solid var(--success);
+            border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px;
+            display: none; align-items: center; gap: 10px; font-size: 0.85rem;
+            font-weight: 600; color: var(--success);
+        }
+        .rooms-summary-bar.show { display: flex; }
 
         /* ── Modal ── */
         .modal-content { border-radius: var(--radius-lg); border: none; }
@@ -242,9 +256,16 @@
     String formAction = request.getContextPath() + roleBase + (isEdit ? "/update" : "/save");
     String backUrl    = request.getContextPath() + roleBase;
     String errorMsg   = (String) request.getAttribute("error");
-    String today      = LocalDate.now().toString();
 
-    // Guest pre-fill
+    // Also check session for error (set on redirect)
+    if (errorMsg == null) {
+        errorMsg = (String) session.getAttribute("error");
+        if (errorMsg != null) session.removeAttribute("error");
+    }
+
+    String today = LocalDate.now().toString();
+
+    // ── Guest pre-fill ────────────────────────────────────────────────────────────
     String preGuestId = "", preGuestName = "", preGuestInfo = "", preGuestInitials = "";
     if (isEdit && reservation.getGuestId() != null) {
         preGuestId   = String.valueOf(reservation.getGuestId());
@@ -255,7 +276,7 @@
         preGuestInfo = em + ph + gn;
         String[] np = preGuestName.split(" ");
         preGuestInitials = np.length >= 2
-                ? String.valueOf(np[0].charAt(0)) + String.valueOf(np[np.length-1].charAt(0))
+                ? String.valueOf(np[0].charAt(0)) + String.valueOf(np[np.length - 1].charAt(0))
                 : preGuestName.substring(0, Math.min(2, preGuestName.length())).toUpperCase();
     } else if (selectedGuest != null) {
         preGuestId   = String.valueOf(selectedGuest.getId());
@@ -265,16 +286,44 @@
         String gn = selectedGuest.getGuestNumber() != null ? " · #" + selectedGuest.getGuestNumber() : "";
         preGuestInfo = em + ph + gn;
         if (selectedGuest.getFirstName() != null && selectedGuest.getLastName() != null)
-            preGuestInitials = String.valueOf(selectedGuest.getFirstName().charAt(0)) + String.valueOf(selectedGuest.getLastName().charAt(0));
+            preGuestInitials = String.valueOf(selectedGuest.getFirstName().charAt(0))
+                    + String.valueOf(selectedGuest.getLastName().charAt(0));
     }
     boolean hasPreGuest = !preGuestId.isEmpty();
 
-    String preRoomId    = isEdit && reservation.getRoomId()    != null ? String.valueOf(reservation.getRoomId())    : "";
-    String preRoomNum   = isEdit && reservation.getRoomNumber() != null ? reservation.getRoomNumber() : "";
-    String preRoomType  = isEdit && reservation.getRoomType()   != null ? reservation.getRoomType()   : "";
-    String preRoomPrice = isEdit && reservation.getRoomPrice()  != null ? reservation.getRoomPrice().toPlainString() : "0";
-    String preCheckIn   = isEdit && reservation.getCheckInDate()  != null ? reservation.getCheckInDate().toString()  : "";
-    String preCheckOut  = isEdit && reservation.getCheckOutDate() != null ? reservation.getCheckOutDate().toString() : "";
+    // ── Room pre-fill for edit mode ───────────────────────────────────────────────
+    // Build a JSON array of pre-existing rooms so JS can restore all slots.
+    // Uses getRooms() list — safe for both single and multi-room reservations.
+    String preCheckIn  = "";
+    String preCheckOut = "";
+    String preRoomsJson = "[]"; // JSON array fed to JS init
+
+    if (isEdit) {
+        preCheckIn  = reservation.getCheckInDate()  != null ? reservation.getCheckInDate().toString()  : "";
+        preCheckOut = reservation.getCheckOutDate() != null ? reservation.getCheckOutDate().toString() : "";
+
+        List<ReservationRoomDTO> preRooms = reservation.getRooms();
+        if (preRooms != null && !preRooms.isEmpty()) {
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < preRooms.size(); i++) {
+                ReservationRoomDTO r = preRooms.get(i);
+                if (i > 0) sb.append(",");
+                long   rid   = r.getRoomId()     != null ? r.getRoomId()     : 0L;
+                String rnum  = r.getRoomNumber()  != null ? r.getRoomNumber().replace("'", "\\'")  : "";
+                String rtype = r.getRoomType()    != null ? r.getRoomType().replace("'", "\\'")    : "";
+                double rprice= r.getRoomPrice()   != null ? r.getRoomPrice().doubleValue()         : 0.0;
+                int    rcap  = r.getCapacity()    != null ? r.getCapacity()                        : 0;
+                sb.append("{\"id\":").append(rid)
+                        .append(",\"roomNumber\":\"").append(rnum).append("\"")
+                        .append(",\"roomType\":\"").append(rtype).append("\"")
+                        .append(",\"basePrice\":").append(rprice)
+                        .append(",\"capacity\":").append(rcap)
+                        .append("}");
+            }
+            sb.append("]");
+            preRoomsJson = sb.toString();
+        }
+    }
 %>
 
 <div class="form-wizard-wrap">
@@ -294,7 +343,7 @@
         <div class="step" id="step-4"><div class="step-num">4</div><span>Confirm</span></div>
     </div>
 
-    <% if (errorMsg != null) { %>
+    <% if (errorMsg != null && !errorMsg.isEmpty()) { %>
     <div class="err-box"><i class="fas fa-exclamation-circle"></i> <%= errorMsg %></div>
     <% } %>
 
@@ -310,17 +359,25 @@
             <div class="card-body">
                 <% if (!isEdit) { %>
                 <div class="guest-mode-toggle">
-                    <button type="button" class="guest-mode-btn active" id="tab-existing" onclick="switchMode('existing')"><i class="fas fa-search me-2"></i>Existing Guest</button>
-                    <button type="button" class="guest-mode-btn" id="tab-new" onclick="switchMode('new')"><i class="fas fa-user-plus me-2"></i>New Guest</button>
+                    <button type="button" class="guest-mode-btn active" id="tab-existing" onclick="switchMode('existing')">
+                        <i class="fas fa-search me-2"></i>Existing Guest
+                    </button>
+                    <button type="button" class="guest-mode-btn" id="tab-new" onclick="switchMode('new')">
+                        <i class="fas fa-user-plus me-2"></i>New Guest
+                    </button>
                 </div>
                 <input type="hidden" name="guestMode" id="guestMode" value="existing">
+
+                <!-- Existing Guest Panel -->
                 <div id="panelExisting">
                     <div class="search-wrap mb-3">
                         <label class="form-label">Search Guest <span class="required-star">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-primary"></i></span>
-                            <input type="text" id="guestSearchInput" class="form-control border-start-0" placeholder="Name, email, phone or guest #..." autocomplete="off">
-                            <button type="button" class="btn btn-primary" onclick="doSearch(document.getElementById('guestSearchInput').value)">Search</button>
+                            <input type="text" id="guestSearchInput" class="form-control border-start-0"
+                                   placeholder="Name, email, phone or guest #..." autocomplete="off">
+                            <button type="button" class="btn btn-primary"
+                                    onclick="doSearch(document.getElementById('guestSearchInput').value)">Search</button>
                         </div>
                         <div class="search-results" id="searchResults"></div>
                     </div>
@@ -335,12 +392,26 @@
                     </div>
                     <div class="info-tip"><i class="fas fa-info-circle"></i> Type at least 2 characters to search, then click a result.</div>
                 </div>
+
+                <!-- New Guest Panel -->
                 <div id="panelNew" style="display:none;">
                     <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">First Name <span class="required-star">*</span></label><input type="text" name="firstName" id="newFirstName" class="form-control" placeholder="First name"></div>
-                        <div class="col-md-6"><label class="form-label">Last Name <span class="required-star">*</span></label><input type="text" name="lastName" id="newLastName" class="form-control" placeholder="Last name"></div>
-                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="guestEmail" class="form-control" placeholder="guest@email.com"></div>
-                        <div class="col-md-6"><label class="form-label">Phone</label><input type="text" name="guestPhone" class="form-control" placeholder="+94 XX XXX XXXX"></div>
+                        <div class="col-md-6">
+                            <label class="form-label">First Name <span class="required-star">*</span></label>
+                            <input type="text" name="firstName" id="newFirstName" class="form-control" placeholder="First name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name <span class="required-star">*</span></label>
+                            <input type="text" name="lastName" id="newLastName" class="form-control" placeholder="Last name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="guestEmail" class="form-control" placeholder="guest@email.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="guestPhone" class="form-control" placeholder="+94 XX XXX XXXX">
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">ID Type</label>
                             <select name="idCardType" class="form-select">
@@ -350,8 +421,14 @@
                                 <option value="DRIVERS_LICENSE">Driver's License</option>
                             </select>
                         </div>
-                        <div class="col-md-6"><label class="form-label">ID Number</label><input type="text" name="idCardNumber" class="form-control" placeholder="ID number"></div>
-                        <div class="col-12"><label class="form-label">Address</label><input type="text" name="address" class="form-control" placeholder="Street address"></div>
+                        <div class="col-md-6">
+                            <label class="form-label">ID Number</label>
+                            <input type="text" name="idCardNumber" class="form-control" placeholder="ID number">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" name="address" class="form-control" placeholder="Street address">
+                        </div>
                         <div class="col-md-4"><label class="form-label">City</label><input type="text" name="city" class="form-control"></div>
                         <div class="col-md-4"><label class="form-label">Country</label><input type="text" name="country" class="form-control"></div>
                         <div class="col-md-4"><label class="form-label">Postal Code</label><input type="text" name="postalCode" class="form-control"></div>
@@ -359,11 +436,15 @@
                     <div class="info-tip mt-3"><i class="fas fa-info-circle"></i> A new guest profile will be created on submission.</div>
                 </div>
                 <% } else { %>
+                <!-- Edit mode: guest is fixed, show read-only card -->
                 <input type="hidden" name="guestMode" value="existing">
                 <input type="hidden" name="guestId" value="<%= preGuestId %>">
                 <div class="selected-guest-card show">
                     <div class="sg-avatar"><%= preGuestInitials %></div>
-                    <div><div class="sg-name"><%= preGuestName %></div><div class="sg-info"><%= preGuestInfo %></div></div>
+                    <div>
+                        <div class="sg-name"><%= preGuestName %></div>
+                        <div class="sg-info"><%= preGuestInfo %></div>
+                    </div>
                 </div>
                 <% } %>
             </div>
@@ -379,23 +460,32 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Check-in Date <span class="required-star">*</span></label>
-                        <input type="date" name="checkInDate" id="checkInDate" class="form-control" required min="<%= today %>" value="<%= preCheckIn %>" onchange="onDatesChange()">
+                        <input type="date" name="checkInDate" id="checkInDate" class="form-control"
+                               required min="<%= today %>" value="<%= preCheckIn %>" onchange="onDatesChange()">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Check-out Date <span class="required-star">*</span></label>
-                        <input type="date" name="checkOutDate" id="checkOutDate" class="form-control" required min="<%= today %>" value="<%= preCheckOut %>" onchange="onDatesChange()">
+                        <input type="date" name="checkOutDate" id="checkOutDate" class="form-control"
+                               required min="<%= today %>" value="<%= preCheckOut %>" onchange="onDatesChange()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Adults <span class="required-star">*</span></label>
-                        <input type="number" name="adults" id="adults" class="form-control" min="1" max="20" required value="<%= isEdit && reservation.getAdults() != null ? reservation.getAdults() : 1 %>" onchange="onGuestCountChange()">
+                        <input type="number" name="adults" id="adults" class="form-control" min="1" max="20" required
+                               value="<%= isEdit && reservation.getAdults() != null ? reservation.getAdults() : 1 %>"
+                               onchange="onGuestCountChange()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Children</label>
-                        <input type="number" name="children" id="children" class="form-control" min="0" max="20" value="<%= isEdit && reservation.getChildren() != null ? reservation.getChildren() : 0 %>" onchange="onGuestCountChange()">
+                        <input type="number" name="children" id="children" class="form-control" min="0" max="20"
+                               value="<%= isEdit && reservation.getChildren() != null ? reservation.getChildren() : 0 %>"
+                               onchange="onGuestCountChange()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Discount ($)</label>
-                        <input type="number" name="discountAmount" id="discountAmount" class="form-control" min="0" step="0.01" value="<%= isEdit && reservation.getDiscountAmount() != null ? reservation.getDiscountAmount() : "0" %>" onchange="recalcBill()">
+                        <input type="number" name="discountAmount" id="discountAmount" class="form-control"
+                               min="0" step="0.01"
+                               value="<%= isEdit && reservation.getDiscountAmount() != null ? reservation.getDiscountAmount() : "0" %>"
+                               onchange="recalcBill()">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Source</label>
@@ -409,7 +499,8 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label">Special Requests</label>
-                        <textarea name="specialRequests" class="form-control" rows="2" placeholder="Dietary needs, extra pillows, late check-in..."><%= isEdit && reservation.getSpecialRequests() != null ? reservation.getSpecialRequests() : "" %></textarea>
+                        <textarea name="specialRequests" class="form-control" rows="2"
+                                  placeholder="Dietary needs, extra pillows, late check-in..."><%= isEdit && reservation.getSpecialRequests() != null ? reservation.getSpecialRequests() : "" %></textarea>
                     </div>
                 </div>
 
@@ -433,98 +524,26 @@
             <div class="card-head">
                 <div class="icon-wrap"><i class="fas fa-door-open"></i></div>
                 <div>
-                    <h4>Room Selection <span style="opacity:0.7;font-weight:400;font-size:0.85rem;">(up to 2 rooms per reservation)</span></h4>
-                    <p>Only rooms available for your chosen dates are shown. Both check-in & check-out dates are treated as occupied.</p>
+                    <h4>Room Selection <span style="opacity:0.7;font-weight:400;font-size:0.85rem;">(unlimited rooms per reservation)</span></h4>
+                    <p>Only rooms available for your chosen dates are shown.</p>
                 </div>
             </div>
             <div class="card-body">
+                <div id="roomSlotsContainer"></div>
 
-                <!-- Hidden inputs for up to 2 rooms -->
-                <input type="hidden" name="roomId"  id="roomId"  value="<%= preRoomId %>">
-                <input type="hidden" name="roomId2" id="roomId2" value="">
+                <button type="button" class="add-room-btn" id="addRoomBtn" onclick="addRoomSlot()">
+                    <i class="fas fa-plus-circle"></i> Add Another Room
+                </button>
 
-                <!-- Room tab switcher -->
-                <div class="room-tabs">
-                    <button type="button" class="room-tab-btn active" id="tab-room1" onclick="switchRoomTab(1)">
-                        <i class="fas fa-door-closed"></i> Room 1
-                        <span class="tab-check" id="check-room1"><i class="fas fa-check-circle"></i></span>
-                        <span style="font-size:0.72rem;color:var(--danger);font-weight:700;" id="req-room1">(Required)</span>
-                    </button>
-                    <button type="button" class="room-tab-btn" id="tab-room2" onclick="switchRoomTab(2)">
-                        <i class="fas fa-door-open"></i> Room 2
-                        <span class="tab-check" id="check-room2"><i class="fas fa-check-circle"></i></span>
-                        <span style="font-size:0.72rem;color:var(--gray-600);font-weight:700;" id="req-room2">(Optional)</span>
-                    </button>
-                </div>
-
-                <!-- ROOM 1 PANEL -->
-                <div id="panel-room1">
-                    <div class="room-section-header">
-                        <div class="room-filters" id="typeFilters1">
-                            <span style="font-size:0.8rem;font-weight:600;color:var(--gray-600);align-self:center;">Filter:</span>
-                            <span class="filter-chip active" data-slot="1" data-type="ALL"          onclick="filterRooms(1,'ALL',this)">All</span>
-                            <span class="filter-chip"        data-slot="1" data-type="STANDARD"     onclick="filterRooms(1,'STANDARD',this)">Standard</span>
-                            <span class="filter-chip"        data-slot="1" data-type="DELUXE"       onclick="filterRooms(1,'DELUXE',this)">Deluxe</span>
-                            <span class="filter-chip"        data-slot="1" data-type="SUITE"        onclick="filterRooms(1,'SUITE',this)">Suite</span>
-                            <span class="filter-chip"        data-slot="1" data-type="EXECUTIVE"    onclick="filterRooms(1,'EXECUTIVE',this)">Executive</span>
-                            <span class="filter-chip"        data-slot="1" data-type="FAMILY"       onclick="filterRooms(1,'FAMILY',this)">Family</span>
-                            <span class="filter-chip"        data-slot="1" data-type="PRESIDENTIAL" onclick="filterRooms(1,'PRESIDENTIAL',this)">Presidential</span>
-                        </div>
-                        <div class="room-search-box"><i class="fas fa-search"></i><input type="text" id="roomSearch1" placeholder="Room number..." oninput="filterRooms(1,null,null)"></div>
-                    </div>
-                    <div id="roomsContainer1">
-                        <div class="need-dates-notice"><i class="fas fa-calendar-alt"></i><strong>Fill in check-in and check-out dates above</strong><br><span style="font-size:0.84rem;">Available rooms will appear here.</span></div>
-                    </div>
-                    <div class="selected-room-bar" id="selectedRoomBar1">
-                        <div class="srb-icon"><i class="fas fa-check"></i></div>
-                        <div><div class="srb-name" id="srbName1">—</div><div class="srb-info" id="srbInfo1">—</div></div>
-                        <span class="srb-clear" onclick="clearRoom(1)"><i class="fas fa-times me-1"></i>Change</span>
-                    </div>
-                </div>
-
-                <!-- ROOM 2 PANEL -->
-                <div id="panel-room2" style="display:none;">
-                    <div class="room-section-header">
-                        <div class="room-filters" id="typeFilters2">
-                            <span style="font-size:0.8rem;font-weight:600;color:var(--gray-600);align-self:center;">Filter:</span>
-                            <span class="filter-chip active" data-slot="2" data-type="ALL"          onclick="filterRooms(2,'ALL',this)">All</span>
-                            <span class="filter-chip"        data-slot="2" data-type="STANDARD"     onclick="filterRooms(2,'STANDARD',this)">Standard</span>
-                            <span class="filter-chip"        data-slot="2" data-type="DELUXE"       onclick="filterRooms(2,'DELUXE',this)">Deluxe</span>
-                            <span class="filter-chip"        data-slot="2" data-type="SUITE"        onclick="filterRooms(2,'SUITE',this)">Suite</span>
-                            <span class="filter-chip"        data-slot="2" data-type="EXECUTIVE"    onclick="filterRooms(2,'EXECUTIVE',this)">Executive</span>
-                            <span class="filter-chip"        data-slot="2" data-type="FAMILY"       onclick="filterRooms(2,'FAMILY',this)">Family</span>
-                            <span class="filter-chip"        data-slot="2" data-type="PRESIDENTIAL" onclick="filterRooms(2,'PRESIDENTIAL',this)">Presidential</span>
-                        </div>
-                        <div class="room-search-box"><i class="fas fa-search"></i><input type="text" id="roomSearch2" placeholder="Room number..." oninput="filterRooms(2,null,null)"></div>
-                    </div>
-                    <div id="roomsContainer2">
-                        <div class="need-dates-notice"><i class="fas fa-calendar-alt"></i><strong>Select Room 1 first, then choose Room 2 here</strong><br><span style="font-size:0.84rem;">Room 2 will exclude your already-selected Room 1.</span></div>
-                    </div>
-                    <div class="selected-room-bar" id="selectedRoomBar2">
-                        <div class="srb-icon"><i class="fas fa-check"></i></div>
-                        <div><div class="srb-name" id="srbName2">—</div><div class="srb-info" id="srbInfo2">—</div></div>
-                        <span class="srb-clear" onclick="clearRoom(2)"><i class="fas fa-times me-1"></i>Remove Room 2</span>
-                    </div>
+                <div class="rooms-summary-bar" id="roomsSummaryBar">
+                    <i class="fas fa-door-open"></i>
+                    <span id="roomsSummaryText">1 room selected</span>
                 </div>
 
                 <!-- Bill preview -->
                 <div class="bill-preview" id="billPreview" style="display:none;">
                     <div class="bill-preview-title"><i class="fas fa-receipt"></i> Bill Preview</div>
-                    <!-- Room 1 section -->
-                    <div id="bill-room1-section">
-                        <div class="bill-section-divider">Room 1</div>
-                        <div class="bill-row"><span class="label">Room</span><span id="b-room1">—</span></div>
-                        <div class="bill-row"><span class="label">Rate/night</span><span id="b-rate1">—</span></div>
-                        <div class="bill-row"><span class="label">Room 1 Charges</span><span id="b-charges1">—</span></div>
-                    </div>
-                    <!-- Room 2 section (shown only when room 2 is selected) -->
-                    <div id="bill-room2-section" style="display:none;">
-                        <div class="bill-section-divider">Room 2</div>
-                        <div class="bill-row"><span class="label">Room</span><span id="b-room2">—</span></div>
-                        <div class="bill-row"><span class="label">Rate/night</span><span id="b-rate2">—</span></div>
-                        <div class="bill-row"><span class="label">Room 2 Charges</span><span id="b-charges2">—</span></div>
-                    </div>
-                    <!-- Totals -->
+                    <div id="billRoomsSection"></div>
                     <div class="bill-section-divider" style="margin-top:8px;">Summary</div>
                     <div class="bill-row"><span class="label">Nights</span><span id="b-nights">—</span></div>
                     <div class="bill-row"><span class="label">Total Room Charges</span><span id="b-total-charges">—</span></div>
@@ -582,170 +601,217 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ═══ Global State ═══════════════════════════════════════════════════════════
-    var _ctx   = '<%= request.getContextPath() %>';
+    var _ctx         = '<%= request.getContextPath() %>';
+    var _slots       = [];
+    var _slotSeq     = 0;
+    var _datesLoaded = false;
+    var _modalRoom   = null;
+    var _modalSlotId = null;
 
-    // Each slot: 1 = Room 1 (required), 2 = Room 2 (optional)
-    var _rooms         = { 1: [], 2: [] };  // full available lists
-    var _selectedRoom  = { 1: null, 2: null }; // selected room objects
-    var _filter        = { 1: 'ALL', 2: 'ALL' };
-    var _datesLoaded   = false;
-    var _activeSlot    = 1;   // which tab is showing
-    var _modalRoom     = null;
-    var _modalSlot     = 1;
+    // Pre-existing rooms for edit mode (populated by JSP)
+    var _preRooms = <%= preRoomsJson %>;
 
-    // Pre-fill edit mode room 1
-    <% if (!preRoomId.isEmpty()) { %>
-    _selectedRoom[1] = { id: parseInt('<%= preRoomId %>'), roomNumber: '<%= preRoomNum %>', roomType: '<%= preRoomType %>', basePrice: parseFloat('<%= preRoomPrice %>'), capacity: 0 };
-    <% } %>
+    // ═══ Slot management ════════════════════════════════════════════════════════
 
-    // ═══ 1. Guest Mode ══════════════════════════════════════════════════════════
-    function switchMode(mode) {
-        document.getElementById('guestMode').value = mode;
-        document.getElementById('tab-existing').classList.toggle('active', mode === 'existing');
-        document.getElementById('tab-new').classList.toggle('active', mode === 'new');
-        document.getElementById('panelExisting').style.display = mode === 'existing' ? 'block' : 'none';
-        document.getElementById('panelNew').style.display      = mode === 'new'      ? 'block' : 'none';
+    function createSlot() {
+        _slotSeq++;
+        return { slotId: _slotSeq, roomList: [], selectedRoom: null, filter: 'ALL', open: true };
     }
 
-    // ═══ 2. Guest Search ════════════════════════════════════════════════════════
-    var _searchTimer;
-    var _gsi = document.getElementById('guestSearchInput');
-    if (_gsi) {
-        _gsi.addEventListener('input', function () {
-            clearTimeout(_searchTimer);
-            var q = this.value.trim();
-            if (q.length >= 2) _searchTimer = setTimeout(function () { doSearch(q); }, 350);
-            else hideGuestResults();
-        });
-    }
-    function doSearch(q) {
-        if (!q || q.trim().length < 1) return;
-        fetch(_ctx + '/api/guests/search?keyword=' + encodeURIComponent(q.trim()))
-            .then(function(r){ return r.json(); })
-            .then(renderGuestResults)
-            .catch(function(){ showGuestErr('Search failed. Try again.'); });
-    }
-    function renderGuestResults(guests) {
-        var box = document.getElementById('searchResults');
-        if (!guests || !guests.length) {
-            box.innerHTML = '<div class="sr-item" style="color:var(--gray-600);"><i class="fas fa-info-circle me-2"></i>No guests found. Switch to "New Guest" tab.</div>';
-        } else {
-            box.innerHTML = guests.map(function(g) {
-                var info = []; if(g.email) info.push(g.email); if(g.phone) info.push(g.phone); if(g.guestNumber) info.push('#'+g.guestNumber);
-                var ini = g.fullName ? g.fullName.split(' ').map(function(p){return p[0];}).join('').substring(0,2).toUpperCase() : '??';
-                return '<div class="sr-item" onclick="pickGuest('+g.id+',\''+escJ(g.fullName)+'\',\''+escJ(g.email||'')+'\',\''+escJ(g.phone||'')+'\',\''+escJ(g.guestNumber||'')+'\',\''+escJ(ini)+'\')">' +
-                    '<div class="sr-avatar">'+escH(ini)+'</div><div><div class="sr-name">'+escH(g.fullName)+'</div><div class="sr-info">'+escH(info.join(' · '))+'</div></div></div>';
-            }).join('');
-        }
-        box.style.display = 'block';
-    }
-    function showGuestErr(msg) {
-        var box = document.getElementById('searchResults');
-        box.innerHTML = '<div class="sr-item" style="color:var(--danger);"><i class="fas fa-exclamation-circle me-2"></i>'+msg+'</div>';
-        box.style.display = 'block';
-    }
-    function pickGuest(id, name, email, phone, gnum, ini) {
-        document.getElementById('guestId').value = id;
-        document.getElementById('sgAvatar').textContent = ini || (name ? name.substring(0,2).toUpperCase() : '??');
-        document.getElementById('sgName').textContent   = name;
-        var p = []; if(email) p.push(email); if(phone) p.push(phone); if(gnum) p.push('#'+gnum);
-        document.getElementById('sgInfo').textContent   = p.join(' · ');
-        document.getElementById('selectedGuest').classList.add('show');
-        document.getElementById('guestSearchInput').value = '';
-        hideGuestResults(); updateStepIndicators();
-    }
-    function clearGuest() {
-        document.getElementById('guestId').value = '';
-        document.getElementById('selectedGuest').classList.remove('show');
-        document.getElementById('guestSearchInput').value = '';
+    function addRoomSlot() {
+        var slot = createSlot();
+        _slots.push(slot);
+        renderAllSlots();
+        var ci = document.getElementById('checkInDate').value;
+        var co = document.getElementById('checkOutDate').value;
+        if (ci && co && _datesLoaded) loadRoomsForSlot(slot.slotId, ci, co);
+        setTimeout(function() { toggleSlot(slot.slotId, true); }, 50);
         updateStepIndicators();
     }
-    function hideGuestResults() { var b = document.getElementById('searchResults'); if(b) b.style.display='none'; }
-    document.addEventListener('click', function(e){ if(!e.target.closest('.search-wrap')) hideGuestResults(); });
 
-    // ═══ 3. Dates Change → Load Rooms ═══════════════════════════════════════════
-    function onDatesChange() {
-        var ci = document.getElementById('checkInDate');
-        var co = document.getElementById('checkOutDate');
-        if (ci && co && co.value && ci.value && new Date(co.value) < new Date(ci.value)) {
-            co.value = ''; co.classList.add('is-invalid');
-        } else {
-            if(ci) ci.classList.remove('is-invalid');
-            if(co) co.classList.remove('is-invalid');
-        }
-        recalcBill(); updateStepIndicators();
-        var ciV = document.getElementById('checkInDate').value;
-        var coV = document.getElementById('checkOutDate').value;
-        if (ciV && coV && new Date(coV) >= new Date(ciV)) {
-            // Reset rooms when dates change
-            clearRoom(1, true);
-            clearRoom(2, true);
-            loadRoomsForSlot(1, ciV, coV, null);
-        }
+    function removeRoomSlot(slotId) {
+        _slots = _slots.filter(function(s){ return s.slotId !== slotId; });
+        renderAllSlots();
+        recalcBill();
+        onGuestCountChange();
+        updateStepIndicators();
     }
 
-    function loadRoomsForSlot(slot, checkIn, checkOut, excludeId) {
-        var container = document.getElementById('roomsContainer' + slot);
-        container.innerHTML = '<div class="rooms-loading"><div class="spinner-border text-primary mb-3"></div><div>Loading available rooms...</div></div>';
+    function toggleSlot(slotId, forceOpen) {
+        var slot = getSlot(slotId);
+        if (!slot) return;
+        slot.open = (forceOpen !== undefined) ? forceOpen : !slot.open;
+        var panel = document.getElementById('slot-panel-' + slotId);
+        if (panel) panel.classList.toggle('open', slot.open);
+    }
 
+    function getSlot(slotId) {
+        return _slots.find(function(s){ return s.slotId === slotId; }) || null;
+    }
+
+    function getSelectedRoomIds() {
+        var ids = [];
+        _slots.forEach(function(s){ if (s.selectedRoom) ids.push(s.selectedRoom.id); });
+        return ids;
+    }
+
+    // ═══ Render all slot panels ══════════════════════════════════════════════════
+
+    function renderAllSlots() {
+        var container = document.getElementById('roomSlotsContainer');
+        var existing = document.querySelectorAll('input[name="roomIds"]');
+        existing.forEach(function(el){ el.parentNode.removeChild(el); });
+
+        var html = '';
+        _slots.forEach(function(slot, idx) {
+            var slotNum = idx + 1;
+            var isFirst = idx === 0;
+            var hasRoom = !!slot.selectedRoom;
+            var isOpen  = slot.open;
+            var selectedPreview = hasRoom
+                ? 'Room ' + slot.selectedRoom.roomNumber + ' · $' + slot.selectedRoom.basePrice.toFixed(2) + '/night'
+                : '';
+
+            html += '<div class="room-slot-panel' + (hasRoom ? ' has-room' : '') + (isOpen ? ' open' : '') + '" id="slot-panel-' + slot.slotId + '">';
+            html += '<div class="room-slot-header" onclick="toggleSlot(' + slot.slotId + ')">';
+            html += '<div class="room-slot-title">';
+            html += '<div class="slot-num-badge">' + slotNum + '</div>';
+            html += '<span>Room ' + slotNum + '</span>';
+            html += isFirst
+                ? '<span class="slot-required-badge">(Required)</span>'
+                : '<span class="slot-optional-badge">(Optional)</span>';
+            html += '<i class="fas fa-check-circle slot-check-icon"></i>';
+            if (hasRoom) html += '<span class="slot-selected-preview">' + escH(selectedPreview) + '</span>';
+            html += '</div>';
+            html += '<div style="display:flex;align-items:center;gap:8px;">';
+            if (!isFirst) {
+                html += '<button type="button" class="remove-slot-btn" onclick="event.stopPropagation();removeRoomSlot(' + slot.slotId + ')"><i class="fas fa-trash-alt me-1"></i>Remove</button>';
+            }
+            html += '<i class="fas fa-chevron-down slot-collapse-icon"></i>';
+            html += '</div></div>';
+
+            // Body
+            html += '<div class="room-slot-body">';
+            html += '<div class="room-section-header">';
+            html += '<div class="room-filters" id="typeFilters-' + slot.slotId + '">';
+            html += '<span style="font-size:0.8rem;font-weight:600;color:var(--gray-600);align-self:center;">Filter:</span>';
+            var types = ['ALL','STANDARD','DELUXE','SUITE','EXECUTIVE','FAMILY','PRESIDENTIAL'];
+            types.forEach(function(t) {
+                var isActive = slot.filter === t;
+                html += '<span class="filter-chip' + (isActive ? ' active' : '') + '" onclick="filterRooms(' + slot.slotId + ',\'' + t + '\',this)">' + (t === 'ALL' ? 'All' : t.charAt(0) + t.slice(1).toLowerCase()) + '</span>';
+            });
+            html += '</div>';
+            html += '<div class="room-search-box"><i class="fas fa-search"></i><input type="text" id="roomSearch-' + slot.slotId + '" placeholder="Room number..." oninput="filterRooms(' + slot.slotId + ',null,null)"></div>';
+            html += '</div>';
+            html += '<div id="roomsContainer-' + slot.slotId + '">';
+            if (!_datesLoaded) {
+                html += '<div class="need-dates-notice"><i class="fas fa-calendar-alt"></i><strong>Fill in check-in and check-out dates above</strong><br><span style="font-size:0.84rem;">Available rooms will appear here.</span></div>';
+            } else if (!slot.roomList.length) {
+                html += '<div class="rooms-loading"><div class="spinner-border text-primary mb-3"></div><div>Loading available rooms...</div></div>';
+            }
+            html += '</div>';
+
+            // Selected bar
+            html += '<div class="selected-room-bar' + (hasRoom ? ' show' : '') + '" id="selectedRoomBar-' + slot.slotId + '">';
+            html += '<div class="srb-icon"><i class="fas fa-check"></i></div>';
+            html += '<div><div class="srb-name" id="srbName-' + slot.slotId + '">' + (hasRoom ? 'Room ' + escH(slot.selectedRoom.roomNumber) + ' — ' + escH(slot.selectedRoom.roomType) : '—') + '</div>';
+            html += '<div class="srb-info" id="srbInfo-' + slot.slotId + '">' + (hasRoom ? '$' + slot.selectedRoom.basePrice.toFixed(2) + '/night · Capacity: ' + slot.selectedRoom.capacity + ' guests' : '—') + '</div></div>';
+            html += '<span class="srb-clear" onclick="clearRoom(' + slot.slotId + ')"><i class="fas fa-times me-1"></i>Change</span>';
+            html += '</div>';
+            html += '</div></div>';
+        });
+
+        container.innerHTML = html;
+
+        // Re-render grids for loaded slots
+        _slots.forEach(function(slot) {
+            if (slot.roomList.length) renderRoomGrid(slot.slotId);
+        });
+
+        // Re-inject hidden room ID inputs
+        var form = document.getElementById('resForm');
+        _slots.forEach(function(slot) {
+            var inp = document.createElement('input');
+            inp.type  = 'hidden';
+            inp.name  = 'roomIds';
+            inp.id    = 'roomId-hidden-' + slot.slotId;
+            inp.value = slot.selectedRoom ? slot.selectedRoom.id : '';
+            form.appendChild(inp);
+        });
+
+        updateRoomsSummary();
+    }
+
+    // ═══ Load rooms from server ══════════════════════════════════════════════════
+
+    function loadRoomsForSlot(slotId, checkIn, checkOut) {
+        var container = document.getElementById('roomsContainer-' + slotId);
+        if (container) {
+            container.innerHTML = '<div class="rooms-loading"><div class="spinner-border text-primary mb-3"></div><div>Loading available rooms...</div></div>';
+        }
+        var excludeIds = getSelectedRoomIds();
+        var slot = getSlot(slotId);
+        if (slot && slot.selectedRoom) {
+            excludeIds = excludeIds.filter(function(id){ return id !== slot.selectedRoom.id; });
+        }
         var url = _ctx + '/api/rooms/available?checkIn=' + encodeURIComponent(checkIn) + '&checkOut=' + encodeURIComponent(checkOut);
-        if (excludeId) url += '&excludeRoomId=' + excludeId;
+        excludeIds.forEach(function(id) { url += '&excludeRoomId=' + id; });
 
         fetch(url)
-            .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+            .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(function(rooms) {
-                _rooms[slot] = rooms;
-                if (slot === 1) _datesLoaded = true;
-                renderRooms(slot);
-                onGuestCountChange();
+                var s = getSlot(slotId);
+                if (s) {
+                    s.roomList = rooms;
+                    if (!_datesLoaded) _datesLoaded = true;
+                    renderRoomGrid(slotId);
+                    onGuestCountChange();
+                }
             })
             .catch(function(e) {
                 console.error('Room load error:', e);
-                container.innerHTML = '<div class="no-rooms-msg"><i class="fas fa-exclamation-triangle" style="color:var(--warning);"></i><strong>Failed to load rooms.</strong><br><span style="font-size:0.84rem;">Check dates and try again.</span></div>';
+                var c = document.getElementById('roomsContainer-' + slotId);
+                if (c) c.innerHTML = '<div class="no-rooms-msg"><i class="fas fa-exclamation-triangle" style="color:var(--warning);"></i><strong>Failed to load rooms.</strong><br><span style="font-size:0.84rem;">Check dates and try again.</span></div>';
             });
     }
 
-    // ═══ 4. Room Tab Switching ═══════════════════════════════════════════════════
-    function switchRoomTab(slot) {
-        _activeSlot = slot;
-        document.getElementById('tab-room1').classList.toggle('active', slot === 1);
-        document.getElementById('tab-room2').classList.toggle('active', slot === 2);
-        document.getElementById('panel-room1').style.display = slot === 1 ? 'block' : 'none';
-        document.getElementById('panel-room2').style.display = slot === 2 ? 'block' : 'none';
-
-        // Load room 2 list when switching to tab 2 (exclude room 1)
-        if (slot === 2 && _datesLoaded) {
-            var ci = document.getElementById('checkInDate').value;
-            var co = document.getElementById('checkOutDate').value;
-            var excl = _selectedRoom[1] ? _selectedRoom[1].id : null;
-            if (!_rooms[2].length) {
-                loadRoomsForSlot(2, ci, co, excl);
-            } else {
-                renderRooms(2); // re-render to reflect any room 1 changes
-            }
-        }
+    function loadAllSlotsRooms() {
+        var ci = document.getElementById('checkInDate').value;
+        var co = document.getElementById('checkOutDate').value;
+        if (!ci || !co) return;
+        _datesLoaded = true;
+        _slots.forEach(function(slot) { loadRoomsForSlot(slot.slotId, ci, co); });
     }
 
-    // ═══ 5. Render Rooms ═════════════════════════════════════════════════════════
-    function renderRooms(slot) {
-        var container = document.getElementById('roomsContainer' + slot);
-        var rooms     = _rooms[slot];
-        var keyword   = (document.getElementById('roomSearch' + slot).value || '').trim().toLowerCase();
-        var filt      = _filter[slot];
-        var selId     = _selectedRoom[slot] ? _selectedRoom[slot].id : null;
+    // ═══ Render room grid for one slot ═══════════════════════════════════════════
 
-        // For slot 2: also exclude slot 1 selection from display
-        var excl1 = (slot === 2 && _selectedRoom[1]) ? _selectedRoom[1].id : null;
+    function renderRoomGrid(slotId) {
+        var slot      = getSlot(slotId);
+        var container = document.getElementById('roomsContainer-' + slotId);
+        if (!slot || !container) return;
 
-        var filtered = rooms.filter(function(r) {
-            if (excl1 && r.id === excl1) return false;
+        var keyword  = '';
+        var searchEl = document.getElementById('roomSearch-' + slotId);
+        if (searchEl) keyword = (searchEl.value || '').trim().toLowerCase();
+
+        var filt  = slot.filter;
+        var selId = slot.selectedRoom ? slot.selectedRoom.id : null;
+
+        // Exclude rooms selected in OTHER slots
+        var otherSelectedIds = [];
+        _slots.forEach(function(s) {
+            if (s.slotId !== slotId && s.selectedRoom) otherSelectedIds.push(s.selectedRoom.id);
+        });
+
+        var filtered = slot.roomList.filter(function(r) {
+            if (otherSelectedIds.indexOf(r.id) !== -1) return false;
             var mt = (filt === 'ALL' || r.roomType === filt);
-            var ms = !keyword || r.roomNumber.toLowerCase().includes(keyword);
+            var ms = !keyword || r.roomNumber.toLowerCase().indexOf(keyword) !== -1;
             return mt && ms;
         });
 
         if (!filtered.length) {
-            var msg = rooms.length === 0
+            var msg = slot.roomList.length === 0
                 ? '<strong>No rooms available</strong> for these dates.'
                 : '<strong>No rooms match your filter.</strong> Try a different type or clear search.';
             container.innerHTML = '<div class="no-rooms-msg"><i class="fas fa-door-open"></i>' + msg + '</div>';
@@ -757,17 +823,17 @@
             var isSel = selId && r.id === selId;
             var bc    = getBadge(r.roomType);
             var vstr  = r.roomView ? r.roomView.replace(/_/g,' ') : '';
-            html += '<div class="room-card'+(isSel?' selected':'') + '" id="rc'+slot+'-'+r.id+'" onclick="pickRoom('+slot+','+r.id+',\''+escJ(r.roomNumber)+'\',\''+escJ(r.roomType)+'\','+r.basePrice+','+r.capacity+')">' +
-                '<span class="room-type-badge '+bc+'">'+escH(r.roomType)+'</span>' +
-                '<div class="room-number">'+escH(r.roomNumber)+'</div>' +
-                '<div class="room-floor">'+(r.floorNumber?'Floor '+r.floorNumber:'')+'</div>' +
-                '<div class="room-price">$'+parseFloat(r.basePrice).toFixed(2)+' <small>/ night</small></div>' +
-                '<div class="room-meta">' +
-                '<span class="room-tag"><i class="fas fa-users"></i> '+r.capacity+' pax</span>' +
-                (vstr ? '<span class="room-tag"><i class="fas fa-eye"></i> '+escH(vstr)+'</span>' : '') +
-                '</div>' +
-                '<button type="button" class="room-detail-btn" onclick="event.stopPropagation();showRoomDetail('+slot+','+r.id+')"><i class="fas fa-info-circle me-1"></i>View Details</button>' +
-                '</div>';
+            html += '<div class="room-card' + (isSel ? ' selected' : '') + '" id="rc-' + slotId + '-' + r.id + '" onclick="pickRoom(' + slotId + ',' + r.id + ',\'' + escJ(r.roomNumber) + '\',\'' + escJ(r.roomType) + '\',' + r.basePrice + ',' + r.capacity + ')">';
+            html += '<span class="room-type-badge ' + bc + '">' + escH(r.roomType) + '</span>';
+            html += '<div class="room-number">' + escH(r.roomNumber) + '</div>';
+            html += '<div class="room-floor">' + (r.floorNumber ? 'Floor ' + r.floorNumber : '') + '</div>';
+            html += '<div class="room-price">$' + parseFloat(r.basePrice).toFixed(2) + ' <small>/ night</small></div>';
+            html += '<div class="room-meta">';
+            html += '<span class="room-tag"><i class="fas fa-users"></i> ' + r.capacity + ' pax</span>';
+            if (vstr) html += '<span class="room-tag"><i class="fas fa-eye"></i> ' + escH(vstr) + '</span>';
+            html += '</div>';
+            html += '<button type="button" class="room-detail-btn" onclick="event.stopPropagation();showRoomDetail(' + slotId + ',' + r.id + ')"><i class="fas fa-info-circle me-1"></i>View Details</button>';
+            html += '</div>';
         });
         html += '</div>';
         container.innerHTML = html;
@@ -777,71 +843,114 @@
         return ({STANDARD:'badge-standard',DELUXE:'badge-deluxe',SUITE:'badge-suite',EXECUTIVE:'badge-executive',FAMILY:'badge-family',PRESIDENTIAL:'badge-presidential'}[t] || 'badge-other');
     }
 
-    // ═══ 6. Filter / Search ══════════════════════════════════════════════════════
-    function filterRooms(slot, type, el) {
+    // ═══ Filter ═══════════════════════════════════════════════════════════════════
+
+    function filterRooms(slotId, type, el) {
+        var slot = getSlot(slotId);
+        if (!slot) return;
         if (type !== null) {
-            _filter[slot] = type;
-            document.querySelectorAll('[data-slot="'+slot+'"].filter-chip').forEach(function(c){ c.classList.remove('active'); });
+            slot.filter = type;
+            var chips = document.querySelectorAll('#typeFilters-' + slotId + ' .filter-chip');
+            chips.forEach(function(c){ c.classList.remove('active'); });
             if (el) el.classList.add('active');
         }
-        if (_rooms[slot].length) renderRooms(slot);
+        if (slot.roomList.length) renderRoomGrid(slotId);
     }
 
-    // ═══ 7. Pick Room ════════════════════════════════════════════════════════════
-    function pickRoom(slot, id, num, type, price, cap) {
-        var room = { id: id, roomNumber: num, roomType: type, basePrice: parseFloat(price), capacity: parseInt(cap) };
-        _selectedRoom[slot] = room;
-        document.getElementById('room' + (slot === 1 ? 'Id' : 'Id2')).value = id;
+    // ═══ Pick / Clear room ════════════════════════════════════════════════════════
 
-        renderRooms(slot); // re-render to show checkmark
+    function pickRoom(slotId, id, num, type, price, cap) {
+        var slot = getSlot(slotId);
+        if (!slot) return;
+        slot.selectedRoom = { id: id, roomNumber: num, roomType: type, basePrice: parseFloat(price), capacity: parseInt(cap) };
 
-        var bar = document.getElementById('selectedRoomBar' + slot);
-        document.getElementById('srbName' + slot).textContent = 'Room ' + num + ' — ' + type;
-        document.getElementById('srbInfo' + slot).textContent = '$' + parseFloat(price).toFixed(2) + '/night · Capacity: ' + cap + ' guests';
-        bar.classList.add('show');
+        var inp = document.getElementById('roomId-hidden-' + slotId);
+        if (inp) inp.value = id;
 
-        // Mark tab as having a room
-        document.getElementById('tab-room' + slot).classList.add('has-room');
+        var panel = document.getElementById('slot-panel-' + slotId);
+        if (panel) panel.classList.add('has-room');
 
-        // If room 2 is open, reload to exclude room 1
-        if (slot === 1 && _datesLoaded) {
-            var ci = document.getElementById('checkInDate').value;
-            var co = document.getElementById('checkOutDate').value;
-            _rooms[2] = []; // force reload
-            if (_activeSlot === 2) loadRoomsForSlot(2, ci, co, id);
+        var bar = document.getElementById('selectedRoomBar-' + slotId);
+        if (bar) {
+            bar.classList.add('show');
+            document.getElementById('srbName-' + slotId).textContent = 'Room ' + num + ' — ' + type;
+            document.getElementById('srbInfo-' + slotId).textContent = '$' + parseFloat(price).toFixed(2) + '/night · Capacity: ' + cap + ' guests';
         }
+
+        renderRoomGrid(slotId);
+        _slots.forEach(function(s) {
+            if (s.slotId !== slotId && s.open && s.roomList.length) renderRoomGrid(s.slotId);
+        });
 
         recalcBill();
         onGuestCountChange();
         updateStepIndicators();
+        updateRoomsSummary();
     }
 
-    function clearRoom(slot, silent) {
-        _selectedRoom[slot] = null;
-        document.getElementById('room' + (slot === 1 ? 'Id' : 'Id2')).value = '';
-        var bar = document.getElementById('selectedRoomBar' + slot);
+    function clearRoom(slotId, silent) {
+        var slot = getSlot(slotId);
+        if (!slot) return;
+        slot.selectedRoom = null;
+
+        var inp = document.getElementById('roomId-hidden-' + slotId);
+        if (inp) inp.value = '';
+
+        var panel = document.getElementById('slot-panel-' + slotId);
+        if (panel) panel.classList.remove('has-room');
+
+        var bar = document.getElementById('selectedRoomBar-' + slotId);
         if (bar) bar.classList.remove('show');
-        document.getElementById('tab-room' + slot).classList.remove('has-room');
+
         if (!silent) {
-            renderRooms(slot);
+            renderRoomGrid(slotId);
+            _slots.forEach(function(s) {
+                if (s.slotId !== slotId && s.open && s.roomList.length) renderRoomGrid(s.slotId);
+            });
             recalcBill();
             onGuestCountChange();
             updateStepIndicators();
-        }
-        if (slot === 2) {
-            document.getElementById('bill-room2-section').style.display = 'none';
+            updateRoomsSummary();
         }
     }
 
-    // ═══ 8. Room Detail Modal ════════════════════════════════════════════════════
-    function showRoomDetail(slot, id) {
-        var room = _rooms[slot].find(function(r){ return r.id === id; });
+    // ═══ Dates Change ══════════════════════════════════════════════════════════════
+
+    function onDatesChange() {
+        var ci = document.getElementById('checkInDate');
+        var co = document.getElementById('checkOutDate');
+        if (ci && co && co.value && ci.value && new Date(co.value) < new Date(ci.value)) {
+            co.value = '';
+            co.classList.add('is-invalid');
+        } else {
+            if (ci) ci.classList.remove('is-invalid');
+            if (co) co.classList.remove('is-invalid');
+        }
+        var ciV = document.getElementById('checkInDate').value;
+        var coV = document.getElementById('checkOutDate').value;
+        if (ciV && coV && new Date(coV) >= new Date(ciV)) {
+            _slots.forEach(function(s){ clearRoom(s.slotId, true); });
+            _datesLoaded = false;
+            loadAllSlotsRooms();
+        }
+        recalcBill();
+        updateStepIndicators();
+    }
+
+    // ═══ Room Detail Modal ════════════════════════════════════════════════════════
+
+    function showRoomDetail(slotId, id) {
+        var slot = getSlot(slotId);
+        if (!slot) return;
+        var room = slot.roomList.find(function(r){ return r.id === id; });
         if (!room) return;
-        _modalRoom = room; _modalSlot = slot;
+        _modalRoom   = room;
+        _modalSlotId = slotId;
 
         document.getElementById('md-room-number').textContent = 'Room ' + room.roomNumber;
         var badge = document.getElementById('md-room-type-badge');
-        badge.textContent = room.roomType; badge.className = 'room-type-badge ' + getBadge(room.roomType);
+        badge.textContent = room.roomType;
+        badge.className = 'room-type-badge ' + getBadge(room.roomType);
         document.getElementById('md-floor').textContent    = room.floorNumber ? 'Floor ' + room.floorNumber : '—';
         document.getElementById('md-capacity').textContent = room.capacity + ' Guests';
         document.getElementById('md-view').textContent     = room.roomView ? room.roomView.replace(/_/g,' ') : '—';
@@ -854,29 +963,32 @@
         document.getElementById('md-description').textContent = room.description || 'No description available.';
 
         var btn = document.getElementById('md-select-btn');
-        var cur = _selectedRoom[slot];
+        var cur = slot.selectedRoom;
         if (cur && cur.id === id) {
             btn.innerHTML = '<i class="fas fa-check me-2"></i>Already Selected';
             btn.className = 'btn btn-success';
         } else {
-            btn.innerHTML = '<i class="fas fa-check me-2"></i>Select for Room ' + slot;
+            var slotNum = _slots.findIndex(function(s){ return s.slotId === slotId; }) + 1;
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>Select for Room ' + slotNum;
             btn.className = 'btn btn-primary';
         }
         new bootstrap.Modal(document.getElementById('roomDetailModal')).show();
     }
+
     function selectRoomFromModal() {
-        if (!_modalRoom) return;
+        if (!_modalRoom || !_modalSlotId) return;
         var r = _modalRoom;
-        pickRoom(_modalSlot, r.id, r.roomNumber, r.roomType, r.basePrice, r.capacity);
+        pickRoom(_modalSlotId, r.id, r.roomNumber, r.roomType, r.basePrice, r.capacity);
         bootstrap.Modal.getInstance(document.getElementById('roomDetailModal')).hide();
     }
 
-    // ═══ 9. Capacity Check ═══════════════════════════════════════════════════════
+    // ═══ Capacity Check ════════════════════════════════════════════════════════════
+
     function onGuestCountChange() {
         recalcBill();
         var totalCap = 0;
-        if (_selectedRoom[1]) totalCap += _selectedRoom[1].capacity;
-        if (_selectedRoom[2]) totalCap += _selectedRoom[2].capacity;
+        _slots.forEach(function(s){ if (s.selectedRoom) totalCap += s.selectedRoom.capacity; });
+
         if (totalCap <= 0) {
             document.getElementById('capacityChecker').classList.remove('show');
             document.getElementById('capacityAlert').classList.remove('show');
@@ -897,7 +1009,7 @@
         if (total > totalCap) {
             bar.classList.add('over');
             document.getElementById('capacityText').style.color = 'var(--danger)';
-            document.getElementById('capacityAlertMsg').textContent = '⚠ Guest count (' + total + ') exceeds combined room capacity (' + totalCap + '). Add a second room or reduce guests.';
+            document.getElementById('capacityAlertMsg').textContent = '⚠ Guest count (' + total + ') exceeds combined room capacity (' + totalCap + '). Add more rooms or reduce guests.';
             document.getElementById('capacityAlert').classList.add('show');
         } else if (pct >= 80) {
             bar.classList.add('warn');
@@ -907,40 +1019,40 @@
         }
     }
 
-    // ═══ 10. Bill Calculation ════════════════════════════════════════════════════
+    // ═══ Bill Calculation ══════════════════════════════════════════════════════════
+
     function recalcBill() {
         var ci   = document.getElementById('checkInDate').value;
         var co   = document.getElementById('checkOutDate').value;
         var disc = parseFloat(document.getElementById('discountAmount').value) || 0;
-        var r1   = _selectedRoom[1];
-        var r2   = _selectedRoom[2];
 
-        if (!ci || !co || !r1) { document.getElementById('billPreview').style.display = 'none'; return; }
+        var selectedSlots = _slots.filter(function(s){ return s.selectedRoom; });
+        if (!ci || !co || selectedSlots.length === 0) {
+            document.getElementById('billPreview').style.display = 'none';
+            return;
+        }
         var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
         if (nights <= 0) return;
 
         document.getElementById('billPreview').style.display = 'block';
 
-        var charges1 = r1.basePrice * nights;
-        document.getElementById('b-room1').textContent    = 'Room ' + r1.roomNumber;
-        document.getElementById('b-rate1').textContent    = '$' + r1.basePrice.toFixed(2) + '/night';
-        document.getElementById('b-charges1').textContent = '$' + charges1.toFixed(2);
+        var billHtml     = '';
+        var totalCharges = 0;
+        selectedSlots.forEach(function(s) {
+            var r       = s.selectedRoom;
+            var charges = r.basePrice * nights;
+            totalCharges += charges;
+            var slotNum = _slots.indexOf(s) + 1;
+            billHtml += '<div class="bill-section-divider">Room ' + slotNum + '</div>';
+            billHtml += '<div class="bill-row"><span class="label">Room</span><span>Room ' + escH(r.roomNumber) + '</span></div>';
+            billHtml += '<div class="bill-row"><span class="label">Rate/night</span><span>$' + r.basePrice.toFixed(2) + '</span></div>';
+            billHtml += '<div class="bill-row"><span class="label">Room ' + slotNum + ' Charges</span><span>$' + charges.toFixed(2) + '</span></div>';
+        });
+        document.getElementById('billRoomsSection').innerHTML = billHtml;
 
-        var charges2 = 0;
-        if (r2) {
-            charges2 = r2.basePrice * nights;
-            document.getElementById('bill-room2-section').style.display = 'block';
-            document.getElementById('b-room2').textContent    = 'Room ' + r2.roomNumber;
-            document.getElementById('b-rate2').textContent    = '$' + r2.basePrice.toFixed(2) + '/night';
-            document.getElementById('b-charges2').textContent = '$' + charges2.toFixed(2);
-        } else {
-            document.getElementById('bill-room2-section').style.display = 'none';
-        }
-
-        var totalCharges = charges1 + charges2;
-        var taxable      = totalCharges - disc;
-        var tax          = taxable * 0.12;
-        var total        = taxable + tax;
+        var taxable = totalCharges - disc;
+        var tax     = taxable * 0.12;
+        var total   = taxable + tax;
 
         document.getElementById('b-nights').textContent        = nights + ' night' + (nights > 1 ? 's' : '');
         document.getElementById('b-total-charges').textContent = '$' + totalCharges.toFixed(2);
@@ -949,22 +1061,40 @@
         document.getElementById('b-total').textContent         = '$' + total.toFixed(2);
     }
 
-    // ═══ 11. Step Indicators ═════════════════════════════════════════════════════
+    // ═══ Rooms Summary Bar ════════════════════════════════════════════════════════
+
+    function updateRoomsSummary() {
+        var count = _slots.filter(function(s){ return s.selectedRoom; }).length;
+        var bar   = document.getElementById('roomsSummaryBar');
+        if (count > 0) {
+            bar.classList.add('show');
+            document.getElementById('roomsSummaryText').textContent = count + ' room' + (count > 1 ? 's' : '') + ' selected';
+        } else {
+            bar.classList.remove('show');
+        }
+    }
+
+    // ═══ Step Indicators ══════════════════════════════════════════════════════════
+
     function updateStepIndicators() {
-        var modeEl = document.getElementById('guestMode');
-        var mode   = modeEl ? modeEl.value : 'existing';
+        var modeEl  = document.getElementById('guestMode');
+        var mode    = modeEl ? modeEl.value : 'existing';
         var guestOk = mode === 'existing'
             ? !!(document.getElementById('guestId') && document.getElementById('guestId').value)
             : (document.getElementById('newFirstName') && document.getElementById('newLastName') &&
                 document.getElementById('newFirstName').value.trim() && document.getElementById('newLastName').value.trim());
         var datesOk = !!(document.getElementById('checkInDate').value && document.getElementById('checkOutDate').value);
-        var roomOk  = !!_selectedRoom[1];
+        var roomOk  = _slots.some(function(s){ return s.selectedRoom; });
 
-        setStep(1, guestOk); setStep(2, datesOk); setStep(3, roomOk);
+        setStep(1, guestOk);
+        setStep(2, datesOk);
+        setStep(3, roomOk);
         setStep(4, guestOk && datesOk && roomOk, true);
     }
+
     function setStep(num, done, isLast) {
-        var el = document.getElementById('step-' + num); if (!el) return;
+        var el = document.getElementById('step-' + num);
+        if (!el) return;
         el.classList.remove('done','active');
         if (done) {
             el.classList.add('done');
@@ -978,7 +1108,8 @@
         }
     }
 
-    // ═══ 12. Validate ════════════════════════════════════════════════════════════
+    // ═══ Validate ═════════════════════════════════════════════════════════════════
+
     function validateForm() {
         var mode = (document.getElementById('guestMode') || {}).value || 'existing';
         if (mode === 'existing') {
@@ -986,37 +1117,133 @@
             if (!gid || !gid.value) { alert('Please search and select a guest, or switch to "New Guest" tab.'); return false; }
         } else {
             var fn = document.getElementById('newFirstName'), ln = document.getElementById('newLastName');
-            if (!fn.value.trim() || !ln.value.trim()) { alert('First name and last name are required.'); return false; }
+            if (!fn || !ln || !fn.value.trim() || !ln.value.trim()) { alert('First name and last name are required.'); return false; }
         }
         var ci = document.getElementById('checkInDate').value;
         var co = document.getElementById('checkOutDate').value;
         if (!ci || !co) { alert('Please select check-in and check-out dates.'); return false; }
         if (new Date(co) < new Date(ci)) { alert('Check-out date must not be before check-in date.'); return false; }
-        if (!_selectedRoom[1]) { alert('Please select at least Room 1.'); return false; }
 
-        // Combined capacity check
-        var totalCap = (_selectedRoom[1] ? _selectedRoom[1].capacity : 0) + (_selectedRoom[2] ? _selectedRoom[2].capacity : 0);
+        var selectedSlots = _slots.filter(function(s){ return s.selectedRoom; });
+        if (selectedSlots.length === 0) { alert('Please select at least one room.'); return false; }
+
+        var ids = selectedSlots.map(function(s){ return s.selectedRoom.id; });
+        var uniqueIds = ids.filter(function(v, i){ return ids.indexOf(v) === i; });
+        if (ids.length !== uniqueIds.length) { alert('Duplicate rooms detected. Please select different rooms.'); return false; }
+
+        var totalCap = 0;
+        selectedSlots.forEach(function(s){ totalCap += s.selectedRoom.capacity; });
         if (totalCap > 0) {
             var guests = (parseInt(document.getElementById('adults').value) || 0) + (parseInt(document.getElementById('children').value) || 0);
             if (guests > totalCap) {
-                alert('Guest count (' + guests + ') exceeds combined room capacity (' + totalCap + '). Add a second room or reduce guest count.');
+                alert('Guest count (' + guests + ') exceeds combined room capacity (' + totalCap + '). Add more rooms or reduce guest count.');
                 return false;
             }
         }
         return true;
     }
 
-    // ═══ Helpers ═════════════════════════════════════════════════════════════════
+    // ═══ Guest Mode ═══════════════════════════════════════════════════════════════
+
+    function switchMode(mode) {
+        document.getElementById('guestMode').value = mode;
+        document.getElementById('tab-existing').classList.toggle('active', mode === 'existing');
+        document.getElementById('tab-new').classList.toggle('active', mode === 'new');
+        document.getElementById('panelExisting').style.display = mode === 'existing' ? 'block' : 'none';
+        document.getElementById('panelNew').style.display      = mode === 'new'      ? 'block' : 'none';
+    }
+
+    // ═══ Guest Search ══════════════════════════════════════════════════════════════
+
+    var _searchTimer;
+    var _gsi = document.getElementById('guestSearchInput');
+    if (_gsi) {
+        _gsi.addEventListener('input', function() {
+            clearTimeout(_searchTimer);
+            var q = this.value.trim();
+            if (q.length >= 2) _searchTimer = setTimeout(function(){ doSearch(q); }, 350);
+            else hideGuestResults();
+        });
+    }
+
+    function doSearch(q) {
+        if (!q || q.trim().length < 1) return;
+        fetch(_ctx + '/api/guests/search?keyword=' + encodeURIComponent(q.trim()))
+            .then(function(r){ return r.json(); })
+            .then(renderGuestResults)
+            .catch(function(){ showGuestErr('Search failed. Try again.'); });
+    }
+
+    function renderGuestResults(guests) {
+        var box = document.getElementById('searchResults');
+        if (!guests || !guests.length) {
+            box.innerHTML = '<div class="sr-item" style="color:var(--gray-600);"><i class="fas fa-info-circle me-2"></i>No guests found. Switch to "New Guest" tab.</div>';
+        } else {
+            box.innerHTML = guests.map(function(g) {
+                var info = [];
+                if (g.email) info.push(g.email);
+                if (g.phone) info.push(g.phone);
+                if (g.guestNumber) info.push('#' + g.guestNumber);
+                var ini = g.fullName ? g.fullName.split(' ').map(function(p){ return p[0]; }).join('').substring(0,2).toUpperCase() : '??';
+                return '<div class="sr-item" onclick="pickGuest(' + g.id + ',\'' + escJ(g.fullName) + '\',\'' + escJ(g.email||'') + '\',\'' + escJ(g.phone||'') + '\',\'' + escJ(g.guestNumber||'') + '\',\'' + escJ(ini) + '\')">' +
+                    '<div class="sr-avatar">' + escH(ini) + '</div>' +
+                    '<div><div class="sr-name">' + escH(g.fullName) + '</div>' +
+                    '<div class="sr-info">' + escH(info.join(' · ')) + '</div></div></div>';
+            }).join('');
+        }
+        box.style.display = 'block';
+    }
+
+    function showGuestErr(msg) {
+        var box = document.getElementById('searchResults');
+        box.innerHTML = '<div class="sr-item" style="color:var(--danger);"><i class="fas fa-exclamation-circle me-2"></i>' + msg + '</div>';
+        box.style.display = 'block';
+    }
+
+    function pickGuest(id, name, email, phone, gnum, ini) {
+        document.getElementById('guestId').value = id;
+        document.getElementById('sgAvatar').textContent = ini || (name ? name.substring(0,2).toUpperCase() : '??');
+        document.getElementById('sgName').textContent   = name;
+        var p = [];
+        if (email) p.push(email);
+        if (phone) p.push(phone);
+        if (gnum)  p.push('#' + gnum);
+        document.getElementById('sgInfo').textContent = p.join(' · ');
+        document.getElementById('selectedGuest').classList.add('show');
+        document.getElementById('guestSearchInput').value = '';
+        hideGuestResults();
+        updateStepIndicators();
+    }
+
+    function clearGuest() {
+        document.getElementById('guestId').value = '';
+        document.getElementById('selectedGuest').classList.remove('show');
+        document.getElementById('guestSearchInput').value = '';
+        updateStepIndicators();
+    }
+
+    function hideGuestResults() {
+        var b = document.getElementById('searchResults');
+        if (b) b.style.display = 'none';
+    }
+
+    document.addEventListener('click', function(e){
+        if (!e.target.closest('.search-wrap')) hideGuestResults();
+    });
+
+    // ═══ Helpers ══════════════════════════════════════════════════════════════════
+
     function escJ(s) { if(!s) return ''; return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n'); }
     function escH(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    // ═══ Init ════════════════════════════════════════════════════════════════════
-    document.addEventListener('DOMContentLoaded', function () {
+    // ═══ Init ═════════════════════════════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', function() {
         // Date constraint: checkout min = checkin
         var ciEl = document.getElementById('checkInDate');
         var coEl = document.getElementById('checkOutDate');
         if (ciEl) {
-            ciEl.addEventListener('change', function () {
+            ciEl.addEventListener('change', function() {
                 if (coEl) {
                     coEl.min = this.value;
                     if (coEl.value && new Date(coEl.value) < new Date(this.value)) coEl.value = '';
@@ -1024,21 +1251,53 @@
             });
         }
 
-        // Edit mode: pre-load rooms
-        <% if (isEdit && !preCheckIn.isEmpty() && !preCheckOut.isEmpty()) { %>
-        loadRoomsForSlot(1, '<%= preCheckIn %>', '<%= preCheckOut %>', null);
-        setTimeout(function() {
-            if (_selectedRoom[1]) {
-                document.getElementById('roomId').value = '<%= preRoomId %>';
-                var bar = document.getElementById('selectedRoomBar1');
-                document.getElementById('srbName1').textContent = 'Room <%= preRoomNum %> — <%= preRoomType %>';
-                document.getElementById('srbInfo1').textContent = '$<%= preRoomPrice %>/night (previously selected)';
-                bar.classList.add('show');
-                document.getElementById('tab-room1').classList.add('has-room');
-                recalcBill();
+        var isEditMode = (<%= isEdit ? "true" : "false" %>);
+
+        if (isEditMode && _preRooms.length > 0) {
+            // ── Edit mode: create one slot per pre-existing room ──────────────────
+            var ci = '<%= preCheckIn %>';
+            var co = '<%= preCheckOut %>';
+            _datesLoaded = true;
+
+            _preRooms.forEach(function(preRoom, idx) {
+                var slot = createSlot();
+                // Mark slot as already having a room selected (pre-fill)
+                slot.selectedRoom = {
+                    id:         preRoom.id,
+                    roomNumber: preRoom.roomNumber,
+                    roomType:   preRoom.roomType,
+                    basePrice:  preRoom.basePrice,
+                    capacity:   preRoom.capacity
+                };
+                _slots.push(slot);
+            });
+
+            renderAllSlots();
+
+            // Load room lists for each slot so user can change rooms
+            _slots.forEach(function(slot) {
+                loadRoomsForSlot(slot.slotId, ci, co);
+            });
+
+            recalcBill();
+            onGuestCountChange();
+            updateStepIndicators();
+            updateRoomsSummary();
+
+        } else {
+            // ── New reservation: single empty slot ────────────────────────────────
+            var firstSlot = createSlot();
+            _slots.push(firstSlot);
+            renderAllSlots();
+
+            // If dates already filled (e.g. back-navigation), load rooms immediately
+            var ci = document.getElementById('checkInDate').value;
+            var co = document.getElementById('checkOutDate').value;
+            if (ci && co) {
+                _datesLoaded = true;
+                loadRoomsForSlot(firstSlot.slotId, ci, co);
             }
-        }, 900);
-        <% } %>
+        }
 
         updateStepIndicators();
     });

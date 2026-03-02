@@ -6,6 +6,12 @@ import com.oceanview.model.Guest;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Maps between Guest entity and GuestDTO.
+ *
+ * Note: idCardType is stored as a plain String in both Guest and GuestDTO
+ * (the DB column is an ENUM but Java treats it as String — no IdCardType enum exists).
+ */
 public class GuestMapper {
 
     private static GuestMapper instance;
@@ -19,10 +25,10 @@ public class GuestMapper {
         return instance;
     }
 
+    // ── Entity → DTO ─────────────────────────────────────────────────────────────
+
     public GuestDTO toDTO(Guest guest) {
-        if (guest == null) {
-            return null;
-        }
+        if (guest == null) return null;
 
         GuestDTO dto = new GuestDTO();
         dto.setId(guest.getId());
@@ -36,7 +42,8 @@ public class GuestMapper {
         dto.setCountry(guest.getCountry());
         dto.setPostalCode(guest.getPostalCode());
         dto.setIdCardNumber(guest.getIdCardNumber());
-        dto.setIdCardType(guest.getIdCardType() != null ? guest.getIdCardType().name() : null);
+        // idCardType is already a String — no .name() call needed
+        dto.setIdCardType(guest.getIdCardType());
         dto.setIsVip(guest.isVip());
         dto.setLoyaltyPoints(guest.getLoyaltyPoints());
         dto.setNotes(guest.getNotes());
@@ -46,16 +53,10 @@ public class GuestMapper {
         return dto;
     }
 
-    public List<GuestDTO> toDTOList(List<Guest> guests) {
-        return guests.stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
+    // ── DTO → Entity ─────────────────────────────────────────────────────────────
 
     public Guest toEntity(GuestDTO dto) {
-        if (dto == null) {
-            return null;
-        }
+        if (dto == null) return null;
 
         Guest guest = new Guest();
         guest.setId(dto.getId());
@@ -69,15 +70,22 @@ public class GuestMapper {
         guest.setCountry(dto.getCountry());
         guest.setPostalCode(dto.getPostalCode());
         guest.setIdCardNumber(dto.getIdCardNumber());
-
-        if (dto.getIdCardType() != null && !dto.getIdCardType().isEmpty()) {
-            guest.setIdCardType(Guest.IdCardType.valueOf(dto.getIdCardType()));
-        }
-
-        guest.setVip(dto.getIsVip() != null ? dto.getIsVip() : false);
+        // idCardType is a plain String — assign directly, no enum conversion
+        guest.setIdCardType(dto.getIdCardType());
+        guest.setVip(dto.getIsVip() != null && dto.getIsVip());
         guest.setLoyaltyPoints(dto.getLoyaltyPoints() != null ? dto.getLoyaltyPoints() : 0);
         guest.setNotes(dto.getNotes());
 
         return guest;
+    }
+
+    // ── List helpers ──────────────────────────────────────────────────────────────
+
+    public List<GuestDTO> toDTOList(List<Guest> guests) {
+        return guests.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    public List<Guest> toEntityList(List<GuestDTO> dtos) {
+        return dtos.stream().map(this::toEntity).collect(Collectors.toList());
     }
 }

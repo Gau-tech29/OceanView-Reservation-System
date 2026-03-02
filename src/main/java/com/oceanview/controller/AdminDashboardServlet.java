@@ -21,14 +21,14 @@ import java.util.List;
 public class AdminDashboardServlet extends HttpServlet {
 
     private ReservationService reservationService;
-    private RoomService roomService;
-    private GuestService guestService;
+    private RoomService        roomService;
+    private GuestService       guestService;
 
     @Override
     public void init() throws ServletException {
         reservationService = new ReservationService();
-        roomService = new RoomService();
-        guestService = new GuestService();
+        roomService        = new RoomService();
+        guestService       = new GuestService();
     }
 
     @Override
@@ -50,9 +50,10 @@ public class AdminDashboardServlet extends HttpServlet {
         try {
             DashboardStatsDTO stats = new DashboardStatsDTO();
 
-            int totalRooms = (int) roomService.getTotalRooms();
-            int availableRooms = (int) roomService.getAvailableRoomsCount();
-            int occupiedRooms = (int) roomService.getOccupiedRoomsCount();
+            // ── Room stats ───────────────────────────────────────────────────────
+            int totalRooms       = (int) roomService.getTotalRooms();
+            int availableRooms   = (int) roomService.getAvailableRoomsCount();
+            int occupiedRooms    = (int) roomService.getOccupiedRoomsCount();
             int maintenanceRooms = (int) roomService.getMaintenanceRoomsCount();
 
             stats.setTotalRooms(totalRooms);
@@ -60,21 +61,28 @@ public class AdminDashboardServlet extends HttpServlet {
             stats.setOccupiedRooms(occupiedRooms);
             stats.setMaintenanceRooms(maintenanceRooms);
 
+            // ── Reservation stats ────────────────────────────────────────────────
             stats.setTotalReservations((int) reservationService.getTotalReservationsCount());
             stats.setActiveReservations((int) reservationService.getActiveReservationsCount());
             stats.setTodayCheckIns(reservationService.getTodaysCheckInsCount());
             stats.setTodayCheckOuts(reservationService.getTodaysCheckOutsCount());
             stats.setMonthlyRevenue(reservationService.getCurrentMonthRevenue());
-            stats.setTotalGuests((int) guestService.getActiveGuestsCount());
 
+            // ── Guest stats ──────────────────────────────────────────────────────
+            // Use long to avoid lossy cast — DashboardStatsDTO.setTotalGuests accepts long
+            stats.setTotalGuests(guestService.getActiveGuestsCount());
+
+            // ── Occupancy rate ───────────────────────────────────────────────────
             double occupancyRate = totalRooms > 0
-                    ? ((double) (totalRooms - availableRooms) / totalRooms) * 100
-                    : 0;
+                    ? ((double) (totalRooms - availableRooms) / totalRooms) * 100.0
+                    : 0.0;
             stats.setOccupancyRate(occupancyRate);
 
             request.setAttribute("stats", stats);
 
-            List<ReservationDTO> recentReservations = reservationService.getRecentReservations(8);
+            // ── Recent reservations ──────────────────────────────────────────────
+            List<ReservationDTO> recentReservations =
+                    reservationService.getRecentReservations(8);
             request.setAttribute("recentReservations", recentReservations);
 
         } catch (SQLException e) {
@@ -82,6 +90,7 @@ public class AdminDashboardServlet extends HttpServlet {
             request.setAttribute("error", "Failed to load dashboard data: " + e.getMessage());
         }
 
-        request.getRequestDispatcher("/WEB-INF/views/admin/dashboard.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/admin/dashboard.jsp")
+                .forward(request, response);
     }
 }

@@ -20,14 +20,14 @@ import java.util.List;
 public class StaffDashboardServlet extends HttpServlet {
 
     private ReservationService reservationService;
-    private RoomService roomService;
-    private GuestService guestService;
+    private RoomService        roomService;
+    private GuestService       guestService;
 
     @Override
     public void init() throws ServletException {
         reservationService = new ReservationService();
-        roomService = new RoomService();
-        guestService = new GuestService();
+        roomService        = new RoomService();
+        guestService       = new GuestService();
     }
 
     @Override
@@ -42,26 +42,36 @@ public class StaffDashboardServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
 
+        // Redirect admin to their own dashboard
+        if (user.isAdmin()) {
+            response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+            return;
+        }
+
         try {
-            int activeReservations = (int) reservationService.getActiveReservationsCount();
-            int availableRooms = (int) roomService.getAvailableRoomsCount();
-            long totalGuests = guestService.getActiveGuestsCount();
-            int todayCheckins = reservationService.getTodaysCheckInsCount();
-            int todayCheckouts = reservationService.getTodaysCheckOutsCount();
-            List<ReservationDTO> recentReservations = reservationService.getRecentReservations(8);
+            int  activeReservations = (int)  reservationService.getActiveReservationsCount();
+            int  availableRooms     = (int)  roomService.getAvailableRoomsCount();
+            long totalGuests        =        guestService.getActiveGuestsCount();
+            int  todayCheckins      =        reservationService.getTodaysCheckInsCount();
+            int  todayCheckouts     =        reservationService.getTodaysCheckOutsCount();
+
+            List<ReservationDTO> recentReservations =
+                    reservationService.getRecentReservations(8);
 
             request.setAttribute("activeReservations", activeReservations);
-            request.setAttribute("availableRooms", availableRooms);
-            request.setAttribute("totalGuests", totalGuests);
-            request.setAttribute("todayCheckins", todayCheckins);
-            request.setAttribute("todayCheckouts", todayCheckouts);
+            request.setAttribute("availableRooms",     availableRooms);
+            request.setAttribute("totalGuests",        totalGuests);
+            request.setAttribute("todayCheckins",      todayCheckins);
+            request.setAttribute("todayCheckouts",     todayCheckouts);
             request.setAttribute("recentReservations", recentReservations);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("error", "Failed to load dashboard data: " + e.getMessage());
+            request.setAttribute("error",
+                    "Failed to load dashboard data: " + e.getMessage());
         }
 
-        request.getRequestDispatcher("/WEB-INF/views/staff/dashboard.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/staff/dashboard.jsp")
+                .forward(request, response);
     }
 }

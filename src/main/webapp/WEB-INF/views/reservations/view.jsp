@@ -30,7 +30,7 @@
     }
     .sidebar-brand { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; }
     .sidebar-brand h3 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-    .sidebar-brand p { font-size: 0.85rem; opacity: 0.8; margin: 5px 0 0; }
+    .sidebar-brand p  { font-size: 0.85rem; opacity: 0.8; margin: 5px 0 0; }
     .sidebar-menu { list-style: none; padding: 0 15px; }
     .sidebar-menu a {
       display: flex; align-items: center; padding: 12px 20px;
@@ -65,13 +65,13 @@
     .reservation-number { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
     .reservation-number small { font-size: 0.9rem; color: #6c757d; font-weight: normal; }
     .status-badge { padding: 8px 20px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; }
-    .status-confirmed  { background: #d4edda; color: #155724; }
-    .status-checked-in { background: #cce5ff; color: #004085; }
-    .status-checked-out{ background: #e2e3e5; color: #383d41; }
-    .status-cancelled  { background: #f8d7da; color: #721c24; }
-    .status-pending    { background: #fff3cd; color: #856404; }
-    .payment-paid      { background: #d4edda; color: #155724; }
-    .payment-pending   { background: #fff3cd; color: #856404; }
+    .status-confirmed   { background: #d4edda; color: #155724; }
+    .status-checked-in  { background: #cce5ff; color: #004085; }
+    .status-checked-out { background: #e2e3e5; color: #383d41; }
+    .status-cancelled   { background: #f8d7da; color: #721c24; }
+    .status-pending     { background: #fff3cd; color: #856404; }
+    .payment-paid       { background: #d4edda; color: #155724; }
+    .payment-pending    { background: #fff3cd; color: #856404; }
 
     .info-section { margin-bottom: 30px; }
     .info-section h5 {
@@ -96,6 +96,8 @@
     }
     .btn-action { padding: 10px 20px; border-radius: 10px; font-weight: 500; transition: all 0.3s; }
     .btn-action:hover { transform: translateY(-2px); }
+    /* Inline delete form should look like a button */
+    .delete-form { display: inline; margin: 0; padding: 0; }
 
     .alert { border-radius: 10px; margin-bottom: 20px; }
 
@@ -190,10 +192,7 @@
           <div>
             <div class="reservation-number">
                 ${reservation.reservationNumber}
-                <%-- Use safe formatted date helper instead of fmt:formatDate --%>
-              <small class="d-block mt-1">
-                Created: ${reservation.formattedCreatedAt}
-              </small>
+              <small class="d-block mt-1">Created: ${reservation.formattedCreatedAt}</small>
             </div>
           </div>
           <div class="d-flex gap-2 flex-wrap">
@@ -219,7 +218,10 @@
                 <span class="status-badge payment-paid"><i class="fas fa-dollar-sign me-1"></i>Paid</span>
               </c:when>
               <c:otherwise>
-                <span class="status-badge payment-pending"><i class="fas fa-hourglass-half me-1"></i>${reservation.paymentStatus}</span>
+                <span class="status-badge payment-pending">
+                  <i class="fas fa-hourglass-half me-1"></i>
+                  <c:out value="${reservation.paymentStatus}"/>
+                </span>
               </c:otherwise>
             </c:choose>
           </div>
@@ -231,20 +233,30 @@
           <div class="info-grid">
             <div class="info-item">
               <div class="label">Full Name</div>
-              <div class="value">${reservation.guestName}</div>
+              <div class="value"><c:out value="${reservation.guestName}"/></div>
             </div>
             <div class="info-item">
               <div class="label">Email</div>
-              <div class="value">${not empty reservation.guestEmail ? reservation.guestEmail : '—'}</div>
+              <div class="value">
+                <c:choose>
+                  <c:when test="${not empty reservation.guestEmail}"><c:out value="${reservation.guestEmail}"/></c:when>
+                  <c:otherwise>—</c:otherwise>
+                </c:choose>
+              </div>
             </div>
             <div class="info-item">
               <div class="label">Phone</div>
-              <div class="value">${not empty reservation.guestPhone ? reservation.guestPhone : '—'}</div>
+              <div class="value">
+                <c:choose>
+                  <c:when test="${not empty reservation.guestPhone}"><c:out value="${reservation.guestPhone}"/></c:when>
+                  <c:otherwise>—</c:otherwise>
+                </c:choose>
+              </div>
             </div>
             <c:if test="${not empty reservation.guestNumber}">
               <div class="info-item">
                 <div class="label">Guest #</div>
-                <div class="value">${reservation.guestNumber}</div>
+                <div class="value"><c:out value="${reservation.guestNumber}"/></div>
               </div>
             </c:if>
           </div>
@@ -253,27 +265,68 @@
         <!-- ── Room Information ── -->
         <div class="info-section">
           <h5><i class="fas fa-door-open me-2"></i>Room Information</h5>
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Room Number</div>
-              <div class="value">${reservation.roomNumber}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Room Type</div>
-              <div class="value">${reservation.roomType}</div>
-            </div>
-            <c:if test="${not empty reservation.roomView}">
-              <div class="info-item">
-                <div class="label">Room View</div>
-                <div class="value">${reservation.roomView}</div>
+          <c:choose>
+            <c:when test="${not empty reservation.rooms}">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                  <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Room Number</th>
+                    <th>Room Type</th>
+                    <th>View</th>
+                    <th>Floor</th>
+                    <th>Capacity</th>
+                    <th>Price/Night</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
+                    <tr>
+                      <td><span class="badge bg-primary">${loop.index + 1}</span></td>
+                      <td><strong><c:out value="${room.roomNumber}"/></strong></td>
+                      <td>
+                          <span class="badge"
+                                style="background:
+                                <c:choose>
+                                <c:when test="${room.roomType == 'DELUXE'}">#f3e5f5;color:#7b1fa2</c:when>
+                                <c:when test="${room.roomType == 'SUITE'}">#fff8e1;color:#f57f17</c:when>
+                                <c:when test="${room.roomType == 'EXECUTIVE'}">#e8f5e9;color:#2e7d32</c:when>
+                                <c:when test="${room.roomType == 'FAMILY'}">#fce4ec;color:#c62828</c:when>
+                                <c:when test="${room.roomType == 'PRESIDENTIAL'}">#fdf3e7;color:#e65100</c:when>
+                                <c:otherwise>#e3f2fd;color:#1565c0</c:otherwise>
+                                        </c:choose>">
+                            <c:out value="${room.roomType}"/>
+                          </span>
+                      </td>
+                      <td><c:out value="${not empty room.roomView ? room.roomView : '—'}"/></td>
+                      <td><c:out value="${not empty room.floorNumber ? room.floorNumber : '—'}"/></td>
+                      <td><c:out value="${not empty room.capacity ? room.capacity : '—'}"/></td>
+                      <td>
+                        <c:choose>
+                          <c:when test="${not empty room.roomPrice}">
+                            $<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/>
+                          </c:when>
+                          <c:otherwise>—</c:otherwise>
+                        </c:choose>
+                      </td>
+                    </tr>
+                  </c:forEach>
+                  </tbody>
+                </table>
               </div>
-            </c:if>
-            <c:if test="${reservation.floorNumber != null}">
-              <div class="info-item">
-                <div class="label">Floor</div>
-                <div class="value">${reservation.floorNumber}</div>
+            </c:when>
+            <c:otherwise>
+              <div class="alert alert-warning">
+                <i class="fas fa-info-circle me-2"></i>No room details available.
               </div>
-            </c:if>
+            </c:otherwise>
+          </c:choose>
+          <div class="info-grid mt-3">
+            <div class="info-item">
+              <div class="label">Total Rooms</div>
+              <div class="value">${reservation.numberOfRooms}</div>
+            </div>
           </div>
         </div>
 
@@ -283,7 +336,6 @@
           <div class="info-grid">
             <div class="info-item">
               <div class="label">Check-in</div>
-                <%-- Safe: use formattedCheckInDate helper instead of fmt:formatDate --%>
               <div class="value">${reservation.formattedCheckInDate}</div>
             </div>
             <div class="info-item">
@@ -301,7 +353,7 @@
             <c:if test="${not empty reservation.source}">
               <div class="info-item">
                 <div class="label">Source</div>
-                <div class="value">${reservation.source}</div>
+                <div class="value"><c:out value="${reservation.source}"/></div>
               </div>
             </c:if>
           </div>
@@ -311,23 +363,80 @@
         <div class="info-section">
           <h5><i class="fas fa-dollar-sign me-2"></i>Price Breakdown</h5>
           <div class="price-breakdown">
-            <div class="price-row">
-              <span>Room Price (${reservation.totalNights} nights @ $<fmt:formatNumber value="${reservation.roomPrice}" pattern="#,##0.00"/>/night)</span>
-              <span class="fw-bold">$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
-            </div>
-            <div class="price-row">
-              <span>Tax (12%)</span>
-              <span class="fw-bold">$<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
-            </div>
-            <c:if test="${reservation.discountAmount != null && reservation.discountAmount > 0}">
+
+              <%-- Per-room breakdown if multiple rooms --%>
+            <c:if test="${reservation.numberOfRooms > 1}">
+              <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
+                <c:if test="${not empty room.roomPrice}">
+                  <div class="price-row">
+                    <span>Room ${loop.index + 1} — <c:out value="${room.roomNumber}"/> (<c:out value="${room.roomType}"/>)
+                      × ${reservation.totalNights} night(s)</span>
+                    <span class="fw-bold">
+                      $<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/>
+                    </span>
+                  </div>
+                </c:if>
+              </c:forEach>
+              <hr style="margin:8px 0;border-color:#dee2e6;">
+            </c:if>
+
+              <%-- Subtotal row --%>
+            <c:choose>
+              <c:when test="${not empty reservation.subtotal}">
+                <div class="price-row">
+                  <span>
+                    <c:choose>
+                      <c:when test="${reservation.numberOfRooms > 1}">Total Room Charges (${reservation.totalNights} nights)</c:when>
+                      <c:otherwise>Room Charges (${reservation.totalNights} nights
+                        <c:if test="${not empty reservation.roomPrice}">
+                          @ $<fmt:formatNumber value="${reservation.roomPrice}" pattern="#,##0.00"/>/night
+                        </c:if>)
+                      </c:otherwise>
+                    </c:choose>
+                  </span>
+                  <span class="fw-bold">$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
+                </div>
+              </c:when>
+              <c:otherwise>
+                <div class="price-row">
+                  <span>Room Charges</span>
+                  <span class="fw-bold">—</span>
+                </div>
+              </c:otherwise>
+            </c:choose>
+
+              <%-- Tax --%>
+            <c:choose>
+              <c:when test="${not empty reservation.taxAmount}">
+                <div class="price-row">
+                  <span>Tax (12%)</span>
+                  <span class="fw-bold">$<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
+                </div>
+              </c:when>
+              <c:otherwise>
+                <div class="price-row"><span>Tax (12%)</span><span class="fw-bold">—</span></div>
+              </c:otherwise>
+            </c:choose>
+
+              <%-- Discount --%>
+            <c:if test="${not empty reservation.discountAmount and reservation.discountAmount > 0}">
               <div class="price-row">
                 <span>Discount</span>
                 <span class="fw-bold text-success">-$<fmt:formatNumber value="${reservation.discountAmount}" pattern="#,##0.00"/></span>
               </div>
             </c:if>
+
+              <%-- Total --%>
             <div class="price-row total">
               <span>Total Amount</span>
-              <span>$<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/></span>
+              <span>
+                <c:choose>
+                  <c:when test="${not empty reservation.totalAmount}">
+                    $<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/>
+                  </c:when>
+                  <c:otherwise>—</c:otherwise>
+                </c:choose>
+              </span>
             </div>
           </div>
         </div>
@@ -336,7 +445,7 @@
         <c:if test="${not empty reservation.specialRequests}">
           <div class="info-section">
             <h5><i class="fas fa-comment me-2"></i>Special Requests</h5>
-            <div class="p-3 bg-light rounded">${reservation.specialRequests}</div>
+            <div class="p-3 bg-light rounded"><c:out value="${reservation.specialRequests}"/></div>
           </div>
         </c:if>
 
@@ -346,13 +455,15 @@
             <h5><i class="fas fa-user-tie me-2"></i>Created By</h5>
             <div class="info-item" style="max-width:300px;">
               <div class="label">Staff Name</div>
-              <div class="value">${reservation.staffName}</div>
+              <div class="value"><c:out value="${reservation.staffName}"/></div>
             </div>
           </div>
         </c:if>
 
         <!-- ── Actions ── -->
         <div class="action-buttons">
+
+            <%-- Check In --%>
           <c:if test="${reservation.reservationStatus == 'CONFIRMED'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/checkin?id=${reservation.id}"
                class="btn btn-success btn-action"
@@ -360,6 +471,8 @@
               <i class="fas fa-sign-in-alt me-2"></i>Check In
             </a>
           </c:if>
+
+            <%-- Check Out --%>
           <c:if test="${reservation.reservationStatus == 'CHECKED_IN'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/checkout?id=${reservation.id}"
                class="btn btn-warning btn-action"
@@ -367,32 +480,49 @@
               <i class="fas fa-sign-out-alt me-2"></i>Check Out
             </a>
           </c:if>
-          <c:if test="${reservation.reservationStatus != 'CHECKED_OUT' && reservation.reservationStatus != 'CANCELLED'}">
+
+            <%-- Cancel --%>
+          <c:if test="${reservation.reservationStatus != 'CHECKED_OUT' and reservation.reservationStatus != 'CANCELLED'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/cancel?id=${reservation.id}"
                class="btn btn-danger btn-action"
                onclick="return confirm('Are you sure you want to cancel this reservation?')">
               <i class="fas fa-times-circle me-2"></i>Cancel
             </a>
           </c:if>
+
+            <%-- Edit --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/edit?id=${reservation.id}"
              class="btn btn-primary btn-action">
             <i class="fas fa-edit me-2"></i>Edit
           </a>
+
+            <%-- Print Bill --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/print-bill?id=${reservation.id}"
              class="btn btn-info btn-action text-white" target="_blank">
             <i class="fas fa-print me-2"></i>Print Bill
           </a>
-          <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/delete?id=${reservation.id}"
-             class="btn btn-outline-danger btn-action"
-             onclick="return confirm('Permanently delete this reservation?')">
-            <i class="fas fa-trash me-2"></i>Delete
-          </a>
+
+            <%--
+              DELETE: must be a POST form — the controller's doPost handles /delete.
+              A plain GET link would hit doGet which has no /delete case → 404.
+            --%>
+          <form method="POST"
+                action="${pageContext.request.contextPath}<%= basePath %>/reservations/delete"
+                class="delete-form"
+                onsubmit="return confirm('Permanently delete this reservation? This cannot be undone.');">
+            <input type="hidden" name="id" value="${reservation.id}">
+            <button type="submit" class="btn btn-outline-danger btn-action">
+              <i class="fas fa-trash me-2"></i>Delete
+            </button>
+          </form>
+
+            <%-- Back to List --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations"
              class="btn btn-secondary btn-action ms-auto">
             <i class="fas fa-arrow-left me-2"></i>Back to List
           </a>
-        </div>
 
+        </div>
       </div>
     </c:otherwise>
   </c:choose>

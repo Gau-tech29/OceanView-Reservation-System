@@ -1,57 +1,69 @@
 package com.oceanview.dto;
 
+/**
+ * DTO for admin dashboard statistics.
+ * Populated by AdminDashboardServlet and read by admin/dashboard.jsp.
+ */
 public class DashboardStatsDTO {
-    private int totalReservations;
-    private int activeReservations;
-    private int totalRooms;
-    private int availableRooms;
-    private int occupiedRooms;
-    private int maintenanceRooms;
-    private int totalGuests;
-    private int totalStaff;
-    private int todayCheckIns;
-    private int todayCheckOuts;
+
+    private int    totalReservations;
+    private int    activeReservations;
+    private int    availableRooms;
+    private int    totalRooms;
+    private int    occupiedRooms;
+    private int    maintenanceRooms;
+    private long   totalGuests;
+    private int    todayCheckIns;
+    private int    todayCheckOuts;
     private double monthlyRevenue;
     private double occupancyRate;
-    private int pendingMaintenance;
 
-    // Getters and Setters
-    public int getTotalReservations() { return totalReservations; }
-    public void setTotalReservations(int totalReservations) { this.totalReservations = totalReservations; }
+    // ── Fields used by ReportService ─────────────────────────────────────────────
+    private int    totalStaff;
+    private int    pendingMaintenance;
 
-    public int getActiveReservations() { return activeReservations; }
-    public void setActiveReservations(int activeReservations) { this.activeReservations = activeReservations; }
+    public DashboardStatsDTO() {}
 
-    public int getTotalRooms() { return totalRooms; }
-    public void setTotalRooms(int totalRooms) { this.totalRooms = totalRooms; }
+    // ── Getters & Setters ─────────────────────────────────────────────────────────
 
-    public int getAvailableRooms() { return availableRooms; }
-    public void setAvailableRooms(int availableRooms) { this.availableRooms = availableRooms; }
+    public int getTotalReservations()               { return totalReservations; }
+    public void setTotalReservations(int v)         { this.totalReservations = v; }
 
-    public int getOccupiedRooms() { return occupiedRooms; }
-    public void setOccupiedRooms(int occupiedRooms) { this.occupiedRooms = occupiedRooms; }
+    public int getActiveReservations()              { return activeReservations; }
+    public void setActiveReservations(int v)        { this.activeReservations = v; }
 
-    public int getMaintenanceRooms() { return maintenanceRooms; }
-    public void setMaintenanceRooms(int maintenanceRooms) { this.maintenanceRooms = maintenanceRooms; }
+    public int getAvailableRooms()                  { return availableRooms; }
+    public void setAvailableRooms(int v)            { this.availableRooms = v; }
 
-    public int getTotalGuests() { return totalGuests; }
-    public void setTotalGuests(int totalGuests) { this.totalGuests = totalGuests; }
+    public int getTotalRooms()                      { return totalRooms; }
+    public void setTotalRooms(int v)                { this.totalRooms = v; }
 
-    public int getTotalStaff() { return totalStaff; }
-    public void setTotalStaff(int totalStaff) { this.totalStaff = totalStaff; }
+    public int getOccupiedRooms()                   { return occupiedRooms; }
+    public void setOccupiedRooms(int v)             { this.occupiedRooms = v; }
 
-    public int getTodayCheckIns() { return todayCheckIns; }
-    public void setTodayCheckIns(int todayCheckIns) { this.todayCheckIns = todayCheckIns; }
+    public int getMaintenanceRooms()                { return maintenanceRooms; }
+    public void setMaintenanceRooms(int v)          { this.maintenanceRooms = v; }
 
-    public int getTodayCheckOuts() { return todayCheckOuts; }
-    public void setTodayCheckOuts(int todayCheckOuts) { this.todayCheckOuts = todayCheckOuts; }
+    public long getTotalGuests()                    { return totalGuests; }
+    public void setTotalGuests(long v)              { this.totalGuests = v; }
 
-    public double getMonthlyRevenue() { return monthlyRevenue; }
-    public void setMonthlyRevenue(double monthlyRevenue) { this.monthlyRevenue = monthlyRevenue; }
+    public int getTodayCheckIns()                   { return todayCheckIns; }
+    public void setTodayCheckIns(int v)             { this.todayCheckIns = v; }
 
-    public double getOccupancyRate() { return occupancyRate; }
-    public void setOccupancyRate(double occupancyRate) { this.occupancyRate = occupancyRate; }
+    public int getTodayCheckOuts()                  { return todayCheckOuts; }
+    public void setTodayCheckOuts(int v)            { this.todayCheckOuts = v; }
 
-    public int getPendingMaintenance() { return pendingMaintenance; }
-    public void setPendingMaintenance(int pendingMaintenance) { this.pendingMaintenance = pendingMaintenance; }
+    public double getMonthlyRevenue()               { return monthlyRevenue; }
+    public void setMonthlyRevenue(double v)         { this.monthlyRevenue = v; }
+
+    public double getOccupancyRate()                { return occupancyRate; }
+    public void setOccupancyRate(double v)          { this.occupancyRate = v; }
+
+    /** Total staff users (used by ReportService). */
+    public int getTotalStaff()                      { return totalStaff; }
+    public void setTotalStaff(int v)                { this.totalStaff = v; }
+
+    /** Number of pending maintenance requests (used by ReportService). */
+    public int getPendingMaintenance()              { return pendingMaintenance; }
+    public void setPendingMaintenance(int v)        { this.pendingMaintenance = v; }
 }

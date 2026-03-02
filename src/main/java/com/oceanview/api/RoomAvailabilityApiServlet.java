@@ -13,17 +13,17 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Endpoint: GET /api/rooms/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD[&excludeRoomId=123]
+ * Endpoint: GET /api/rooms/available?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD[&excludeRoomId=1&excludeRoomId=2&...]
  *
  * Returns JSON array of rooms with NO overlapping CONFIRMED/CHECKED_IN reservation.
  * Both check-in and check-out dates are treated as INCLUSIVE (occupied days).
  *
- * The optional excludeRoomId parameter lets the frontend exclude the already-selected
- * first room from the second room's available list (so user can't pick the same room twice).
+ * The optional excludeRoomId parameter (repeatable) lets the frontend exclude already-selected
+ * rooms from the available list (so user can't pick the same room twice).
  *
  * Save as: src/main/java/com/oceanview/api/RoomAvailabilityApiServlet.java
  */
@@ -47,7 +47,9 @@ public class RoomAvailabilityApiServlet extends HttpServlet {
 
         String checkInStr  = request.getParameter("checkIn");
         String checkOutStr = request.getParameter("checkOut");
-        String excludeStr  = request.getParameter("excludeRoomId"); // optional
+
+        // Support multiple excludeRoomId values: ?excludeRoomId=1&excludeRoomId=2&...
+        String[] excludeParams = request.getParameterValues("excludeRoomId");
 
         if (checkInStr == null || checkOutStr == null
                 || checkInStr.trim().isEmpty() || checkOutStr.trim().isEmpty()) {
@@ -70,14 +72,22 @@ public class RoomAvailabilityApiServlet extends HttpServlet {
 
             List<RoomDTO> rooms = roomService.getAvailableRoomsForDates(checkIn, checkOut);
 
-            // Exclude an already-selected room (for 2nd room picker)
-            if (excludeStr != null && !excludeStr.trim().isEmpty()) {
-                try {
-                    final long excludeId = Long.parseLong(excludeStr.trim());
+            // Collect all room IDs to exclude
+            if (excludeParams != null && excludeParams.length > 0) {
+                Set<Long> excludeIds = new HashSet<>();
+                for (String ex : excludeParams) {
+                    if (ex != null && !ex.trim().isEmpty()) {
+                        try {
+                            excludeIds.add(Long.parseLong(ex.trim()));
+                        } catch (NumberFormatException ignored) { /* bad param — just ignore */ }
+                    }
+                }
+                if (!excludeIds.isEmpty()) {
+                    final Set<Long> finalExcludeIds = excludeIds;
                     rooms = rooms.stream()
-                            .filter(r -> r.getId() != null && r.getId() != excludeId)
+                            .filter(r -> r.getId() != null && !finalExcludeIds.contains(r.getId()))
                             .collect(Collectors.toList());
-                } catch (NumberFormatException ignored) { /* bad param — just ignore */ }
+                }
             }
 
             out.print(toJson(rooms));

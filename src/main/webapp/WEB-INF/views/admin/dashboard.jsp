@@ -4,6 +4,7 @@
 <%@ page import="com.oceanview.dto.DashboardStatsDTO" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,10 +140,9 @@
 <body>
 <%
     User user = (User) session.getAttribute("user");
-    if (user == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
+    if (user == null) { response.sendRedirect(request.getContextPath() + "/login.jsp"); return; }
     if (!user.isAdmin()) { response.sendRedirect(request.getContextPath() + "/staff/dashboard"); return; }
 
-    // Read stats set by AdminDashboardServlet via DashboardStatsDTO
     DashboardStatsDTO stats = (DashboardStatsDTO) request.getAttribute("stats");
 
     int totalReservations = 0, activeReservations = 0, availableRooms = 0, totalRooms = 0;
@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <!-- Stats - all values come from AdminDashboardServlet via DashboardStatsDTO -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info"><h3><%= totalReservations %></h3><p>Total Reservations</p></div>
@@ -327,7 +327,7 @@
                 <tr>
                     <th>Reservation #</th>
                     <th>Guest Name</th>
-                    <th>Room</th>
+                    <th>Rooms</th>
                     <th>Check-in</th>
                     <th>Check-out</th>
                     <th>Status</th>
@@ -358,11 +358,13 @@
                     <td><strong><%= r.getReservationNumber() %></strong></td>
                     <td><%= r.getGuestName() != null ? r.getGuestName() : "-" %></td>
                     <td>
-                        <%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
-                        <% if (r.getRoomType() != null) { %><small class="text-muted d-block"><%= r.getRoomType() %></small><% } %>
+                        <%= r.getRoomNumbersSummary() %>
+                        <% if (r.getRoomTypesSummary() != null && !r.getRoomTypesSummary().equals("N/A")) { %>
+                        <small class="text-muted d-block"><%= r.getRoomTypesSummary() %></small>
+                        <% } %>
                     </td>
-                    <td><%= r.getCheckInDate() %></td>
-                    <td><%= r.getCheckOutDate() %></td>
+                    <td><%= r.getFormattedCheckInDate() %></td>
+                    <td><%= r.getFormattedCheckOutDate() %></td>
                     <td><span class="badge-status <%= badgeClass %>"><%= status != null ? status.replace("_"," ") : "PENDING" %></span></td>
                     <td><span class="badge-status <%= pBadge %>"><%= pStatus != null ? pStatus : "PENDING" %></span></td>
                     <td>
@@ -433,10 +435,10 @@
         new Chart(document.getElementById('roomStatusChart').getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['Available', 'Occupied', 'Reserved', 'Maintenance'],
+                labels: ['Available', 'Occupied', 'Maintenance', 'Reserved'],
                 datasets: [{
                     data: [<%= availableRooms %>, <%= totalRooms - availableRooms %>, 0, 0],
-                    backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545'],
+                    backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107'],
                     borderWidth: 0, hoverOffset: 8
                 }]
             },

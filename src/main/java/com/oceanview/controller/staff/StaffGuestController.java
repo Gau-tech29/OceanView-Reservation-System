@@ -108,6 +108,7 @@ public class StaffGuestController extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/staff/guests/form.jsp").forward(request, response);
     }
 
+    // FIXED: Single viewGuest method using getReservationsByGuest()
     private void viewGuest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
@@ -121,7 +122,8 @@ public class StaffGuestController extends HttpServlet {
         GuestDTO guest = guestService.getGuestById(id)
                 .orElseThrow(() -> new ServletException("Guest not found"));
 
-        List<ReservationDTO> reservations = reservationService.getReservationsByGuestId(id);
+        // Using getReservationsByGuest() which exists in ReservationService
+        List<ReservationDTO> reservations = reservationService.getReservationsByGuest(id);
 
         request.setAttribute("guest", guest);
         request.setAttribute("reservations", reservations);

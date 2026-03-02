@@ -150,6 +150,7 @@ public class AdminGuestController extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/admin/guests/form.jsp").forward(request, response);
     }
 
+    // FIXED: Single viewGuest method using getReservationsByGuest()
     private void viewGuest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
@@ -167,7 +168,8 @@ public class AdminGuestController extends HttpServlet {
             return;
         }
 
-        List<ReservationDTO> reservations = reservationService.getReservationsByGuestId(id);
+        // Using getReservationsByGuest() which exists in ReservationService
+        List<ReservationDTO> reservations = reservationService.getReservationsByGuest(id);
 
         request.setAttribute("guest", guest);
         request.setAttribute("reservations", reservations);

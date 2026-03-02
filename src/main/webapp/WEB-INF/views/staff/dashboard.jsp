@@ -3,6 +3,7 @@
 <%@ page import="com.oceanview.dto.ReservationDTO" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,19 +166,19 @@
 <%
     User user = (User) session.getAttribute("user");
     if (user == null) {
-        response.sendRedirect(request.getContextPath() + "/login");
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
 
-    // Read stats set by StaffDashboardServlet
-    int activeReservations = request.getAttribute("activeReservations") != null
-            ? (int) request.getAttribute("activeReservations") : 0;
-    int availableRooms = request.getAttribute("availableRooms") != null
-            ? (int) request.getAttribute("availableRooms") : 0;
-    long totalGuests = request.getAttribute("totalGuests") != null
-            ? (long) request.getAttribute("totalGuests") : 0L;
-    int todayCheckins = request.getAttribute("todayCheckins") != null
-            ? (int) request.getAttribute("todayCheckins") : 0;
+    Integer activeReservations = (Integer) request.getAttribute("activeReservations");
+    Integer availableRooms = (Integer) request.getAttribute("availableRooms");
+    Long totalGuests = (Long) request.getAttribute("totalGuests");
+    Integer todayCheckins = (Integer) request.getAttribute("todayCheckins");
+
+    activeReservations = activeReservations != null ? activeReservations : 0;
+    availableRooms = availableRooms != null ? availableRooms : 0;
+    totalGuests = totalGuests != null ? totalGuests : 0L;
+    todayCheckins = todayCheckins != null ? todayCheckins : 0;
 
     @SuppressWarnings("unchecked")
     List<ReservationDTO> recentReservations = (List<ReservationDTO>) request.getAttribute("recentReservations");
@@ -259,7 +260,7 @@
         </div>
     </div>
 
-    <!-- Stats - now properly reading from request attributes set by servlet -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
@@ -367,13 +368,13 @@
                     <td><strong><%= r.getReservationNumber() %></strong></td>
                     <td><%= r.getGuestName() != null ? r.getGuestName() : "-" %></td>
                     <td>
-                        <%= r.getRoomNumber() != null ? r.getRoomNumber() : "-" %>
-                        <% if (r.getRoomType() != null) { %>
-                        <small class="text-muted">(<%= r.getRoomType() %>)</small>
+                        <%= r.getRoomNumbersSummary() %>
+                        <% if (r.getRoomTypesSummary() != null && !r.getRoomTypesSummary().equals("N/A")) { %>
+                        <small class="text-muted d-block"><%= r.getRoomTypesSummary() %></small>
                         <% } %>
                     </td>
-                    <td><%= r.getCheckInDate() %></td>
-                    <td><%= r.getCheckOutDate() %></td>
+                    <td><%= r.getFormattedCheckInDate() %></td>
+                    <td><%= r.getFormattedCheckOutDate() %></td>
                     <td>
                         <%
                             String status = r.getReservationStatus();

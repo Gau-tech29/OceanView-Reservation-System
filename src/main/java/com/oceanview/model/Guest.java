@@ -3,131 +3,107 @@ package com.oceanview.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Entity model for a hotel guest.
+ * Maps to the `guests` table in oceanview_db.
+ */
 public class Guest {
-    private Long id;
-    private String guestNumber;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String phone;
-    private String address;
-    private String city;
-    private String country;
-    private String postalCode;
-    private String idCardNumber;
-    private IdCardType idCardType;
-    private boolean isVip;
-    private Integer loyaltyPoints;
-    private String notes;
+
+    private Long          id;
+    private String        guestNumber;
+    private String        firstName;
+    private String        lastName;
+    private String        email;
+    private String        phone;
+    private String        address;
+    private String        city;
+    private String        country;
+    private String        postalCode;
+    private String        idCardNumber;
+    private String        idCardType;
+    private boolean       isVip;
+    private int           loyaltyPoints;
+    private String        notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public enum IdCardType {
-        PASSPORT, NATIONAL_ID, DRIVERS_LICENSE
-    }
-
-    // Constructors
     public Guest() {
+        this.isVip         = false;
         this.loyaltyPoints = 0;
-        this.isVip = false;
     }
 
-    public Guest(String guestNumber, String firstName, String lastName,
-                 String email, String phone) {
-        this.guestNumber = guestNumber;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.phone = phone;
-        this.loyaltyPoints = 0;
-        this.isVip = false;
+    // ── Convenience ───────────────────────────────────────────────────────────────
+
+    public String getFullName() {
+        String fn = firstName != null ? firstName : "";
+        String ln = lastName  != null ? lastName  : "";
+        return (fn + " " + ln).trim();
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ── Getters & Setters ─────────────────────────────────────────────────────────
 
-    public String getGuestNumber() { return guestNumber; }
-    public void setGuestNumber(String guestNumber) { this.guestNumber = guestNumber; }
+    public Long getId()                         { return id; }
+    public void setId(Long id)                  { this.id = id; }
 
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getGuestNumber()              { return guestNumber; }
+    public void setGuestNumber(String v)        { this.guestNumber = v; }
 
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
+    public String getFirstName()                { return firstName; }
+    public void setFirstName(String v)          { this.firstName = v; }
 
-    public String getFullName() { return firstName + " " + lastName; }
+    public String getLastName()                 { return lastName; }
+    public void setLastName(String v)           { this.lastName = v; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getEmail()                    { return email; }
+    public void setEmail(String v)              { this.email = v; }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
+    public String getPhone()                    { return phone; }
+    public void setPhone(String v)              { this.phone = v; }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public String getAddress()                  { return address; }
+    public void setAddress(String v)            { this.address = v; }
 
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
+    public String getCity()                     { return city; }
+    public void setCity(String v)               { this.city = v; }
 
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
+    public String getCountry()                  { return country; }
+    public void setCountry(String v)            { this.country = v; }
 
-    public String getPostalCode() { return postalCode; }
-    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
+    public String getPostalCode()               { return postalCode; }
+    public void setPostalCode(String v)         { this.postalCode = v; }
 
-    public String getIdCardNumber() { return idCardNumber; }
-    public void setIdCardNumber(String idCardNumber) { this.idCardNumber = idCardNumber; }
+    public String getIdCardNumber()             { return idCardNumber; }
+    public void setIdCardNumber(String v)       { this.idCardNumber = v; }
 
-    public IdCardType getIdCardType() { return idCardType; }
-    public void setIdCardType(IdCardType idCardType) { this.idCardType = idCardType; }
+    public String getIdCardType()               { return idCardType; }
+    public void setIdCardType(String v)         { this.idCardType = v; }
 
-    public boolean isVip() { return isVip; }
-    public void setVip(boolean vip) { isVip = vip; }
+    public boolean isVip()                      { return isVip; }
+    public void setVip(boolean vip)             { this.isVip = vip; }
 
-    public Integer getLoyaltyPoints() { return loyaltyPoints; }
-    public void setLoyaltyPoints(Integer loyaltyPoints) { this.loyaltyPoints = loyaltyPoints; }
+    public int getLoyaltyPoints()               { return loyaltyPoints; }
+    public void setLoyaltyPoints(int v)         { this.loyaltyPoints = v; }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
+    public String getNotes()                    { return notes; }
+    public void setNotes(String v)              { this.notes = v; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getCreatedAt()         { return createdAt; }
+    public void setCreatedAt(LocalDateTime v)   { this.createdAt = v; }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    // Business methods
-    public void addLoyaltyPoints(int points) {
-        this.loyaltyPoints += points;
-        updateVipStatus();
-    }
-
-    private void updateVipStatus() {
-        this.isVip = this.loyaltyPoints >= 1000;
-    }
+    public LocalDateTime getUpdatedAt()         { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime v)   { this.updatedAt = v; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Guest guest = (Guest) o;
-        return Objects.equals(id, guest.id);
+        return Objects.equals(id, ((Guest) o).id);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+    public int hashCode() { return Objects.hash(id); }
 
     @Override
     public String toString() {
-        return "Guest{" +
-                "id=" + id +
-                ", guestNumber='" + guestNumber + '\'' +
-                ", fullName='" + getFullName() + '\'' +
-                ", email='" + email + '\'' +
-                ", isVip=" + isVip +
-                '}';
-    }
-}
+        return "Guest{id=" + id + ", name='" + getFullName() + "', email='" + email + "'}";
+    }}
