@@ -42,13 +42,21 @@ public class StaffGuestController extends HttpServlet {
 
         try {
             if (pathInfo == null || pathInfo.equals("/")) {
-                listGuests(request, response);
+                // Check if it's a search request
+                String search = request.getParameter("search");
+                if (search != null && !search.trim().isEmpty()) {
+                    searchGuests(request, response);
+                } else {
+                    listGuests(request, response);
+                }
             } else if (pathInfo.equals("/new")) {
                 showNewForm(request, response);
+            } else if (pathInfo.equals("/edit")) {
+                showEditForm(request, response);
             } else if (pathInfo.equals("/view")) {
                 viewGuest(request, response);
             } else if (pathInfo.equals("/search")) {
-                searchGuests(request, response);
+                showSearchForm(request, response);
             } else {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
@@ -74,6 +82,10 @@ public class StaffGuestController extends HttpServlet {
         try {
             if ("/save".equals(pathInfo)) {
                 saveGuest(request, response);
+            } else if ("/update".equals(pathInfo)) {
+                updateGuest(request, response);
+            } else if ("/search".equals(pathInfo)) {
+                searchGuests(request, response);
             } else {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
@@ -88,16 +100,17 @@ public class StaffGuestController extends HttpServlet {
             throws ServletException, IOException, SQLException {
 
         int page = getIntParam(request, "page", 1);
-        int size = 10;
+        int size = 12; // Grid view, show 12 per page
 
         List<GuestDTO> guests = guestService.getGuests(page, size);
-        long totalCount = guestService.getActiveGuestsCount();
+        long totalCount = guestService.getTotalGuestsCount();
         int totalPages = (int) Math.ceil((double) totalCount / size);
 
         request.setAttribute("guests", guests);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalCount", totalCount);
+        request.setAttribute("pageTitle", "Guest Management");
 
         request.getRequestDispatcher("/WEB-INF/views/staff/guests/list.jsp").forward(request, response);
     }
@@ -105,10 +118,28 @@ public class StaffGuestController extends HttpServlet {
     private void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("guest", null);
+        request.setAttribute("pageTitle", "Add New Guest");
         request.getRequestDispatcher("/WEB-INF/views/staff/guests/form.jsp").forward(request, response);
     }
 
-    // FIXED: Single viewGuest method using getReservationsByGuest()
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Guest ID required");
+            return;
+        }
+
+        Long id = Long.parseLong(idStr);
+        GuestDTO guest = guestService.getGuestById(id)
+                .orElseThrow(() -> new ServletException("Guest not found"));
+
+        request.setAttribute("guest", guest);
+        request.setAttribute("pageTitle", "Edit Guest - " + guest.getFullName());
+        request.getRequestDispatcher("/WEB-INF/views/staff/guests/form.jsp").forward(request, response);
+    }
+
     private void viewGuest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
@@ -122,23 +153,50 @@ public class StaffGuestController extends HttpServlet {
         GuestDTO guest = guestService.getGuestById(id)
                 .orElseThrow(() -> new ServletException("Guest not found"));
 
-        // Using getReservationsByGuest() which exists in ReservationService
+        // Get guest's reservation history
         List<ReservationDTO> reservations = reservationService.getReservationsByGuest(id);
+
+        // Get statistics
+        int totalStays = reservations.size();
+        int completedStays = (int) reservations.stream()
+                .filter(r -> "CHECKED_OUT".equals(r.getReservationStatus())).count();
+        int cancelledStays = (int) reservations.stream()
+                .filter(r -> "CANCELLED".equals(r.getReservationStatus())).count();
+        double totalSpent = reservations.stream()
+                .filter(r -> "CHECKED_OUT".equals(r.getReservationStatus()) || "PAID".equals(r.getPaymentStatus()))
+                .mapToDouble(r -> r.getTotalAmount() != null ? r.getTotalAmount().doubleValue() : 0).sum();
 
         request.setAttribute("guest", guest);
         request.setAttribute("reservations", reservations);
+        request.setAttribute("totalStays", totalStays);
+        request.setAttribute("completedStays", completedStays);
+        request.setAttribute("cancelledStays", cancelledStays);
+        request.setAttribute("totalSpent", totalSpent);
+        request.setAttribute("pageTitle", "Guest Profile - " + guest.getFullName());
+
         request.getRequestDispatcher("/WEB-INF/views/staff/guests/view.jsp").forward(request, response);
+    }
+
+    private void showSearchForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setAttribute("pageTitle", "Search Guests");
+        request.getRequestDispatcher("/WEB-INF/views/staff/guests/search.jsp").forward(request, response);
     }
 
     private void searchGuests(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
         String keyword = request.getParameter("keyword");
+        if (keyword == null) keyword = request.getParameter("search");
+
         List<GuestDTO> results = guestService.searchGuests(keyword);
 
-        request.setAttribute("results", results);
-        request.setAttribute("keyword", keyword);
-        request.getRequestDispatcher("/WEB-INF/views/staff/guests/search.jsp").forward(request, response);
+        request.setAttribute("guests", results);
+        request.setAttribute("searchKeyword", keyword);
+        request.setAttribute("totalCount", results.size());
+        request.setAttribute("pageTitle", "Search Results");
+
+        request.getRequestDispatcher("/WEB-INF/views/staff/guests/list.jsp").forward(request, response);
     }
 
     private void saveGuest(HttpServletRequest request, HttpServletResponse response)
@@ -163,7 +221,46 @@ public class StaffGuestController extends HttpServlet {
             guest.setNotes(request.getParameter("notes"));
 
             GuestDTO saved = guestService.createGuest(guest);
-            session.setAttribute("success", "Guest created successfully!");
+            session.setAttribute("success", "Guest " + saved.getFullName() + " created successfully!");
+
+        } catch (IllegalArgumentException e) {
+            session.setAttribute("error", e.getMessage());
+        }
+
+        response.sendRedirect(request.getContextPath() + "/staff/guests");
+    }
+
+    private void updateGuest(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, SQLException {
+
+        HttpSession session = request.getSession();
+
+        try {
+            String idStr = request.getParameter("id");
+            if (idStr == null || idStr.isEmpty()) {
+                throw new IllegalArgumentException("Guest ID is required");
+            }
+
+            Long id = Long.parseLong(idStr);
+            GuestDTO existing = guestService.getGuestById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
+
+            existing.setFirstName(required(request, "firstName"));
+            existing.setLastName(required(request, "lastName"));
+            existing.setEmail(request.getParameter("email"));
+            existing.setPhone(request.getParameter("phone"));
+            existing.setAddress(request.getParameter("address"));
+            existing.setCity(request.getParameter("city"));
+            existing.setCountry(request.getParameter("country"));
+            existing.setPostalCode(request.getParameter("postalCode"));
+            existing.setIdCardType(request.getParameter("idCardType"));
+            existing.setIdCardNumber(request.getParameter("idCardNumber"));
+            existing.setLoyaltyPoints(getIntParam(request, "loyaltyPoints", 0));
+            existing.setIsVip("on".equals(request.getParameter("isVip")));
+            existing.setNotes(request.getParameter("notes"));
+
+            guestService.updateGuest(existing);
+            session.setAttribute("success", "Guest " + existing.getFullName() + " updated successfully!");
 
         } catch (IllegalArgumentException e) {
             session.setAttribute("error", e.getMessage());

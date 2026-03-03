@@ -23,35 +23,35 @@
             --warning-color: #ffc107;
             --danger-color: #dc3545;
             --dark-color: #212529;
-            --sidebar-width: 270px;
+            --sidebar-width: 280px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Poppins', sans-serif;
-            background: #f0f4f8;
+            background: #f4f7fc;
             overflow-x: hidden;
         }
 
-        /* Sidebar - Admin specific styling */
+        /* Sidebar */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #0a3d8f 0%, #0d6efd 100%);
+            background: linear-gradient(180deg, #0b5ed7 0%, #0d6efd 100%);
             color: white;
             z-index: 1000;
-            box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+            box-shadow: 3px 0 20px rgba(0,0,0,0.1);
             overflow-y: auto;
         }
         .sidebar-brand {
-            padding: 25px 22px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
-            margin-bottom: 10px;
+            padding: 25px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 15px;
         }
         .sidebar-brand h3 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             margin: 0;
         }
@@ -60,17 +60,9 @@
             opacity: 0.8;
             margin: 4px 0 0;
         }
-        .sidebar-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.5;
-            padding: 15px 22px 5px;
-        }
         .sidebar-menu {
             list-style: none;
-            padding: 5px 12px;
+            padding: 5px 15px;
             margin: 0;
         }
         .sidebar-menu li {
@@ -79,48 +71,45 @@
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 11px 15px;
+            padding: 12px 15px;
             color: rgba(255,255,255,0.85);
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.3s;
             border-radius: 10px;
-            font-weight: 500;
         }
         .sidebar-menu a:hover,
         .sidebar-menu a.active {
-            background: rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.15);
             color: white;
             transform: translateX(5px);
         }
         .sidebar-menu a i {
-            width: 28px;
-            font-size: 1.05rem;
+            width: 30px;
+            font-size: 1.1rem;
         }
 
         /* Main Content */
         .main-content {
             margin-left: var(--sidebar-width);
-            padding: 22px 30px;
+            padding: 20px 30px;
         }
 
         /* Top Navigation */
         .top-nav {
             background: white;
             border-radius: 16px;
-            padding: 14px 24px;
-            margin-bottom: 22px;
-            box-shadow: 0 4px 20px rgba(13,110,253,0.1);
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .page-title h2 {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 600;
+            color: var(--dark-color);
             margin: 0;
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         .page-title p {
             color: var(--secondary-color);
@@ -133,15 +122,15 @@
             gap: 15px;
         }
         .user-avatar {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
-            border-radius: 10px;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 1rem;
         }
 
@@ -166,13 +155,13 @@
             border-left: 4px solid #dc3545;
         }
 
-        /* Search Section - Enhanced for Admin */
+        /* Search Section */
         .search-section {
             background: white;
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(13,110,253,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .search-title {
             font-size: 1.1rem;
@@ -206,7 +195,7 @@
         }
         .search-input-group button {
             padding: 12px 25px;
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 12px;
@@ -215,34 +204,12 @@
             transition: all 0.3s;
         }
         .search-input-group button:hover {
+            background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(13,110,253,0.3);
         }
 
-        /* Advanced Filters - Admin Only */
-        .advanced-filters {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #e9ecef;
-            display: none;
-        }
-        .advanced-filters.show {
-            display: block;
-        }
-        .filter-toggle {
-            color: var(--primary-color);
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .filter-toggle:hover {
-            color: var(--primary-dark);
-        }
-
-        /* Stats Cards - Enhanced for Admin */
+        /* Stats Cards */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -253,21 +220,20 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(13,110,253,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
             gap: 15px;
             transition: all 0.3s;
-            border-left: 4px solid var(--primary-color);
         }
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(13,110,253,0.2);
+            box-shadow: 0 8px 25px rgba(13,110,253,0.15);
         }
         .stat-icon {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -290,7 +256,7 @@
             font-size: 0.85rem;
         }
 
-        /* Action Bar - Admin has more options */
+        /* Action Bar */
         .action-bar {
             display: flex;
             justify-content: space-between;
@@ -324,7 +290,7 @@
             color: white;
         }
         .btn-add {
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
             border: none;
             padding: 12px 25px;
@@ -341,28 +307,11 @@
             box-shadow: 0 5px 15px rgba(13,110,253,0.3);
             color: white;
         }
-        .btn-export {
-            background: white;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        .btn-export:hover {
-            background: var(--primary-light);
-            transform: translateY(-2px);
-        }
 
         /* Guest Grid */
         .guest-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 25px;
         }
@@ -370,14 +319,14 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(13,110,253,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             transition: all 0.3s;
             position: relative;
             border: 1px solid rgba(13,110,253,0.1);
         }
         .guest-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(13,110,253,0.2);
+            box-shadow: 0 8px 25px rgba(13,110,253,0.15);
             border-color: var(--primary-color);
         }
         .guest-card.vip {
@@ -387,7 +336,7 @@
         .guest-avatar {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #0d6efd, #0a3d8f);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -424,30 +373,12 @@
             width: 20px;
             color: var(--primary-color);
         }
-        .guest-stats {
-            display: flex;
-            gap: 15px;
-            margin: 10px 0;
-            padding: 10px 0;
-            border-top: 1px solid #e9ecef;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .guest-stat {
-            flex: 1;
-            text-align: center;
-        }
-        .guest-stat-value {
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        .guest-stat-label {
-            font-size: 0.7rem;
-            color: var(--secondary-color);
-        }
         .guest-actions {
             display: flex;
             gap: 10px;
             margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
         }
         .guest-actions a {
             flex: 1;
@@ -474,22 +405,13 @@
             background: var(--secondary-color);
             color: white;
         }
-        .btn-delete {
-            background: #f8d7da;
-            color: var(--danger-color);
-            border: none;
-        }
-        .btn-delete:hover {
-            background: var(--danger-color);
-            color: white;
-        }
 
-        /* Guest Table - Enhanced for Admin */
+        /* Guest Table (List View) */
         .guest-table {
             background: white;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(13,110,253,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 25px;
             display: none;
         }
@@ -577,40 +499,32 @@
 <body>
 <%
     User user = (User) session.getAttribute("user");
-    if (user == null || !user.isAdmin()) {
+    if (user == null) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
-    String basePath = "/admin";
+    String basePath = "/staff";
 %>
 
-<!-- Sidebar - Admin Version -->
+<!-- Sidebar -->
 <div class="sidebar">
     <div class="sidebar-brand">
         <h3><i class="fas fa-hotel me-2"></i>Ocean View</h3>
-        <p>Admin Control Panel</p>
+        <p>Hotel Reservation System</p>
     </div>
-    <div class="sidebar-label">Main Menu</div>
     <ul class="sidebar-menu">
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/dashboard">
-            <i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations">
             <i class="fas fa-calendar-alt"></i><span>Reservations</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new">
             <i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/guests" class="active">
             <i class="fas fa-users"></i><span>Guests</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms">
+            <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/bills">
-            <i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span></a></li>
-    </ul>
-    <div class="sidebar-label">Administration</div>
-    <ul class="sidebar-menu">
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/manage-staff">
-            <i class="fas fa-users-cog"></i><span>Manage Staff</span></a></li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/manage-rooms">
-            <i class="fas fa-door-open"></i><span>Manage Rooms</span></a></li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/reports">
-            <i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+            <i class="fas fa-receipt"></i><span>Bills</span></a></li>
         <li><a href="${pageContext.request.contextPath}/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
@@ -621,7 +535,7 @@
     <div class="top-nav">
         <div class="page-title">
             <h2><%= request.getAttribute("pageTitle") %></h2>
-            <p><i class="fas fa-users me-1"></i>Complete guest management with administrative controls</p>
+            <p><i class="fas fa-users me-1"></i>Manage guest profiles and view stay history</p>
         </div>
         <div class="user-menu">
             <div class="user-avatar">
@@ -629,7 +543,7 @@
             </div>
             <div>
                 <div style="font-weight:600;"><%= user.getFullName() %></div>
-                <div style="font-size:0.8rem;color:#6c757d;"><%= user.getRole() %> (Admin)</div>
+                <div style="font-size:0.8rem;color:#6c757d;"><%= user.getRole() %></div>
             </div>
         </div>
     </div>
@@ -650,58 +564,19 @@
     </div>
     <% } %>
 
-    <!-- Search Section - Admin Version -->
+    <!-- Search Section -->
     <div class="search-section">
         <div class="search-title">
             <i class="fas fa-search"></i>
-            <span>Advanced Guest Search</span>
+            <span>Find Guests</span>
         </div>
         <form action="${pageContext.request.contextPath}<%= basePath %>/guests" method="get" class="search-input-group">
-            <input type="text" name="search" placeholder="Search by name, email, phone, guest number, ID number..."
+            <input type="text" name="search" placeholder="Search by name, email, phone, or guest number..."
                    value="<%= request.getParameter("search") != null ? request.getParameter("search") : "" %>">
             <button type="submit">
                 <i class="fas fa-search me-2"></i>Search
             </button>
         </form>
-
-        <!-- Advanced Filters - Admin Only -->
-        <div class="filter-toggle" onclick="toggleAdvancedFilters()">
-            <i class="fas fa-filter"></i> Advanced Filters
-            <i class="fas fa-chevron-down" id="filterIcon"></i>
-        </div>
-        <div class="advanced-filters" id="advancedFilters">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">VIP Status</label>
-                    <select class="form-select" id="vipFilter">
-                        <option value="">All Guests</option>
-                        <option value="true">VIP Only</option>
-                        <option value="false">Regular Only</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Min Loyalty Points</label>
-                    <input type="number" class="form-control" id="minPoints" min="0" placeholder="0">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Registration Date From</label>
-                    <input type="date" class="form-control" id="dateFrom">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Registration Date To</label>
-                    <input type="date" class="form-control" id="dateTo">
-                </div>
-                <div class="col-12">
-                    <button class="btn btn-primary" onclick="applyAdvancedFilters()">
-                        <i class="fas fa-filter"></i> Apply Filters
-                    </button>
-                    <button class="btn btn-secondary" onclick="resetAdvancedFilters()">
-                        <i class="fas fa-undo"></i> Reset
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <% if (request.getParameter("search") != null && !request.getParameter("search").isEmpty()) { %>
         <div style="margin-top: 10px; color: var(--secondary-color);">
             <i class="fas fa-info-circle me-1"></i>
@@ -711,7 +586,7 @@
         <% } %>
     </div>
 
-    <!-- Stats Row - Enhanced for Admin -->
+    <!-- Stats Row -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -720,8 +595,8 @@
                 <p>Total Guests</p>
             </div>
         </div>
-        <div class="stat-card" style="border-left-color: #ffc107;">
-            <div class="stat-icon" style="background: linear-gradient(135deg,#ffc107,#e0a800);"><i class="fas fa-crown"></i></div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg,#198754,#146c43);"><i class="fas fa-crown"></i></div>
             <div class="stat-info">
                 <h3>
                     <%
@@ -736,31 +611,31 @@
                 <p>VIP Guests</p>
             </div>
         </div>
-        <div class="stat-card" style="border-left-color: #198754;">
-            <div class="stat-icon" style="background: linear-gradient(135deg,#198754,#146c43);"><i class="fas fa-star"></i></div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg,#ffc107,#e0a800);"><i class="fas fa-star"></i></div>
             <div class="stat-info">
                 <h3>
                     <%
-                        int totalPoints = 0;
+                        int loyaltySum = 0;
                         if (guests != null) {
-                            totalPoints = guests.stream().mapToInt(g -> g.getLoyaltyPoints() != null ? g.getLoyaltyPoints() : 0).sum();
+                            loyaltySum = guests.stream().mapToInt(g -> g.getLoyaltyPoints() != null ? g.getLoyaltyPoints() : 0).sum();
                         }
                     %>
-                    <%= totalPoints %>
+                    <%= loyaltySum %>
                 </h3>
-                <p>Total Loyalty Points</p>
+                <p>Loyalty Points</p>
             </div>
         </div>
-        <div class="stat-card" style="border-left-color: #0dcaf0;">
+        <div class="stat-card">
             <div class="stat-icon" style="background: linear-gradient(135deg,#0dcaf0,#0aa2c0);"><i class="fas fa-calendar-check"></i></div>
             <div class="stat-info">
-                <h3><%= new java.text.SimpleDateFormat("MMM yyyy").format(new java.util.Date()) %></h3>
-                <p>Current Month</p>
+                <h3><%= new java.text.SimpleDateFormat("yyyy").format(new java.util.Date()) %></h3>
+                <p>Year</p>
             </div>
         </div>
     </div>
 
-    <!-- Action Bar - Admin has export option -->
+    <!-- Action Bar -->
     <div class="action-bar">
         <div class="action-bar-left">
             <div class="view-toggle">
@@ -772,17 +647,12 @@
                 </button>
             </div>
             <span style="color: var(--secondary-color);">
-                Showing <%= guests != null ? guests.size() : 0 %> of <%= request.getAttribute("totalCount") %> guests
+                Showing <%= guests != null ? guests.size() : 0 %> guests
             </span>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="#" class="btn-export" onclick="exportGuests()">
-                <i class="fas fa-download"></i> Export
-            </a>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/guests/new" class="btn-add">
-                <i class="fas fa-user-plus"></i> Add New Guest
-            </a>
-        </div>
+        <a href="${pageContext.request.contextPath}<%= basePath %>/guests/new" class="btn-add">
+            <i class="fas fa-user-plus"></i> Add New Guest
+        </a>
     </div>
 
     <!-- Guest Grid View -->
@@ -795,7 +665,7 @@
                 <% if (request.getParameter("search") != null) { %>
                 Try a different search term or <a href="${pageContext.request.contextPath}<%= basePath %>/guests">view all guests</a>
                 <% } else { %>
-                Start by adding your first guest to the system
+                Start by adding your first guest
                 <% } %>
             </p>
             <% if (request.getParameter("search") == null) { %>
@@ -839,21 +709,12 @@
                 <span><%= guest.getCity() %><%= guest.getCountry() != null ? ", " + guest.getCountry() : "" %></span>
             </div>
             <% } %>
-
-            <div class="guest-stats">
-                <div class="guest-stat">
-                    <div class="guest-stat-value"><%= guest.getLoyaltyPoints() != null ? guest.getLoyaltyPoints() : 0 %></div>
-                    <div class="guest-stat-label">Points</div>
-                </div>
-                <div class="guest-stat">
-                    <div class="guest-stat-value">0</div>
-                    <div class="guest-stat-label">Stays</div>
-                </div>
-                <div class="guest-stat">
-                    <div class="guest-stat-value">$0</div>
-                    <div class="guest-stat-label">Spent</div>
-                </div>
+            <% if (guest.getLoyaltyPoints() != null && guest.getLoyaltyPoints() > 0) { %>
+            <div class="guest-detail">
+                <i class="fas fa-star"></i>
+                <span><%= guest.getLoyaltyPoints() %> points</span>
             </div>
+            <% } %>
 
             <div class="guest-actions">
                 <a href="${pageContext.request.contextPath}<%= basePath %>/guests/view?id=<%= guest.getId() %>" class="btn-view">
@@ -861,9 +722,6 @@
                 </a>
                 <a href="${pageContext.request.contextPath}<%= basePath %>/guests/edit?id=<%= guest.getId() %>" class="btn-edit">
                     <i class="fas fa-edit me-1"></i>Edit
-                </a>
-                <a href="#" class="btn-delete" onclick="confirmDelete(<%= guest.getId() %>)">
-                    <i class="fas fa-trash me-1"></i>Delete
                 </a>
             </div>
         </div>
@@ -880,7 +738,6 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Location</th>
-                <th>ID Type</th>
                 <th>Status</th>
                 <th>Points</th>
                 <th>Actions</th>
@@ -908,7 +765,6 @@
                     -
                     <% } %>
                 </td>
-                <td><%= guest.getIdCardType() != null ? guest.getIdCardType().replace("_", " ") : "-" %></td>
                 <td>
                     <% if (isVip) { %>
                     <span class="badge bg-warning text-dark">VIP</span>
@@ -926,10 +782,6 @@
                        class="btn btn-sm btn-outline-secondary" title="Edit">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <a href="#" onclick="confirmDelete(<%= guest.getId() %>)"
-                       class="btn btn-sm btn-outline-danger" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </a>
                 </td>
             </tr>
             <% } } %>
@@ -945,7 +797,7 @@
     %>
     <div class="pagination">
         <% for (int i = 1; i <= totalPages; i++) { %>
-        <a href="${pageContext.request.contextPath}<%= basePath %>/guests?page=<%= i %><%= request.getParameter("search") != null ? "&search=" + request.getParameter("search") : "" %>"
+        <a href="${pageContext.request.contextPath}<%= basePath %>/guests?page=<%= i %>"
            class="page-link <%= i == currentPage ? "active" : "" %>">
             <%= i %>
         </a>
@@ -954,32 +806,9 @@
     <% } } %>
 </div>
 
-<!-- Delete Confirmation Modal - Admin Only -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this guest?</p>
-                <p class="text-danger"><strong>Warning:</strong> This action cannot be undone. All associated data including reservations and bills will also be deleted.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
-                    <i class="fas fa-trash me-2"></i>Delete Permanently
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // View toggle function
     function toggleView(view) {
         const gridView = document.getElementById('gridView');
         const listView = document.getElementById('listView');
@@ -998,6 +827,7 @@
             gridBtn.classList.remove('active');
         }
 
+        // Save preference
         localStorage.setItem('guestViewPreference', view);
     }
 
@@ -1006,55 +836,6 @@
         const savedView = localStorage.getItem('guestViewPreference') || 'grid';
         toggleView(savedView);
     });
-
-    // Admin: Advanced filters toggle
-    function toggleAdvancedFilters() {
-        const filters = document.getElementById('advancedFilters');
-        const icon = document.getElementById('filterIcon');
-        filters.classList.toggle('show');
-        icon.classList.toggle('fa-chevron-down');
-        icon.classList.toggle('fa-chevron-up');
-    }
-
-    // Admin: Apply filters
-    function applyAdvancedFilters() {
-        const vip = document.getElementById('vipFilter').value;
-        const minPoints = document.getElementById('minPoints').value;
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
-
-        // Build URL with filters
-        let url = '${pageContext.request.contextPath}<%= basePath %>/guests?';
-        if (vip) url += '&vip=' + vip;
-        if (minPoints) url += '&minPoints=' + minPoints;
-        if (dateFrom) url += '&from=' + dateFrom;
-        if (dateTo) url += '&to=' + dateTo;
-
-        window.location.href = url;
-    }
-
-    // Admin: Reset filters
-    function resetAdvancedFilters() {
-        document.getElementById('vipFilter').value = '';
-        document.getElementById('minPoints').value = '';
-        document.getElementById('dateFrom').value = '';
-        document.getElementById('dateTo').value = '';
-    }
-
-    // Admin: Delete confirmation
-    function confirmDelete(guestId) {
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-        deleteBtn.href = '${pageContext.request.contextPath}<%= basePath %>/guests/delete?id=' + guestId;
-
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
-    }
-
-    // Admin: Export guests
-    function exportGuests() {
-        const format = confirm('Export as CSV? Click OK for CSV, Cancel for Excel') ? 'csv' : 'excel';
-        window.location.href = '${pageContext.request.contextPath}<%= basePath %>/guests/export?format=' + format;
-    }
 </script>
 </body>
 </html>
