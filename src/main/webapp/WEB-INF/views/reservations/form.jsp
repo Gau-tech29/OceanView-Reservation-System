@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ... (keep all existing styles) ... */
+        /* ... (keep all existing styles from your original file) ... */
         :root {
             --primary: #0d6efd; --primary-dark: #0b5ed7; --primary-light: #e8f0fe;
             --success: #198754; --success-light: #d4edda;
@@ -76,13 +76,39 @@
         .sr-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
         .sr-name { font-weight: 600; font-size: 0.88rem; color: var(--dark); }
         .sr-info { font-size: 0.77rem; color: var(--gray-600); }
-        .selected-guest-card { display: none; background: linear-gradient(135deg, #e8f4fd, #f0f8ff); border: 2px solid var(--primary); border-radius: var(--radius-md); padding: 14px 16px; position: relative; }
+        .selected-guest-card { display: none; background: linear-gradient(135deg, #e8f4fd, #f0f8ff); border: 2px solid var(--primary); border-radius: var(--radius-md); padding: 14px 16px; position: relative; margin-bottom: 20px; }
         .selected-guest-card.show { display: flex; align-items: center; gap: 14px; }
         .sg-avatar { width: 46px; height: 46px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.1rem; flex-shrink: 0; }
         .sg-name { font-weight: 700; font-size: 0.95rem; color: var(--dark); }
         .sg-info { font-size: 0.8rem; color: var(--gray-600); margin-top: 2px; }
         .sg-clear { position: absolute; top: 10px; right: 12px; cursor: pointer; color: var(--danger); font-size: 1rem; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
         .sg-clear:hover { background: var(--danger-light); }
+        .sg-edit { position: absolute; top: 10px; right: 45px; cursor: pointer; color: var(--primary); font-size: 1rem; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
+        .sg-edit:hover { background: var(--primary-light); }
+
+        /* Guest Edit Section */
+        .guest-edit-section {
+            display: none;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary);
+            position: relative;
+        }
+        .guest-edit-section.show { display: block; }
+        .guest-edit-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--gray-300);
+        }
+        .guest-edit-title { font-weight: 600; color: var(--primary); }
+        .guest-edit-close {
+            cursor: pointer; color: var(--danger); font-size: 1.2rem;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: background 0.2s;
+        }
+        .guest-edit-close:hover { background: var(--danger-light); }
+
         .capacity-checker { background: var(--gray-100); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 16px; border: 1.5px solid var(--gray-300); display: none; }
         .capacity-checker.show { display: block; }
         .capacity-bar-wrap { background: var(--gray-200); border-radius: 20px; height: 8px; overflow: hidden; margin: 8px 0 6px; }
@@ -238,6 +264,10 @@
 
     // ── Guest pre-fill ────────────────────────────────────────────────────────────
     String preGuestId = "", preGuestName = "", preGuestInfo = "", preGuestInitials = "";
+    String preFirstName = "", preLastName = "", preEmail = "", prePhone = "";
+    String preAddress = "", preCity = "", preCountry = "", prePostalCode = "";
+    String preIdCardNumber = "", preIdCardType = "";
+
     if (isEdit && reservation.getGuestId() != null) {
         preGuestId   = String.valueOf(reservation.getGuestId());
         preGuestName = reservation.getGuestName() != null ? reservation.getGuestName() : "Guest #" + reservation.getGuestId();
@@ -249,6 +279,16 @@
         preGuestInitials = np.length >= 2
                 ? String.valueOf(np[0].charAt(0)) + String.valueOf(np[np.length - 1].charAt(0))
                 : preGuestName.substring(0, Math.min(2, preGuestName.length())).toUpperCase();
+
+        // Extract individual fields for edit
+        preFirstName = reservation.getGuestName() != null ?
+                (reservation.getGuestName().contains(" ") ?
+                        reservation.getGuestName().substring(0, reservation.getGuestName().lastIndexOf(' ')) :
+                        reservation.getGuestName()) : "";
+        preLastName = reservation.getGuestName() != null && reservation.getGuestName().contains(" ") ?
+                reservation.getGuestName().substring(reservation.getGuestName().lastIndexOf(' ') + 1) : "";
+        preEmail = reservation.getGuestEmail() != null ? reservation.getGuestEmail() : "";
+        prePhone = reservation.getGuestPhone() != null ? reservation.getGuestPhone() : "";
     } else if (selectedGuest != null) {
         preGuestId   = String.valueOf(selectedGuest.getId());
         preGuestName = selectedGuest.getFullName() != null ? selectedGuest.getFullName() : "";
@@ -259,6 +299,18 @@
         if (selectedGuest.getFirstName() != null && selectedGuest.getLastName() != null)
             preGuestInitials = String.valueOf(selectedGuest.getFirstName().charAt(0))
                     + String.valueOf(selectedGuest.getLastName().charAt(0));
+
+        // Extract individual fields for edit
+        preFirstName = selectedGuest.getFirstName() != null ? selectedGuest.getFirstName() : "";
+        preLastName = selectedGuest.getLastName() != null ? selectedGuest.getLastName() : "";
+        preEmail = selectedGuest.getEmail() != null ? selectedGuest.getEmail() : "";
+        prePhone = selectedGuest.getPhone() != null ? selectedGuest.getPhone() : "";
+        preAddress = selectedGuest.getAddress() != null ? selectedGuest.getAddress() : "";
+        preCity = selectedGuest.getCity() != null ? selectedGuest.getCity() : "";
+        preCountry = selectedGuest.getCountry() != null ? selectedGuest.getCountry() : "";
+        prePostalCode = selectedGuest.getPostalCode() != null ? selectedGuest.getPostalCode() : "";
+        preIdCardNumber = selectedGuest.getIdCardNumber() != null ? selectedGuest.getIdCardNumber() : "";
+        preIdCardType = selectedGuest.getIdCardType() != null ? selectedGuest.getIdCardType() : "";
     }
     boolean hasPreGuest = !preGuestId.isEmpty();
 
@@ -338,6 +390,7 @@
                     </button>
                 </div>
                 <input type="hidden" name="guestMode" id="guestMode" value="existing">
+                <input type="hidden" name="updateGuest" id="updateGuest" value="false">
 
                 <!-- Existing Guest Panel -->
                 <div id="panelExisting">
@@ -353,15 +406,88 @@
                         <div class="search-results" id="searchResults"></div>
                     </div>
                     <input type="hidden" name="guestId" id="guestId" value="<%= hasPreGuest ? preGuestId : "" %>">
+
+                    <!-- Selected Guest Card with Edit Option -->
                     <div class="selected-guest-card <%= hasPreGuest ? "show" : "" %>" id="selectedGuest">
                         <div class="sg-avatar" id="sgAvatar"><%= hasPreGuest ? preGuestInitials : "" %></div>
                         <div>
                             <div class="sg-name" id="sgName"><%= hasPreGuest ? preGuestName : "" %></div>
                             <div class="sg-info" id="sgInfo"><%= hasPreGuest ? preGuestInfo : "" %></div>
                         </div>
-                        <span class="sg-clear" onclick="clearGuest()"><i class="fas fa-times"></i></span>
+                        <span class="sg-edit" onclick="editGuest()" title="Edit Guest Details"><i class="fas fa-pencil-alt"></i></span>
+                        <span class="sg-clear" onclick="clearGuest()" title="Clear Guest"><i class="fas fa-times"></i></span>
                     </div>
-                    <div class="info-tip"><i class="fas fa-info-circle"></i> Type at least 2 characters to search, then click a result.</div>
+
+                    <!-- Guest Edit Section -->
+                    <div class="guest-edit-section" id="guestEditSection">
+                        <div class="guest-edit-header">
+                            <h5 class="guest-edit-title"><i class="fas fa-edit me-2"></i>Edit Guest Details</h5>
+                            <span class="guest-edit-close" onclick="closeGuestEdit()"><i class="fas fa-times"></i></span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name <span class="required-star">*</span></label>
+                                <input type="text" name="firstName" id="editFirstName" class="form-control"
+                                       value="<%= preFirstName %>" placeholder="First name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name <span class="required-star">*</span></label>
+                                <input type="text" name="lastName" id="editLastName" class="form-control"
+                                       value="<%= preLastName %>" placeholder="Last name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="guestEmail" id="editEmail" class="form-control"
+                                       value="<%= preEmail %>" placeholder="guest@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="guestPhone" id="editPhone" class="form-control"
+                                       value="<%= prePhone %>" placeholder="+94 XX XXX XXXX">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ID Type</label>
+                                <select name="idCardType" id="editIdCardType" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="PASSPORT" <%= "PASSPORT".equals(preIdCardType) ? "selected" : "" %>>Passport</option>
+                                    <option value="NATIONAL_ID" <%= "NATIONAL_ID".equals(preIdCardType) ? "selected" : "" %>>National ID</option>
+                                    <option value="DRIVERS_LICENSE" <%= "DRIVERS_LICENSE".equals(preIdCardType) ? "selected" : "" %>>Driver's License</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ID Number</label>
+                                <input type="text" name="idCardNumber" id="editIdCardNumber" class="form-control"
+                                       value="<%= preIdCardNumber %>" placeholder="ID number">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <input type="text" name="address" id="editAddress" class="form-control"
+                                       value="<%= preAddress %>" placeholder="Street address">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">City</label>
+                                <input type="text" name="city" id="editCity" class="form-control" value="<%= preCity %>">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Country</label>
+                                <input type="text" name="country" id="editCountry" class="form-control" value="<%= preCountry %>">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" name="postalCode" id="editPostalCode" class="form-control" value="<%= prePostalCode %>">
+                            </div>
+                            <div class="col-12">
+                                <button type="button" class="btn btn-primary" onclick="saveGuestEdits()">
+                                    <i class="fas fa-save me-2"></i>Update Guest
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="closeGuestEdit()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-tip"><i class="fas fa-info-circle"></i> Type at least 2 characters to search, then click a result. Click <i class="fas fa-pencil-alt"></i> to edit guest details.</div>
                 </div>
 
                 <!-- New Guest Panel -->
@@ -581,6 +707,99 @@
 
     // Pre-existing rooms for edit mode (populated by JSP)
     var _preRooms = <%= preRoomsJson %>;
+
+    // Current guest data for editing
+    var _currentGuest = {
+        id: '<%= preGuestId %>',
+        firstName: '<%= preFirstName.replace("'", "\\'") %>',
+        lastName: '<%= preLastName.replace("'", "\\'") %>',
+        email: '<%= preEmail.replace("'", "\\'") %>',
+        phone: '<%= prePhone.replace("'", "\\'") %>',
+        address: '<%= preAddress.replace("'", "\\'") %>',
+        city: '<%= preCity.replace("'", "\\'") %>',
+        country: '<%= preCountry.replace("'", "\\'") %>',
+        postalCode: '<%= prePostalCode.replace("'", "\\'") %>',
+        idCardNumber: '<%= preIdCardNumber.replace("'", "\\'") %>',
+        idCardType: '<%= preIdCardType %>'
+    };
+
+    // ═══ Guest Edit Functions ═══════════════════════════════════════════════════
+
+    function editGuest() {
+        if (!_currentGuest.id) return;
+
+        // Populate edit form with current guest data
+        document.getElementById('editFirstName').value = _currentGuest.firstName;
+        document.getElementById('editLastName').value = _currentGuest.lastName;
+        document.getElementById('editEmail').value = _currentGuest.email;
+        document.getElementById('editPhone').value = _currentGuest.phone;
+        document.getElementById('editAddress').value = _currentGuest.address;
+        document.getElementById('editCity').value = _currentGuest.city;
+        document.getElementById('editCountry').value = _currentGuest.country;
+        document.getElementById('editPostalCode').value = _currentGuest.postalCode;
+        document.getElementById('editIdCardNumber').value = _currentGuest.idCardNumber;
+
+        var idTypeSelect = document.getElementById('editIdCardType');
+        for (var i = 0; i < idTypeSelect.options.length; i++) {
+            if (idTypeSelect.options[i].value === _currentGuest.idCardType) {
+                idTypeSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Show edit section
+        document.getElementById('guestEditSection').classList.add('show');
+    }
+
+    function saveGuestEdits() {
+        var firstName = document.getElementById('editFirstName').value.trim();
+        var lastName = document.getElementById('editLastName').value.trim();
+
+        if (!firstName || !lastName) {
+            alert('First name and last name are required.');
+            return;
+        }
+
+        // Update current guest data
+        _currentGuest.firstName = firstName;
+        _currentGuest.lastName = lastName;
+        _currentGuest.email = document.getElementById('editEmail').value.trim();
+        _currentGuest.phone = document.getElementById('editPhone').value.trim();
+        _currentGuest.address = document.getElementById('editAddress').value.trim();
+        _currentGuest.city = document.getElementById('editCity').value.trim();
+        _currentGuest.country = document.getElementById('editCountry').value.trim();
+        _currentGuest.postalCode = document.getElementById('editPostalCode').value.trim();
+        _currentGuest.idCardNumber = document.getElementById('editIdCardNumber').value.trim();
+        _currentGuest.idCardType = document.getElementById('editIdCardType').value;
+
+        // Update display
+        var fullName = firstName + ' ' + lastName;
+        document.getElementById('sgName').textContent = fullName;
+
+        var info = [];
+        if (_currentGuest.email) info.push(_currentGuest.email);
+        if (_currentGuest.phone) info.push(_currentGuest.phone);
+        if (info.length > 0) {
+            document.getElementById('sgInfo').textContent = info.join(' · ');
+        }
+
+        // Update avatar initials
+        var initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        document.getElementById('sgAvatar').textContent = initials;
+
+        // Set flag to update guest on server when form is submitted
+        document.getElementById('updateGuest').value = 'true';
+
+        // Close edit section
+        closeGuestEdit();
+
+        // Show success message
+        alert('Guest details updated. Changes will be saved when you create the reservation.');
+    }
+
+    function closeGuestEdit() {
+        document.getElementById('guestEditSection').classList.remove('show');
+    }
 
     // ═══ Slot management ════════════════════════════════════════════════════════
 
@@ -1134,6 +1353,11 @@
         document.getElementById('tab-new').classList.toggle('active', mode === 'new');
         document.getElementById('panelExisting').style.display = mode === 'existing' ? 'block' : 'none';
         document.getElementById('panelNew').style.display      = mode === 'new'      ? 'block' : 'none';
+
+        // Clear guest selection when switching to new mode
+        if (mode === 'new') {
+            clearGuest();
+        }
     }
 
     // ═══ Guest Search ══════════════════════════════════════════════════════════════
@@ -1168,7 +1392,7 @@
                 if (g.phone) info.push(g.phone);
                 if (g.guestNumber) info.push('#' + g.guestNumber);
                 var ini = g.fullName ? g.fullName.split(' ').map(function(p){ return p[0]; }).join('').substring(0,2).toUpperCase() : '??';
-                return '<div class="sr-item" onclick="pickGuest(' + g.id + ',\'' + escJ(g.fullName) + '\',\'' + escJ(g.email||'') + '\',\'' + escJ(g.phone||'') + '\',\'' + escJ(g.guestNumber||'') + '\',\'' + escJ(ini) + '\')">' +
+                return '<div class="sr-item" onclick="pickGuest(' + g.id + ',\'' + escJ(g.fullName) + '\',\'' + escJ(g.email||'') + '\',\'' + escJ(g.phone||'') + '\',\'' + escJ(g.guestNumber||'') + '\',\'' + escJ(g.firstName||'') + '\',\'' + escJ(g.lastName||'') + '\',\'' + escJ(g.address||'') + '\',\'' + escJ(g.city||'') + '\',\'' + escJ(g.country||'') + '\',\'' + escJ(g.postalCode||'') + '\',\'' + escJ(g.idCardNumber||'') + '\',\'' + escJ(g.idCardType||'') + '\')">' +
                     '<div class="sr-avatar">' + escH(ini) + '</div>' +
                     '<div><div class="sr-name">' + escH(g.fullName) + '</div>' +
                     '<div class="sr-info">' + escH(info.join(' · ')) + '</div></div></div>';
@@ -1183,9 +1407,9 @@
         box.style.display = 'block';
     }
 
-    function pickGuest(id, name, email, phone, gnum, ini) {
+    function pickGuest(id, name, email, phone, gnum, firstName, lastName, address, city, country, postalCode, idCardNumber, idCardType) {
         document.getElementById('guestId').value = id;
-        document.getElementById('sgAvatar').textContent = ini || (name ? name.substring(0,2).toUpperCase() : '??');
+        document.getElementById('sgAvatar').textContent = (firstName && lastName) ? (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() : (name ? name.substring(0,2).toUpperCase() : '??');
         document.getElementById('sgName').textContent   = name;
         var p = [];
         if (email) p.push(email);
@@ -1195,6 +1419,25 @@
         document.getElementById('selectedGuest').classList.add('show');
         document.getElementById('guestSearchInput').value = '';
         hideGuestResults();
+
+        // Update current guest data for editing
+        _currentGuest = {
+            id: id,
+            firstName: firstName || '',
+            lastName: lastName || '',
+            email: email || '',
+            phone: phone || '',
+            address: address || '',
+            city: city || '',
+            country: country || '',
+            postalCode: postalCode || '',
+            idCardNumber: idCardNumber || '',
+            idCardType: idCardType || ''
+        };
+
+        // Reset update flag (guest might be edited later)
+        document.getElementById('updateGuest').value = 'false';
+
         updateStepIndicators();
     }
 
@@ -1202,6 +1445,9 @@
         document.getElementById('guestId').value = '';
         document.getElementById('selectedGuest').classList.remove('show');
         document.getElementById('guestSearchInput').value = '';
+        document.getElementById('updateGuest').value = 'false';
+        _currentGuest = { id: '' };
+        closeGuestEdit();
         updateStepIndicators();
     }
 

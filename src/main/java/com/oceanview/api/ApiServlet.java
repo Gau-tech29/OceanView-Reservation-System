@@ -53,8 +53,16 @@ public class ApiServlet extends HttpServlet {
                     .append("\"id\":").append(g.getId()).append(",")
                     .append("\"guestNumber\":\"").append(escapeJson(g.getGuestNumber())).append("\",")
                     .append("\"fullName\":\"").append(escapeJson(g.getFullName())).append("\",")
+                    .append("\"firstName\":\"").append(escapeJson(g.getFirstName())).append("\",")
+                    .append("\"lastName\":\"").append(escapeJson(g.getLastName())).append("\",")
                     .append("\"email\":\"").append(escapeJson(g.getEmail())).append("\",")
-                    .append("\"phone\":\"").append(escapeJson(g.getPhone())).append("\"")
+                    .append("\"phone\":\"").append(escapeJson(g.getPhone())).append("\",")
+                    .append("\"address\":\"").append(escapeJson(g.getAddress())).append("\",")
+                    .append("\"city\":\"").append(escapeJson(g.getCity())).append("\",")
+                    .append("\"country\":\"").append(escapeJson(g.getCountry())).append("\",")
+                    .append("\"postalCode\":\"").append(escapeJson(g.getPostalCode())).append("\",")
+                    .append("\"idCardNumber\":\"").append(escapeJson(g.getIdCardNumber())).append("\",")
+                    .append("\"idCardType\":\"").append(escapeJson(g.getIdCardType())).append("\"")
                     .append("}");
             if (i < guests.size() - 1) json.append(",");
         }

@@ -431,17 +431,43 @@ public class ReservationController extends HttpServlet {
                 newGuest.setLoyaltyPoints(0);
                 resolvedGuestId = guestService.createGuest(newGuest).getId();
             } else {
+                // Check if we need to update the existing guest
+                String updateGuest = request.getParameter("updateGuest");
                 String guestIdStr = request.getParameter("guestId");
+
                 if (guestIdStr == null || guestIdStr.trim().isEmpty())
                     throw new IllegalArgumentException(
                             "Please select an existing guest or choose 'New Guest'.");
+
                 try {
                     resolvedGuestId = Long.parseLong(guestIdStr.trim());
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("Invalid guest ID format.");
                 }
-                if (!guestService.getGuestById(resolvedGuestId).isPresent())
-                    throw new IllegalArgumentException("Guest not found. Please search again.");
+
+                // If updateGuest flag is set, update the guest information
+                if ("true".equals(updateGuest)) {
+                    GuestDTO existingGuest = guestService.getGuestById(resolvedGuestId)
+                            .orElseThrow(() -> new IllegalArgumentException("Guest not found."));
+
+                    // Update guest with form data
+                    existingGuest.setFirstName(required(request, "firstName", "First name is required."));
+                    existingGuest.setLastName(required(request, "lastName", "Last name is required."));
+                    existingGuest.setEmail(request.getParameter("guestEmail"));
+                    existingGuest.setPhone(request.getParameter("guestPhone"));
+                    existingGuest.setAddress(request.getParameter("address"));
+                    existingGuest.setCity(request.getParameter("city"));
+                    existingGuest.setCountry(request.getParameter("country"));
+                    existingGuest.setPostalCode(request.getParameter("postalCode"));
+                    existingGuest.setIdCardNumber(request.getParameter("idCardNumber"));
+                    existingGuest.setIdCardType(request.getParameter("idCardType"));
+
+                    guestService.updateGuest(existingGuest);
+                } else {
+                    // Verify guest exists
+                    if (!guestService.getGuestById(resolvedGuestId).isPresent())
+                        throw new IllegalArgumentException("Guest not found. Please search again.");
+                }
             }
 
             LocalDate checkIn  = parseDate(request, "checkInDate");
