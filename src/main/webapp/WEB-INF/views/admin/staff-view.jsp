@@ -304,21 +304,26 @@
             </div>
         </div>
 
-        <div class="mt-4 text-end">
+        <%-- Replace the existing action buttons div at the bottom of the profile-card with: --%>
+        <div class="mt-4 d-flex flex-wrap gap-2 justify-content-end">
             <a href="${pageContext.request.contextPath}/admin/manage-staff?action=edit&id=<%= staff.getId() %>"
-               class="btn btn-primary btn-action me-2">
+               class="btn btn-primary" style="border-radius:12px; padding:10px 24px;">
                 <i class="fas fa-edit me-2"></i>Edit Profile
+            </a>
+            <a href="${pageContext.request.contextPath}/admin/manage-staff?action=resetpw&id=<%= staff.getId() %>"
+               class="btn" style="background:#7c3aed; color:white; border-radius:12px; padding:10px 24px; font-weight:500; box-shadow:0 4px 12px rgba(124,58,237,.3);">
+                <i class="fas fa-key me-2"></i>Reset Password
             </a>
             <% if (staff.isActive()) { %>
             <a href="${pageContext.request.contextPath}/admin/manage-staff?action=toggle&id=<%= staff.getId() %>&toggle=deactivate"
-               class="btn btn-warning btn-action"
-               onclick="return confirm('Are you sure you want to deactivate this staff member?')">
+               class="btn btn-warning" style="border-radius:12px; padding:10px 24px;"
+               onclick="return confirm('Deactivate this staff member?')">
                 <i class="fas fa-ban me-2"></i>Deactivate
             </a>
             <% } else { %>
             <a href="${pageContext.request.contextPath}/admin/manage-staff?action=toggle&id=<%= staff.getId() %>&toggle=activate"
-               class="btn btn-success btn-action"
-               onclick="return confirm('Are you sure you want to activate this staff member?')">
+               class="btn btn-success" style="border-radius:12px; padding:10px 24px;"
+               onclick="return confirm('Activate this staff member?')">
                 <i class="fas fa-check-circle me-2"></i>Activate
             </a>
             <% } %>

@@ -14,7 +14,6 @@ public class UserService {
 
     private final UserDAO userDAO;
 
-    // Dependency Injection
     public UserService() {
         this.userDAO = UserDAOImpl.getInstance();
     }
@@ -27,51 +26,31 @@ public class UserService {
         if (!ValidationUtils.isValidUsername(username) || !ValidationUtils.isValidPassword(password)) {
             return Optional.empty();
         }
-
         if (userDAO.authenticate(username, password)) {
             Optional<User> userOpt = userDAO.findByUsername(username);
             userOpt.ifPresent(user -> {
-                try {
-                    userDAO.updateLastLogin(user.getId());
-                } catch (SQLException e) {
-                    // Log error but don't fail login
-                }
+                try { userDAO.updateLastLogin(user.getId()); }
+                catch (SQLException e) { /* log but don't fail */ }
             });
             return userOpt;
         }
-
         return Optional.empty();
     }
 
     public User createUser(User user, String password) throws SQLException, IllegalArgumentException {
-        // Validate user data
-        if (!ValidationUtils.isValidUsername(user.getUsername())) {
+        if (!ValidationUtils.isValidUsername(user.getUsername()))
             throw new IllegalArgumentException("Invalid username format");
-        }
-
-        if (!ValidationUtils.isValidPassword(password)) {
+        if (!ValidationUtils.isValidPassword(password))
             throw new IllegalArgumentException("Password must be at least 8 characters with mixed case and numbers");
-        }
-
-        if (!ValidationUtils.isValidEmail(user.getEmail())) {
+        if (!ValidationUtils.isValidEmail(user.getEmail()))
             throw new IllegalArgumentException("Invalid email format");
-        }
-
-        if (!ValidationUtils.isValidPhone(user.getPhone())) {
+        if (!ValidationUtils.isValidPhone(user.getPhone()))
             throw new IllegalArgumentException("Invalid phone number format");
-        }
-
-        // Check if username already exists
-        if (userDAO.findByUsername(user.getUsername()).isPresent()) {
+        if (userDAO.findByUsername(user.getUsername()).isPresent())
             throw new IllegalArgumentException("Username already exists");
-        }
-
-        // Check if email already exists
-        if (userDAO.findByEmail(user.getEmail()).isPresent()) {
+        if (userDAO.findByEmail(user.getEmail()).isPresent())
             throw new IllegalArgumentException("Email already exists");
-        }
 
-        // Hash password and save
         user.setPassword(PasswordUtils.hashPassword(password));
         return userDAO.save(user);
     }
@@ -93,69 +72,59 @@ public class UserService {
     }
 
     public User updateUser(User user) throws SQLException, IllegalArgumentException {
-        // Validate user data
-        if (!ValidationUtils.isValidEmail(user.getEmail())) {
+        if (!ValidationUtils.isValidEmail(user.getEmail()))
             throw new IllegalArgumentException("Invalid email format");
-        }
-
-        if (!ValidationUtils.isValidPhone(user.getPhone())) {
+        if (!ValidationUtils.isValidPhone(user.getPhone()))
             throw new IllegalArgumentException("Invalid phone number format");
-        }
-
-        // Check if email already exists for another user
         Optional<User> existingUser = userDAO.findByEmail(user.getEmail());
-        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId()))
             throw new IllegalArgumentException("Email already exists for another user");
-        }
-
         return userDAO.update(user);
     }
 
-    public boolean changePassword(Long userId, String oldPassword, String newPassword) throws SQLException, IllegalArgumentException {
+    public boolean changePassword(Long userId, String oldPassword, String newPassword)
+            throws SQLException, IllegalArgumentException {
         Optional<User> userOpt = userDAO.findById(userId);
-
-        if (!userOpt.isPresent()) {
-            throw new IllegalArgumentException("User not found");
-        }
-
+        if (!userOpt.isPresent()) throw new IllegalArgumentException("User not found");
         User user = userOpt.get();
-
-        // Verify old password
-        if (!PasswordUtils.checkPassword(oldPassword, user.getPassword())) {
+        if (!PasswordUtils.checkPassword(oldPassword, user.getPassword()))
             throw new IllegalArgumentException("Current password is incorrect");
-        }
-
-        // Validate new password
-        if (!ValidationUtils.isValidPassword(newPassword)) {
+        if (!ValidationUtils.isValidPassword(newPassword))
             throw new IllegalArgumentException("New password must be at least 8 characters with mixed case and numbers");
-        }
+        return userDAO.changePassword(userId, newPassword);
+    }
 
+    /**
+     * Admin-only: reset another user's password without knowing their current password.
+     */
+    public boolean adminResetPassword(Long userId, String newPassword)
+            throws SQLException, IllegalArgumentException {
+        if (!userDAO.exists(userId))
+            throw new IllegalArgumentException("User not found with ID: " + userId);
+        if (!ValidationUtils.isValidPassword(newPassword))
+            throw new IllegalArgumentException("Password must be at least 8 characters with uppercase, lowercase and number");
         return userDAO.changePassword(userId, newPassword);
     }
 
     public boolean deactivateUser(Long userId) throws SQLException {
         Optional<User> userOpt = userDAO.findById(userId);
-
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             user.setActive(false);
             userDAO.update(user);
             return true;
         }
-
         return false;
     }
 
     public boolean activateUser(Long userId) throws SQLException {
         Optional<User> userOpt = userDAO.findById(userId);
-
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             user.setActive(true);
             userDAO.update(user);
             return true;
         }
-
         return false;
     }
 
