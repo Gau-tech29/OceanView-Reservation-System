@@ -600,8 +600,9 @@
             <i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/guests" class="active">
             <i class="fas fa-users"></i><span>Guests</span></a></li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/bills">
-            <i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/payments">
+            <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
+        </li>
     </ul>
     <div class="sidebar-label">Administration</div>
     <ul class="sidebar-menu">

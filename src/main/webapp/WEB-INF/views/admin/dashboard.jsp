@@ -143,6 +143,9 @@
     if (user == null) { response.sendRedirect(request.getContextPath() + "/login.jsp"); return; }
     if (!user.isAdmin()) { response.sendRedirect(request.getContextPath() + "/staff/dashboard"); return; }
 
+    // Define basePath for admin
+    String basePath = "/admin";
+
     DashboardStatsDTO stats = (DashboardStatsDTO) request.getAttribute("stats");
 
     int totalReservations = 0, activeReservations = 0, availableRooms = 0, totalRooms = 0;
@@ -191,8 +194,9 @@
             <i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
         <li><a href="<%= request.getContextPath() %>/admin/guests">
             <i class="fas fa-users"></i><span>Guests</span></a></li>
-        <li><a href="<%= request.getContextPath() %>/admin/bills">
-            <i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span></a></li>
+        <li><a href="<%= request.getContextPath() %><%= basePath %>/payments">
+            <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
+        </li>
     </ul>
     <div class="sidebar-label">Administration</div>
     <ul class="sidebar-menu">
@@ -307,8 +311,10 @@
         <a href="<%= request.getContextPath() %>/admin/guests" class="action-btn">
             <div class="action-icon"><i class="fas fa-users"></i></div><h5>Guests</h5><p>View and manage guest profiles</p>
         </a>
-        <a href="<%= request.getContextPath() %>/admin/bills" class="action-btn">
-            <div class="action-icon"><i class="fas fa-file-invoice-dollar"></i></div><h5>Bills & Payments</h5><p>Manage invoices and payments</p>
+        <a href="<%= request.getContextPath() %><%= basePath %>/payments" class="action-btn">
+            <div class="action-icon"><i class="fas fa-credit-card"></i></div>
+            <h5>Payments & Bills</h5>
+            <p>View all payments, process refunds, manage bills</p>
         </a>
         <a href="<%= request.getContextPath() %>/admin/reports" class="action-btn">
             <div class="action-icon"><i class="fas fa-chart-bar"></i></div><h5>Reports</h5><p>Revenue, occupancy & analytics</p>

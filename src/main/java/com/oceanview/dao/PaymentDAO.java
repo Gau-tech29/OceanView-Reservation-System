@@ -1,5 +1,6 @@
 package com.oceanview.dao;
 
+import com.oceanview.dto.PaymentDTO;
 import com.oceanview.model.Payment;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -14,4 +15,16 @@ public interface PaymentDAO extends BaseDAO<Payment, Long> {
     List<Payment> findByMethod(Payment.PaymentMethod method) throws SQLException;
     double getTotalPaymentsByDateRange(LocalDateTime start, LocalDateTime end) throws SQLException;
     boolean updateStatus(Long id, Payment.PaymentStatus status) throws SQLException;
+
+    // New methods for enhanced payment management
+    List<PaymentDTO> findAllPaymentDTOs(int page, int size) throws SQLException;
+    List<PaymentDTO> findRecentPaymentDTOs(int limit) throws SQLException;
+    Optional<PaymentDTO> findPaymentDTOById(Long id) throws SQLException;
+    Optional<PaymentDTO> findPaymentDTOByNumber(String paymentNumber) throws SQLException;
+    List<PaymentDTO> searchPaymentDTOs(String keyword, String status, String method,
+                                       LocalDateTime startDate, LocalDateTime endDate) throws SQLException;
+    List<PaymentDTO> findPaymentDTOsByGuestId(Long guestId) throws SQLException;
+    List<PaymentDTO> findPaymentDTOsByReservationId(Long reservationId) throws SQLException;
+    long countPayments() throws SQLException;
+    double getTotalRefundedAmount(LocalDateTime start, LocalDateTime end) throws SQLException;
 }

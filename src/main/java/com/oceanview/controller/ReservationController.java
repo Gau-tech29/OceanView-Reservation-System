@@ -65,16 +65,16 @@ public class ReservationController extends HttpServlet {
                     listReservations(request, response);
                 }
             } else switch (pathInfo) {
-                case "/new":             showNewForm(request, response);             break;
-                case "/edit":            showEditForm(request, response);            break;
-                case "/view":            viewReservation(request, response);         break;
-                case "/search":          showSearchForm(request, response);          break;
-                case "/checkin":         checkInReservation(request, response);      break;
-                case "/checkout":        showCheckoutPaymentForm(request, response); break;
-                case "/cancel":          cancelReservation(request, response);       break;
-                case "/delete":          deleteReservation(request, response);       break;
-                case "/print-bill":      printBill(request, response);               break;
-                default:                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                case "/new":              showNewForm(request, response);              break;
+                case "/edit":             showEditForm(request, response);             break;
+                case "/view":             viewReservation(request, response);          break;
+                case "/search":           showSearchForm(request, response);           break;
+                case "/checkin":          checkInReservation(request, response);       break;
+                case "/checkout":         showCheckoutPaymentForm(request, response);  break;
+                case "/cancel":           cancelReservation(request, response);        break;
+                case "/delete":           deleteReservation(request, response);        break;
+                case "/print-bill":       printBill(request, response);                break;
+                default:                  response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (SQLException e) {
             handleDbError(request, response, e);
@@ -109,9 +109,6 @@ public class ReservationController extends HttpServlet {
 
     // ─── Checkout Payment Flow ────────────────────────────────────────────────────
 
-    /**
-     * GET /checkout?id=X  — show payment collection form before checking guest out.
-     */
     protected void showCheckoutPaymentForm(HttpServletRequest request,
                                            HttpServletResponse response)
             throws ServletException, IOException, SQLException {
@@ -142,15 +139,11 @@ public class ReservationController extends HttpServlet {
         }
 
         request.setAttribute("reservation", reservation);
-        request.setAttribute("pageTitle", "Checkout & Payment");
+        request.setAttribute("pageTitle",   "Checkout & Payment");
         request.getRequestDispatcher("/WEB-INF/views/reservations/checkout.jsp")
                 .forward(request, response);
     }
 
-    /**
-     * POST /process-checkout — create bill, record payment, check out guest,
-     *                          then redirect to the print-bill page.
-     */
     protected void processCheckout(HttpServletRequest request,
                                    HttpServletResponse response)
             throws ServletException, IOException, SQLException {
@@ -169,7 +162,6 @@ public class ReservationController extends HttpServlet {
         Long id = Long.parseLong(idStr.trim());
 
         try {
-            // ── 1. Load & validate reservation ───────────────────────────────────
             ReservationDTO reservation = reservationService.getReservationById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Reservation not found."));
 
@@ -178,13 +170,11 @@ public class ReservationController extends HttpServlet {
                         "Only CHECKED IN reservations can be checked out.");
             }
 
-            // ── 2. Validate payment method ────────────────────────────────────────
             String payMethodStr = request.getParameter("paymentMethod");
             if (payMethodStr == null || payMethodStr.trim().isEmpty()) {
                 throw new IllegalArgumentException("Please select a payment method.");
             }
 
-            // Bill uses CASH / CARD / BANK_TRANSFER
             Bill.PaymentMethod billPayMethod;
             switch (payMethodStr.trim()) {
                 case "CASH":          billPayMethod = Bill.PaymentMethod.CASH;          break;
@@ -192,24 +182,21 @@ public class ReservationController extends HttpServlet {
                 case "CREDIT_CARD":
                 case "DEBIT_CARD":    billPayMethod = Bill.PaymentMethod.CARD;          break;
                 default:
-                    throw new IllegalArgumentException(
-                            "Invalid payment method: " + payMethodStr);
+                    throw new IllegalArgumentException("Invalid payment method: " + payMethodStr);
             }
 
-            // Payment model uses CASH / CREDIT_CARD / DEBIT_CARD / BANK_TRANSFER
             Payment.PaymentMethod payMethod;
             try {
                 payMethod = Payment.PaymentMethod.valueOf(payMethodStr.trim());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Invalid payment method: " + payMethodStr);
+                throw new IllegalArgumentException("Invalid payment method: " + payMethodStr);
             }
 
             String cardLastFour  = request.getParameter("cardLastFour");
             String transactionId = request.getParameter("transactionId");
             String notes         = request.getParameter("paymentNotes");
 
-            // ── 3. Create bill (or reuse existing) ───────────────────────────────
+            // Create or reuse bill
             List<Bill> existingBills = billService.getBillsByReservation(id);
             Bill bill;
             if (!existingBills.isEmpty()) {
@@ -222,30 +209,24 @@ public class ReservationController extends HttpServlet {
                 bill = billService.markAsPaid(bill.getId(), billPayMethod);
             }
 
-            // ── 4. Record payment ─────────────────────────────────────────────────
+            // Record payment
             Payment payment = new Payment();
             payment.setReservationId(id);
             payment.setAmount(reservation.getTotalAmount());
             payment.setPaymentMethod(payMethod);
             payment.setPaymentStatus(Payment.PaymentStatus.COMPLETED);
-            if (cardLastFour != null && !cardLastFour.trim().isEmpty()) {
+            if (cardLastFour != null && !cardLastFour.trim().isEmpty())
                 payment.setCardLastFour(cardLastFour.trim());
-            }
-            if (transactionId != null && !transactionId.trim().isEmpty()) {
+            if (transactionId != null && !transactionId.trim().isEmpty())
                 payment.setTransactionId(transactionId.trim());
-            }
-            if (notes != null && !notes.trim().isEmpty()) {
+            if (notes != null && !notes.trim().isEmpty())
                 payment.setNotes(notes.trim());
-            }
             paymentService.createPayment(payment);
 
-            // ── 5. Mark reservation payment status = PAID ────────────────────────
+            // Update statuses
             reservationService.markReservationAsPaid(id);
-
-            // ── 6. Set reservation status = CHECKED_OUT ───────────────────────────
             reservationService.checkOut(id);
 
-            // ── 7. Redirect to print-bill page ────────────────────────────────────
             String amtStr = String.format("%.2f", reservation.getTotalAmount().doubleValue());
             session.setAttribute("success",
                     "Payment of $" + amtStr
@@ -256,12 +237,11 @@ public class ReservationController extends HttpServlet {
                     + base + "/reservations/print-bill?id=" + id);
 
         } catch (IllegalArgumentException e) {
-            // Re-show checkout form with inline error
             ReservationDTO reservation =
                     reservationService.getReservationById(id).orElse(null);
             request.setAttribute("reservation", reservation);
-            request.setAttribute("error", e.getMessage());
-            request.setAttribute("pageTitle", "Checkout & Payment");
+            request.setAttribute("error",       e.getMessage());
+            request.setAttribute("pageTitle",   "Checkout & Payment");
             request.getRequestDispatcher("/WEB-INF/views/reservations/checkout.jsp")
                     .forward(request, response);
         }
@@ -287,8 +267,8 @@ public class ReservationController extends HttpServlet {
     protected void listReservations(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
-        int page = getIntParam(request, "page", 1);
-        int size = getIntParam(request, "size", 10);
+        int page       = getIntParam(request, "page", 1);
+        int size       = getIntParam(request, "size", 10);
         List<ReservationDTO> reservations = reservationService.getReservations(page, size);
         long totalCount = reservationService.getTotalReservationsCount();
         int  totalPages = (int) Math.ceil((double) totalCount / size);
@@ -416,10 +396,9 @@ public class ReservationController extends HttpServlet {
             Long resolvedGuestId;
 
             if ("new".equals(guestMode)) {
-                // FIXED: Use the new prefixed parameter names for new guest
                 GuestDTO newGuest = new GuestDTO();
                 newGuest.setFirstName(required(request, "newFirstName", "First name is required."));
-                newGuest.setLastName(required(request, "newLastName", "Last name is required."));
+                newGuest.setLastName(required(request, "newLastName",   "Last name is required."));
                 newGuest.setEmail(request.getParameter("newGuestEmail"));
                 newGuest.setPhone(request.getParameter("newGuestPhone"));
                 newGuest.setAddress(request.getParameter("newAddress"));
@@ -432,9 +411,8 @@ public class ReservationController extends HttpServlet {
                 newGuest.setLoyaltyPoints(0);
                 resolvedGuestId = guestService.createGuest(newGuest).getId();
             } else {
-                // Check if we need to update the existing guest
                 String updateGuest = request.getParameter("updateGuest");
-                String guestIdStr = request.getParameter("guestId");
+                String guestIdStr  = request.getParameter("guestId");
 
                 if (guestIdStr == null || guestIdStr.trim().isEmpty())
                     throw new IllegalArgumentException(
@@ -446,14 +424,11 @@ public class ReservationController extends HttpServlet {
                     throw new IllegalArgumentException("Invalid guest ID format.");
                 }
 
-                // If updateGuest flag is set, update the guest information
                 if ("true".equals(updateGuest)) {
                     GuestDTO existingGuest = guestService.getGuestById(resolvedGuestId)
                             .orElseThrow(() -> new IllegalArgumentException("Guest not found."));
-
-                    // Update guest with form data (using edit section field names)
                     existingGuest.setFirstName(required(request, "firstName", "First name is required."));
-                    existingGuest.setLastName(required(request, "lastName", "Last name is required."));
+                    existingGuest.setLastName(required(request, "lastName",   "Last name is required."));
                     existingGuest.setEmail(request.getParameter("guestEmail"));
                     existingGuest.setPhone(request.getParameter("guestPhone"));
                     existingGuest.setAddress(request.getParameter("address"));
@@ -462,10 +437,8 @@ public class ReservationController extends HttpServlet {
                     existingGuest.setPostalCode(request.getParameter("postalCode"));
                     existingGuest.setIdCardNumber(request.getParameter("idCardNumber"));
                     existingGuest.setIdCardType(request.getParameter("idCardType"));
-
                     guestService.updateGuest(existingGuest);
                 } else {
-                    // Verify guest exists
                     if (!guestService.getGuestById(resolvedGuestId).isPresent())
                         throw new IllegalArgumentException("Guest not found. Please search again.");
                 }
@@ -513,25 +486,22 @@ public class ReservationController extends HttpServlet {
                     + base + "/reservations/view?id=" + saved.getId());
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("error", e.getMessage());
+            request.setAttribute("error",     e.getMessage());
             request.setAttribute("pageTitle", "New Reservation");
 
-            // For new guest mode, we need to preserve the entered values
             String guestMode = request.getParameter("guestMode");
             if ("new".equals(guestMode)) {
-                // Store new guest form values in request attributes to repopulate form
-                request.setAttribute("newFirstName", request.getParameter("newFirstName"));
-                request.setAttribute("newLastName", request.getParameter("newLastName"));
-                request.setAttribute("newGuestEmail", request.getParameter("newGuestEmail"));
-                request.setAttribute("newGuestPhone", request.getParameter("newGuestPhone"));
-                request.setAttribute("newAddress", request.getParameter("newAddress"));
-                request.setAttribute("newCity", request.getParameter("newCity"));
-                request.setAttribute("newCountry", request.getParameter("newCountry"));
-                request.setAttribute("newPostalCode", request.getParameter("newPostalCode"));
+                request.setAttribute("newFirstName",    request.getParameter("newFirstName"));
+                request.setAttribute("newLastName",     request.getParameter("newLastName"));
+                request.setAttribute("newGuestEmail",   request.getParameter("newGuestEmail"));
+                request.setAttribute("newGuestPhone",   request.getParameter("newGuestPhone"));
+                request.setAttribute("newAddress",      request.getParameter("newAddress"));
+                request.setAttribute("newCity",         request.getParameter("newCity"));
+                request.setAttribute("newCountry",      request.getParameter("newCountry"));
+                request.setAttribute("newPostalCode",   request.getParameter("newPostalCode"));
                 request.setAttribute("newIdCardNumber", request.getParameter("newIdCardNumber"));
-                request.setAttribute("newIdCardType", request.getParameter("newIdCardType"));
+                request.setAttribute("newIdCardType",   request.getParameter("newIdCardType"));
             } else {
-                // For existing guest mode, try to reload the selected guest
                 String guestIdStr = request.getParameter("guestId");
                 if (guestIdStr != null && !guestIdStr.trim().isEmpty()) {
                     try {
@@ -591,7 +561,7 @@ public class ReservationController extends HttpServlet {
                     + base + "/reservations/view?id=" + updated.getId());
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("error", "Update failed: " + e.getMessage());
+            request.setAttribute("error",     "Update failed: " + e.getMessage());
             request.setAttribute("pageTitle", "Edit Reservation");
             if (idStr != null && !idStr.trim().isEmpty()) {
                 try {
@@ -675,20 +645,53 @@ public class ReservationController extends HttpServlet {
         }
     }
 
+    /**
+     * GET /print-bill?id=X  OR  /print-bill?reservationId=X
+     *
+     * FIX: now accepts BOTH "id" and "reservationId" query parameters so that
+     * links from the payments pages (which use ?reservationId=) work correctly.
+     */
     protected void printBill(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
 
+        // FIX: accept both "id" and "reservationId" parameter names
         String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Reservation ID required");
+        if (idStr == null || idStr.trim().isEmpty()) {
+            idStr = request.getParameter("reservationId");  // <-- payments JSPs use this
+        }
+
+        if (idStr == null || idStr.trim().isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "Reservation ID required (pass as 'id' or 'reservationId')");
             return;
         }
-        Long id = Long.parseLong(idStr.trim());
+
+        Long id;
+        try {
+            id = Long.parseLong(idStr.trim());
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid reservation ID");
+            return;
+        }
+
         ReservationDTO reservation = reservationService.getReservationById(id)
-                .orElseThrow(() -> new ServletException("Reservation not found"));
+                .orElseThrow(() -> new ServletException("Reservation not found: id=" + id));
+
+        // Load the associated bill so the bill template can render full details
+        try {
+            List<Bill> bills = billService.getBillsByReservation(id);
+            if (!bills.isEmpty()) {
+                request.setAttribute("bill", bills.get(0));
+                // Increment printed count
+                billService.printBill(bills.get(0).getId());
+            }
+        } catch (SQLException e) {
+            LOGGER.warning("Could not load bill for print (reservationId=" + id + "): "
+                    + e.getMessage());
+        }
 
         request.setAttribute("reservation", reservation);
-        request.setAttribute("pageTitle", "Bill - " + reservation.getReservationNumber());
+        request.setAttribute("pageTitle",   "Bill - " + reservation.getReservationNumber());
         request.getRequestDispatcher("/WEB-INF/views/reservations/bill.jsp")
                 .forward(request, response);
     }
@@ -785,7 +788,7 @@ public class ReservationController extends HttpServlet {
 
         c.setSearchType(searchType != null ? searchType : "all");
         c.setSearchValue(searchValue != null ? searchValue : "");
-        c.setStatus(status != null && !status.isEmpty() ? status : null);
+        c.setStatus(status        != null && !status.isEmpty()        ? status        : null);
         c.setPaymentStatus(paymentStatus != null && !paymentStatus.isEmpty()
                 ? paymentStatus : null);
 

@@ -2,11 +2,14 @@ package com.oceanview.service;
 
 import com.oceanview.dao.PaymentDAO;
 import com.oceanview.dao.impl.PaymentDAOImpl;
+import com.oceanview.dto.PaymentDTO;
 import com.oceanview.model.Payment;
 import com.oceanview.util.ValidationUtils;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,6 +76,10 @@ public class PaymentService {
         return paymentDAO.getTotalPaymentsByDateRange(start, end);
     }
 
+    public double getTotalRefundedAmount(LocalDateTime start, LocalDateTime end) throws SQLException {
+        return paymentDAO.getTotalRefundedAmount(start, end);
+    }
+
     public boolean updatePaymentStatus(Long id, Payment.PaymentStatus status) throws SQLException {
         return paymentDAO.updateStatus(id, status);
     }
@@ -90,11 +97,66 @@ public class PaymentService {
             throw new IllegalArgumentException("Payment has already been refunded");
         }
 
+        if (!payment.isCompleted()) {
+            throw new IllegalArgumentException("Only completed payments can be refunded");
+        }
+
         payment.markAsRefunded();
         payment.setNotes((payment.getNotes() != null ? payment.getNotes() + " | " : "") +
-                "Refunded: " + reason);
+                "Refunded: " + reason + " on " + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
 
         return paymentDAO.update(payment);
+    }
+
+    public Payment processRefundByNumber(String paymentNumber, String reason) throws SQLException, IllegalArgumentException {
+        Optional<Payment> paymentOpt = paymentDAO.findByPaymentNumber(paymentNumber);
+
+        if (!paymentOpt.isPresent()) {
+            throw new IllegalArgumentException("Payment not found");
+        }
+
+        return processRefund(paymentOpt.get().getId(), reason);
+    }
+
+    // New DTO methods
+    public List<PaymentDTO> getAllPaymentDTOs(int page, int size) throws SQLException {
+        return paymentDAO.findAllPaymentDTOs(page, size);
+    }
+
+    public List<PaymentDTO> getRecentPaymentDTOs(int limit) throws SQLException {
+        return paymentDAO.findRecentPaymentDTOs(limit);
+    }
+
+    public Optional<PaymentDTO> getPaymentDTOById(Long id) throws SQLException {
+        return paymentDAO.findPaymentDTOById(id);
+    }
+
+    public Optional<PaymentDTO> getPaymentDTOByNumber(String paymentNumber) throws SQLException {
+        return paymentDAO.findPaymentDTOByNumber(paymentNumber);
+    }
+
+
+    public List<PaymentDTO> searchPayments(String keyword, String status, String method,
+                                           LocalDate startDate, LocalDate endDate) throws SQLException {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+        return paymentDAO.searchPaymentDTOs(keyword, status, method, start, end);
+    }
+
+    public List<PaymentDTO> getPaymentsByGuest(Long guestId) throws SQLException {
+        return paymentDAO.findPaymentDTOsByGuestId(guestId);
+    }
+
+    public List<PaymentDTO> getPaymentsByReservationDTO(Long reservationId) throws SQLException {
+        return paymentDAO.findPaymentDTOsByReservationId(reservationId);
+    }
+
+    public long getTotalPaymentsCount() throws SQLException {
+        return paymentDAO.countPayments();
+    }
+
+    public List<PaymentDTO> getRecentPayments(int limit) throws SQLException {
+        return paymentDAO.findRecentPaymentDTOs(limit);
     }
 
     private String generatePaymentNumber() {

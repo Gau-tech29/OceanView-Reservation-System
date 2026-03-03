@@ -1,14 +1,18 @@
 package com.oceanview.dao.impl;
 
 import com.oceanview.dao.PaymentDAO;
+import com.oceanview.dto.PaymentDTO;
 import com.oceanview.model.Payment;
 import com.oceanview.model.Reservation;
 import com.oceanview.util.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class PaymentDAOImpl implements PaymentDAO {
@@ -23,6 +27,22 @@ public class PaymentDAOImpl implements PaymentDAO {
         }
         return instance;
     }
+
+    private static final String SELECT_PAYMENT_DTO =
+            "SELECT p.*, " +
+                    "  r.reservation_number, " +
+                    "  r.guest_id, " +
+                    "  CONCAT(g.first_name, ' ', g.last_name) AS guest_name, " +
+                    "  g.email AS guest_email, " +
+                    "  g.phone AS guest_phone, " +
+                    "  b.id AS bill_id, " +
+                    "  b.bill_number, " +
+                    "  b.total_amount AS bill_total_amount, " +
+                    "  b.bill_status " +
+                    "FROM payments p " +
+                    "LEFT JOIN reservations r ON p.reservation_id = r.id " +
+                    "LEFT JOIN guests g ON r.guest_id = g.id " +
+                    "LEFT JOIN bills b ON b.reservation_id = r.id ";
 
     @Override
     public Payment save(Payment payment) throws SQLException {
@@ -284,6 +304,26 @@ public class PaymentDAOImpl implements PaymentDAO {
     }
 
     @Override
+    public double getTotalRefundedAmount(LocalDateTime start, LocalDateTime end) throws SQLException {
+        String sql = "SELECT COALESCE(SUM(amount), 0) as total FROM payments " +
+                "WHERE payment_date BETWEEN ? AND ? AND payment_status = 'REFUNDED'";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setTimestamp(1, Timestamp.valueOf(start));
+            ps.setTimestamp(2, Timestamp.valueOf(end));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("total");
+                }
+            }
+        }
+        return 0;
+    }
+
+    @Override
     public boolean updateStatus(Long id, Payment.PaymentStatus status) throws SQLException {
         String sql = "UPDATE payments SET payment_status = ?, updated_at = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -312,6 +352,11 @@ public class PaymentDAOImpl implements PaymentDAO {
     }
 
     @Override
+    public long countPayments() throws SQLException {
+        return count();
+    }
+
+    @Override
     public boolean exists(Long id) throws SQLException {
         String sql = "SELECT 1 FROM payments WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -323,6 +368,197 @@ public class PaymentDAOImpl implements PaymentDAO {
                 return rs.next();
             }
         }
+    }
+
+    // New DTO methods
+
+    @Override
+    public List<PaymentDTO> findAllPaymentDTOs(int page, int size) throws SQLException {
+        List<PaymentDTO> payments = new ArrayList<>();
+        String sql = SELECT_PAYMENT_DTO +
+                "ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, size);
+            ps.setInt(2, (page - 1) * size);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    payments.add(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return payments;
+    }
+
+    @Override
+    public List<PaymentDTO> findRecentPaymentDTOs(int limit) throws SQLException {
+        List<PaymentDTO> payments = new ArrayList<>();
+        String sql = SELECT_PAYMENT_DTO +
+                "ORDER BY p.created_at DESC LIMIT ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    payments.add(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return payments;
+    }
+
+    @Override
+    public Optional<PaymentDTO> findPaymentDTOById(Long id) throws SQLException {
+        String sql = SELECT_PAYMENT_DTO + "WHERE p.id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<PaymentDTO> findPaymentDTOByNumber(String paymentNumber) throws SQLException {
+        String sql = SELECT_PAYMENT_DTO + "WHERE p.payment_number = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, paymentNumber);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<PaymentDTO> searchPaymentDTOs(String keyword, String status, String method,
+                                              LocalDateTime startDate, LocalDateTime endDate) throws SQLException {
+        List<PaymentDTO> payments = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder(SELECT_PAYMENT_DTO + "WHERE 1=1 ");
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String searchPattern = "%" + keyword.trim() + "%";
+            sql.append("AND (p.payment_number LIKE ? ");
+            sql.append("OR r.reservation_number LIKE ? ");
+            sql.append("OR b.bill_number LIKE ? ");
+            sql.append("OR g.first_name LIKE ? ");
+            sql.append("OR g.last_name LIKE ? ");
+            sql.append("OR CONCAT(g.first_name, ' ', g.last_name) LIKE ? ");
+            sql.append("OR g.email LIKE ? ");
+            sql.append("OR g.phone LIKE ?) ");
+
+            // Add 8 parameters
+            for (int i = 0; i < 8; i++) {
+                params.add(searchPattern);
+            }
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            sql.append("AND p.payment_status = ? ");
+            params.add(status);
+        }
+
+        if (method != null && !method.trim().isEmpty()) {
+            sql.append("AND p.payment_method = ? ");
+            params.add(method);
+        }
+
+        if (startDate != null) {
+            sql.append("AND p.payment_date >= ? ");
+            params.add(startDate);
+        }
+
+        if (endDate != null) {
+            sql.append("AND p.payment_date <= ? ");
+            params.add(endDate);
+        }
+
+        sql.append("ORDER BY p.created_at DESC LIMIT 200");
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            // Set parameters
+            for (int i = 0; i < params.size(); i++) {
+                Object param = params.get(i);
+                if (param instanceof String) {
+                    ps.setString(i + 1, (String) param);
+                } else if (param instanceof LocalDateTime) {
+                    ps.setTimestamp(i + 1, Timestamp.valueOf((LocalDateTime) param));
+                }
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                Map<Long, PaymentDTO> dtoMap = new LinkedHashMap<>();
+                while (rs.next()) {
+                    Long id = rs.getLong("id");
+                    if (!dtoMap.containsKey(id)) {
+                        dtoMap.put(id, mapResultSetToPaymentDTO(rs));
+                    }
+                }
+                payments.addAll(dtoMap.values());
+            }
+        }
+        return payments;
+    }
+
+    @Override
+    public List<PaymentDTO> findPaymentDTOsByGuestId(Long guestId) throws SQLException {
+        List<PaymentDTO> payments = new ArrayList<>();
+        String sql = SELECT_PAYMENT_DTO + "WHERE r.guest_id = ? ORDER BY p.created_at DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, guestId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    payments.add(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return payments;
+    }
+
+    @Override
+    public List<PaymentDTO> findPaymentDTOsByReservationId(Long reservationId) throws SQLException {
+        List<PaymentDTO> payments = new ArrayList<>();
+        String sql = SELECT_PAYMENT_DTO + "WHERE p.reservation_id = ? ORDER BY p.created_at DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, reservationId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    payments.add(mapResultSetToPaymentDTO(rs));
+                }
+            }
+        }
+        return payments;
     }
 
     private Payment mapResultSetToPayment(ResultSet rs) throws SQLException {
@@ -377,5 +613,58 @@ public class PaymentDAOImpl implements PaymentDAO {
         }
 
         return payment;
+    }
+
+    private PaymentDTO mapResultSetToPaymentDTO(ResultSet rs) throws SQLException {
+        PaymentDTO dto = new PaymentDTO();
+
+        // Payment fields
+        dto.setId(rs.getLong("id"));
+        dto.setPaymentNumber(rs.getString("payment_number"));
+        dto.setReservationId(rs.getLong("reservation_id"));
+        dto.setAmount(rs.getBigDecimal("amount"));
+        dto.setPaymentMethod(rs.getString("payment_method"));
+        dto.setPaymentStatus(rs.getString("payment_status"));
+        dto.setTransactionId(rs.getString("transaction_id"));
+        dto.setCardLastFour(rs.getString("card_last_four"));
+        dto.setNotes(rs.getString("notes"));
+
+        Timestamp paymentDate = rs.getTimestamp("payment_date");
+        if (paymentDate != null) {
+            dto.setPaymentDate(paymentDate.toLocalDateTime());
+        }
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            dto.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            dto.setUpdatedAt(updatedAt.toLocalDateTime());
+        }
+
+        // Reservation and guest fields
+        try {
+            dto.setReservationNumber(rs.getString("reservation_number"));
+            dto.setGuestId(rs.getLong("guest_id"));
+            dto.setGuestName(rs.getString("guest_name"));
+            dto.setGuestEmail(rs.getString("guest_email"));
+            dto.setGuestPhone(rs.getString("guest_phone"));
+        } catch (SQLException e) {
+            // Ignore if columns don't exist
+        }
+
+        // Bill fields
+        try {
+            dto.setBillId(rs.getLong("bill_id"));
+            dto.setBillNumber(rs.getString("bill_number"));
+            dto.setBillTotalAmount(rs.getBigDecimal("bill_total_amount"));
+            dto.setBillStatus(rs.getString("bill_status"));
+        } catch (SQLException e) {
+            // Ignore if columns don't exist
+        }
+
+        return dto;
     }
 }

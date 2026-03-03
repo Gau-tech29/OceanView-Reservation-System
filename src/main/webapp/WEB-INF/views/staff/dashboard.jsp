@@ -170,6 +170,9 @@
         return;
     }
 
+    // Define basePath for staff
+    String basePath = "/staff";
+
     Integer activeReservations = (Integer) request.getAttribute("activeReservations");
     Integer availableRooms = (Integer) request.getAttribute("availableRooms");
     Long totalGuests = (Long) request.getAttribute("totalGuests");
@@ -214,8 +217,9 @@
             <i class="fas fa-users"></i><span>Guests</span></a></li>
         <li><a href="<%= request.getContextPath() %>/staff/rooms">
             <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
-        <li><a href="<%= request.getContextPath() %>/staff/bills">
-            <i class="fas fa-receipt"></i><span>Bills</span></a></li>
+        <li><a href="<%= request.getContextPath() %><%= basePath %>/payments">
+            <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
+        </li>
         <li><a href="<%= request.getContextPath() %>/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
@@ -342,10 +346,10 @@
             <h5>Room Status</h5>
             <p>View available and occupied rooms</p>
         </a>
-        <a href="<%= request.getContextPath() %>/staff/bills" class="action-btn">
-            <div class="action-icon"><i class="fas fa-receipt"></i></div>
-            <h5>Bills & Payments</h5>
-            <p>Generate bills and record payments</p>
+        <a href="<%= request.getContextPath() %><%= basePath %>/payments" class="action-btn">
+            <div class="action-icon"><i class="fas fa-credit-card"></i></div>
+            <h5>Payments & Bills</h5>
+            <p>View all payments, process refunds, manage bills</p>
         </a>
     </div>
 

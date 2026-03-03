@@ -2,6 +2,7 @@ package com.oceanview.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class Payment {
@@ -19,6 +20,8 @@ public class Payment {
     private LocalDateTime updatedAt;
 
     private Reservation reservation;
+    private Guest guest; // Added for easier access
+    private Bill bill;   // Added for easier access
 
     public enum PaymentMethod {
         CASH, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER
@@ -82,12 +85,27 @@ public class Payment {
     public Reservation getReservation() { return reservation; }
     public void setReservation(Reservation reservation) { this.reservation = reservation; }
 
+    public Guest getGuest() { return guest; }
+    public void setGuest(Guest guest) { this.guest = guest; }
+
+    public Bill getBill() { return bill; }
+    public void setBill(Bill bill) { this.bill = bill; }
+
+    // Helper methods
     public boolean isCompleted() {
         return paymentStatus == PaymentStatus.COMPLETED;
     }
 
     public boolean isRefunded() {
         return paymentStatus == PaymentStatus.REFUNDED;
+    }
+
+    public boolean isPending() {
+        return paymentStatus == PaymentStatus.PENDING;
+    }
+
+    public boolean isFailed() {
+        return paymentStatus == PaymentStatus.FAILED;
     }
 
     public void markAsCompleted() {
@@ -100,6 +118,48 @@ public class Payment {
 
     public void markAsRefunded() {
         this.paymentStatus = PaymentStatus.REFUNDED;
+    }
+
+    public String getFormattedPaymentDate() {
+        if (paymentDate == null) return "";
+        return paymentDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
+    }
+
+    public String getFormattedAmount() {
+        return String.format("$%.2f", amount != null ? amount.doubleValue() : 0.0);
+    }
+
+    public String getPaymentMethodDisplay() {
+        if (paymentMethod == null) return "";
+        switch (paymentMethod) {
+            case CASH: return "Cash";
+            case CREDIT_CARD: return "Credit Card";
+            case DEBIT_CARD: return "Debit Card";
+            case BANK_TRANSFER: return "Bank Transfer";
+            default: return paymentMethod.name();
+        }
+    }
+
+    public String getPaymentStatusBadgeClass() {
+        if (paymentStatus == null) return "badge-pending";
+        switch (paymentStatus) {
+            case COMPLETED: return "badge-completed";
+            case REFUNDED: return "badge-refunded";
+            case PENDING: return "badge-pending";
+            case FAILED: return "badge-failed";
+            default: return "badge-pending";
+        }
+    }
+
+    public String getPaymentStatusDisplay() {
+        if (paymentStatus == null) return "PENDING";
+        switch (paymentStatus) {
+            case COMPLETED: return "Completed";
+            case REFUNDED: return "Refunded";
+            case PENDING: return "Pending";
+            case FAILED: return "Failed";
+            default: return paymentStatus.name();
+        }
     }
 
     @Override

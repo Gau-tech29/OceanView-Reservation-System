@@ -523,8 +523,9 @@
             <i class="fas fa-users"></i><span>Guests</span></a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms">
             <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/bills">
-            <i class="fas fa-receipt"></i><span>Bills</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/payments">
+            <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
+        </li>
         <li><a href="${pageContext.request.contextPath}/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
