@@ -204,8 +204,6 @@
             <i class="fas fa-users-cog"></i><span>Manage Staff</span></a></li>
         <li><a href="<%= request.getContextPath() %>/admin/manage-rooms">
             <i class="fas fa-door-open"></i><span>Manage Rooms</span></a></li>
-        <li><a href="<%= request.getContextPath() %>/admin/maintenance">
-            <i class="fas fa-tools"></i><span>Maintenance</span></a></li>
         <li><a href="<%= request.getContextPath() %>/admin/reports">
             <i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
         <li><a href="<%= request.getContextPath() %>/admin/settings">

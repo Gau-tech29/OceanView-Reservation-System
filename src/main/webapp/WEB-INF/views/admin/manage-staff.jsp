@@ -292,11 +292,10 @@
         <li><a href="${pageContext.request.contextPath}/admin/dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/manage-staff" class="active"><i class="fas fa-users-cog"></i><span>Manage Staff</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/manage-rooms"><i class="fas fa-door-open"></i><span>Manage Rooms</span></a></li>
-        <li><a href="#"><i class="fas fa-calendar-alt"></i><span>All Reservations</span></a></li>
-        <li><a href="#"><i class="fas fa-users"></i><span>Guests</span></a></li>
-        <li><a href="#"><i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span></a></li>
-        <li><a href="#"><i class="fas fa-tools"></i><span>Maintenance</span></a></li>
-        <li><a href="#"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/reservations"><i class="fas fa-calendar-alt"></i><span>All Reservations</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/payments"><i class="fas fa-credit-card"></i><span>Payments & Bills</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/reports"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
         <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
 </div>

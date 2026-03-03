@@ -243,9 +243,9 @@
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/guests">
             <i class="fas fa-users"></i><span>Guests</span></a>
         </li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms">
-            <i class="fas fa-door-open"></i><span>Rooms</span></a>
-        </li>
+<%--        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms">--%>
+<%--            <i class="fas fa-door-open"></i><span>Rooms</span></a>--%>
+<%--        </li>--%>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/payments" class="active">
             <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
         </li>
