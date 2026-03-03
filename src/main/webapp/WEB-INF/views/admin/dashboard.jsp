@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats with Clickable Cards -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info"><h3><%= totalReservations %></h3><p>Total Reservations</p></div>
@@ -263,14 +263,19 @@
             <div class="stat-info"><h3><%= totalGuests %></h3><p>Total Guests</p></div>
             <div class="stat-icon" style="background:linear-gradient(135deg,#fd7e14,#e96c02);"><i class="fas fa-users"></i></div>
         </div>
-        <div class="stat-card" style="border-left-color:#0dcaf0;">
-            <div class="stat-info"><h3><%= todayCheckIns %></h3><p>Check-ins Today</p></div>
+
+        <!-- Clickable Today's Check-ins Card -->
+        <a href="<%= request.getContextPath() %>/admin/today-checkins" class="stat-card text-decoration-none" style="border-left-color:#0dcaf0; cursor:pointer; display:block;">
+            <div class="stat-info"><h3><%= todayCheckIns %></h3><p>Check-ins Today</p><small style="font-size:0.7rem;">Click to view</small></div>
             <div class="stat-icon" style="background:linear-gradient(135deg,#0dcaf0,#0aa2c0);"><i class="fas fa-sign-in-alt"></i></div>
-        </div>
-        <div class="stat-card" style="border-left-color:#6f42c1;">
-            <div class="stat-info"><h3><%= todayCheckOuts %></h3><p>Check-outs Today</p></div>
+        </a>
+
+        <!-- Clickable Today's Check-outs Card -->
+        <a href="<%= request.getContextPath() %>/admin/today-checkouts" class="stat-card text-decoration-none" style="border-left-color:#6f42c1; cursor:pointer; display:block;">
+            <div class="stat-info"><h3><%= todayCheckOuts %></h3><p>Check-outs Today</p><small style="font-size:0.7rem;">Click to view</small></div>
             <div class="stat-icon" style="background:linear-gradient(135deg,#6f42c1,#59359a);"><i class="fas fa-sign-out-alt"></i></div>
-        </div>
+        </a>
+
         <div class="stat-card" style="border-left-color:#20c997;">
             <div class="stat-info"><h3>$<%= String.format("%,.0f", monthlyRevenue) %></h3><p>Monthly Revenue</p></div>
             <div class="stat-icon" style="background:linear-gradient(135deg,#20c997,#17a589);"><i class="fas fa-dollar-sign"></i></div>

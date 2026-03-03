@@ -467,10 +467,10 @@ public class ReservationDAOImpl implements ReservationDAO {
 
     @Override
     public int countCheckOutsByDate(LocalDate date) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM reservations WHERE check_out_date=? " +
+                "AND reservation_status IN ('CHECKED_IN')";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT COUNT(*) FROM reservations WHERE check_out_date=? " +
-                             "AND reservation_status='CHECKED_IN'")) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDate(1, java.sql.Date.valueOf(date));
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
@@ -596,6 +596,47 @@ public class ReservationDAOImpl implements ReservationDAO {
         }
         return ids;
     }
+
+    // Add these methods to ReservationDAOImpl.java
+
+    @Override
+    public List<ReservationDTO> findByCheckInDate(LocalDate date) throws SQLException {
+        List<ReservationDTO> list = new ArrayList<>();
+        String sql = SELECT_DTO + "WHERE r.check_in_date = ? " +
+                "AND r.reservation_status IN ('CONFIRMED', 'CHECKED_IN') " +
+                "ORDER BY r.check_in_date, r.created_at";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapDTO(rs));
+                }
+            }
+        }
+        enrichWithRooms(list);
+        return list;
+    }
+
+    @Override
+    public List<ReservationDTO> findByCheckOutDate(LocalDate date) throws SQLException {
+        List<ReservationDTO> list = new ArrayList<>();
+        String sql = SELECT_DTO + "WHERE r.check_out_date = ? " +
+                "AND r.reservation_status IN ('CHECKED_IN') " +
+                "ORDER BY r.check_out_date, r.created_at";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapDTO(rs));
+                }
+            }
+        }
+        enrichWithRooms(list);
+        return list;
+    }
+
 
     // ─── BaseDAO boilerplate ──────────────────────────────────────────────────────
 

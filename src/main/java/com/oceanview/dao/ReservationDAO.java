@@ -42,6 +42,12 @@ public interface ReservationDAO extends BaseDAO<Reservation, Long> {
 
     List<Reservation> findCheckOutsByDate(LocalDate date) throws SQLException;
 
+    // Add these methods to ReservationDAO.java
+
+    List<ReservationDTO> findByCheckInDate(LocalDate date) throws SQLException;
+
+    List<ReservationDTO> findByCheckOutDate(LocalDate date) throws SQLException;
+
     // ─── New method for dashboard ────────────────────────────────────────────────
 
     long countActiveReservations() throws SQLException;

@@ -350,6 +350,28 @@ public class ReservationService {
     public int getTodaysCheckOutsCount() throws SQLException {
         return reservationDAO.countCheckOutsByDate(LocalDate.now());
     }
+
+    // Add these methods to your ReservationService.java
+
+    /**
+     * Get reservations by check-in date
+     */
+    /**
+     * Get reservations by check-in date
+     */
+    public List<ReservationDTO> getReservationsByCheckInDate(LocalDate date) throws SQLException {
+        if (date == null) {
+            throw new IllegalArgumentException("Date cannot be null");
+        }
+        return reservationDAO.findByCheckInDate(date);
+    }
+
+    /**
+     * Get reservations by check-out date
+     */
+    public List<ReservationDTO> getReservationsByCheckOutDate(LocalDate date) throws SQLException {
+        return reservationDAO.findByCheckOutDate(date);
+    }
     /**
      * Marks a reservation's payment_status as PAID.
      * Called after a successful payment is recorded during checkout.

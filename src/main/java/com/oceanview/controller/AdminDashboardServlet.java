@@ -69,7 +69,6 @@ public class AdminDashboardServlet extends HttpServlet {
             stats.setMonthlyRevenue(reservationService.getCurrentMonthRevenue());
 
             // ── Guest stats ──────────────────────────────────────────────────────
-            // Use long to avoid lossy cast — DashboardStatsDTO.setTotalGuests accepts long
             stats.setTotalGuests(guestService.getActiveGuestsCount());
 
             // ── Occupancy rate ───────────────────────────────────────────────────

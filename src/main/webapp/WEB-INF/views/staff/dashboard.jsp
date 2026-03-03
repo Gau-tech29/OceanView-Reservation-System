@@ -174,11 +174,13 @@
     Integer availableRooms = (Integer) request.getAttribute("availableRooms");
     Long totalGuests = (Long) request.getAttribute("totalGuests");
     Integer todayCheckins = (Integer) request.getAttribute("todayCheckins");
+    Integer todayCheckouts = (Integer) request.getAttribute("todayCheckouts");
 
     activeReservations = activeReservations != null ? activeReservations : 0;
     availableRooms = availableRooms != null ? availableRooms : 0;
     totalGuests = totalGuests != null ? totalGuests : 0L;
     todayCheckins = todayCheckins != null ? todayCheckins : 0;
+    todayCheckouts = todayCheckouts != null ? todayCheckouts : 0;
 
     @SuppressWarnings("unchecked")
     List<ReservationDTO> recentReservations = (List<ReservationDTO>) request.getAttribute("recentReservations");
@@ -260,7 +262,7 @@
         </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats with Clickable Cards -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
@@ -287,15 +289,30 @@
                 <i class="fas fa-users"></i>
             </div>
         </div>
-        <div class="stat-card" style="border-left-color: #0dcaf0;">
+
+        <!-- Clickable Today's Check-ins Card -->
+        <a href="<%= request.getContextPath() %>/staff/today-checkins" class="stat-card text-decoration-none" style="border-left-color: #0dcaf0; cursor: pointer; display: block;">
             <div class="stat-info">
                 <h3><%= todayCheckins %></h3>
                 <p>Check-ins Today</p>
+                <small class="text-muted" style="font-size: 0.7rem;">Click to view</small>
             </div>
             <div class="stat-icon" style="background: linear-gradient(135deg,#0dcaf0,#0aa2c0);">
                 <i class="fas fa-sign-in-alt"></i>
             </div>
-        </div>
+        </a>
+
+        <!-- Clickable Today's Check-outs Card (New) -->
+        <a href="<%= request.getContextPath() %>/staff/today-checkouts" class="stat-card text-decoration-none" style="border-left-color: #ffc107; cursor: pointer; display: block;">
+            <div class="stat-info">
+                <h3><%= todayCheckouts %></h3>
+                <p>Check-outs Today</p>
+                <small class="text-muted" style="font-size: 0.7rem;">Click to view</small>
+            </div>
+            <div class="stat-icon" style="background: linear-gradient(135deg,#ffc107,#e0a800);">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+        </a>
     </div>
 
     <div class="section-title">Quick Actions</div>
