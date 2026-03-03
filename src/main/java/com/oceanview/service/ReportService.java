@@ -61,8 +61,6 @@ public class ReportService {
             stats.setOccupancyRate((occupiedRooms * 100.0) / totalRooms);
         }
 
-        // Pending maintenance
-        stats.setPendingMaintenance(MaintenanceDAOImpl.getInstance().findPendingMaintenance().size());
 
         return stats;
     }

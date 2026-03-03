@@ -206,7 +206,7 @@
             <i class="fas fa-door-open"></i><span>Manage Rooms</span></a></li>
         <li><a href="<%= request.getContextPath() %>/admin/reports">
             <i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
-        <li><a href="<%= request.getContextPath() %>/admin/settings">
+        <li><a href="${pageContext.request.contextPath}/admin/settings">
             <i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="<%= request.getContextPath() %>/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>

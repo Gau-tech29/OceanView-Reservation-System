@@ -101,7 +101,10 @@
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations" class="active"><i class="fas fa-calendar-alt"></i>Reservations</a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new"><i class="fas fa-plus-circle"></i>New Reservation</a></li>
         <li><a href="${pageContext.request.contextPath}<%= basePath %>/guests"><i class="fas fa-users"></i>Guests</a></li>
-        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms"><i class="fas fa-door-open"></i>Rooms</a></li>
+        <li><a href="<%= request.getContextPath() %><%= basePath %>/payments">
+            <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
+        </li>
+<%--        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms"><i class="fas fa-door-open"></i>Rooms</a></li>--%>
         <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
     </ul>
 </div>
