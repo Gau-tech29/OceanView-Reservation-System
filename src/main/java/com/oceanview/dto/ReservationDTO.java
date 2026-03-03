@@ -267,11 +267,30 @@ public class ReservationDTO {
                 .distinct()
                 .collect(Collectors.joining(", "));
     }
+
+    /**
+     * Get formatted room details for bill display
+     * Returns a string like "Room 101 (DELUXE) @ $150.00/night"
+     */
+    public String getRoomDetailsForBill(ReservationRoomDTO room) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Room ").append(room.getRoomNumber());
+        if (room.getRoomType() != null) {
+            sb.append(" (").append(room.getRoomType());
+            if (room.getRoomView() != null && !room.getRoomView().isEmpty()) {
+                sb.append(" - ").append(room.getRoomView().replace("_", " "));
+            }
+            sb.append(")");
+        }
+        return sb.toString();
+    }
+
     /** Long-form formatted createdAt — used by bill.jsp to avoid fmt:formatDate on LocalDateTime */
     public String getFormattedCreatedAtLong() {
         if (createdAt == null) return "";
         return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("MMMM dd, yyyy HH:mm"));
     }
+
     /** Readable multi-line room summary. */
     public String getRoomsDetailSummary() {
         if (rooms == null || rooms.isEmpty()) return "N/A";

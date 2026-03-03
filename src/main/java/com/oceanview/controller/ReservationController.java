@@ -416,17 +416,18 @@ public class ReservationController extends HttpServlet {
             Long resolvedGuestId;
 
             if ("new".equals(guestMode)) {
+                // FIXED: Use the new prefixed parameter names for new guest
                 GuestDTO newGuest = new GuestDTO();
-                newGuest.setFirstName(required(request, "firstName", "First name is required."));
-                newGuest.setLastName(required(request, "lastName",   "Last name is required."));
-                newGuest.setEmail(request.getParameter("guestEmail"));
-                newGuest.setPhone(request.getParameter("guestPhone"));
-                newGuest.setAddress(request.getParameter("address"));
-                newGuest.setCity(request.getParameter("city"));
-                newGuest.setCountry(request.getParameter("country"));
-                newGuest.setPostalCode(request.getParameter("postalCode"));
-                newGuest.setIdCardNumber(request.getParameter("idCardNumber"));
-                newGuest.setIdCardType(request.getParameter("idCardType"));
+                newGuest.setFirstName(required(request, "newFirstName", "First name is required."));
+                newGuest.setLastName(required(request, "newLastName", "Last name is required."));
+                newGuest.setEmail(request.getParameter("newGuestEmail"));
+                newGuest.setPhone(request.getParameter("newGuestPhone"));
+                newGuest.setAddress(request.getParameter("newAddress"));
+                newGuest.setCity(request.getParameter("newCity"));
+                newGuest.setCountry(request.getParameter("newCountry"));
+                newGuest.setPostalCode(request.getParameter("newPostalCode"));
+                newGuest.setIdCardNumber(request.getParameter("newIdCardNumber"));
+                newGuest.setIdCardType(request.getParameter("newIdCardType"));
                 newGuest.setIsVip(false);
                 newGuest.setLoyaltyPoints(0);
                 resolvedGuestId = guestService.createGuest(newGuest).getId();
@@ -450,7 +451,7 @@ public class ReservationController extends HttpServlet {
                     GuestDTO existingGuest = guestService.getGuestById(resolvedGuestId)
                             .orElseThrow(() -> new IllegalArgumentException("Guest not found."));
 
-                    // Update guest with form data
+                    // Update guest with form data (using edit section field names)
                     existingGuest.setFirstName(required(request, "firstName", "First name is required."));
                     existingGuest.setLastName(required(request, "lastName", "Last name is required."));
                     existingGuest.setEmail(request.getParameter("guestEmail"));
@@ -514,14 +515,33 @@ public class ReservationController extends HttpServlet {
         } catch (IllegalArgumentException e) {
             request.setAttribute("error", e.getMessage());
             request.setAttribute("pageTitle", "New Reservation");
-            String guestIdStr = request.getParameter("guestId");
-            if (guestIdStr != null && !guestIdStr.trim().isEmpty()) {
-                try {
-                    Long gid = Long.parseLong(guestIdStr.trim());
-                    guestService.getGuestById(gid)
-                            .ifPresent(g -> request.setAttribute("selectedGuest", g));
-                } catch (NumberFormatException | SQLException ignored) {}
+
+            // For new guest mode, we need to preserve the entered values
+            String guestMode = request.getParameter("guestMode");
+            if ("new".equals(guestMode)) {
+                // Store new guest form values in request attributes to repopulate form
+                request.setAttribute("newFirstName", request.getParameter("newFirstName"));
+                request.setAttribute("newLastName", request.getParameter("newLastName"));
+                request.setAttribute("newGuestEmail", request.getParameter("newGuestEmail"));
+                request.setAttribute("newGuestPhone", request.getParameter("newGuestPhone"));
+                request.setAttribute("newAddress", request.getParameter("newAddress"));
+                request.setAttribute("newCity", request.getParameter("newCity"));
+                request.setAttribute("newCountry", request.getParameter("newCountry"));
+                request.setAttribute("newPostalCode", request.getParameter("newPostalCode"));
+                request.setAttribute("newIdCardNumber", request.getParameter("newIdCardNumber"));
+                request.setAttribute("newIdCardType", request.getParameter("newIdCardType"));
+            } else {
+                // For existing guest mode, try to reload the selected guest
+                String guestIdStr = request.getParameter("guestId");
+                if (guestIdStr != null && !guestIdStr.trim().isEmpty()) {
+                    try {
+                        Long gid = Long.parseLong(guestIdStr.trim());
+                        guestService.getGuestById(gid)
+                                .ifPresent(g -> request.setAttribute("selectedGuest", g));
+                    } catch (NumberFormatException | SQLException ignored) {}
+                }
             }
+
             request.getRequestDispatcher("/WEB-INF/views/reservations/form.jsp")
                     .forward(request, response);
         }

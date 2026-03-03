@@ -303,9 +303,6 @@ public class ReservationDAOImpl implements ReservationDAO {
         List<ReservationDTO> list = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        // You need to get the searchType from somewhere - you might want to pass it as a parameter
-        // For now, this is a generic search across all fields
-
         StringBuilder sql = new StringBuilder(
                 "SELECT DISTINCT r.*, " +
                         "  CONCAT(g.first_name, ' ', g.last_name) AS guest_name, " +
@@ -386,6 +383,7 @@ public class ReservationDAOImpl implements ReservationDAO {
         enrichWithRooms(list);
         return list;
     }
+
     // ─── Status lists ─────────────────────────────────────────────────────────────
 
     @Override
@@ -597,8 +595,6 @@ public class ReservationDAOImpl implements ReservationDAO {
         return ids;
     }
 
-    // Add these methods to ReservationDAOImpl.java
-
     @Override
     public List<ReservationDTO> findByCheckInDate(LocalDate date) throws SQLException {
         List<ReservationDTO> list = new ArrayList<>();
@@ -636,7 +632,6 @@ public class ReservationDAOImpl implements ReservationDAO {
         enrichWithRooms(list);
         return list;
     }
-
 
     // ─── BaseDAO boilerplate ──────────────────────────────────────────────────────
 
@@ -706,7 +701,7 @@ public class ReservationDAOImpl implements ReservationDAO {
             if (dto.getId() != null) {
                 byId.put(dto.getId(), dto);
                 if (inClause.length() > 0) inClause.append(",");
-                inClause.append(dto.getId());  // This will be the int value
+                inClause.append(dto.getId());
             }
         }
         if (byId.isEmpty()) return;
@@ -724,7 +719,7 @@ public class ReservationDAOImpl implements ReservationDAO {
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                long resId = rs.getLong("reservation_id");  // Read as long for Java
+                long resId = rs.getLong("reservation_id");
                 ReservationDTO dto = byId.get(resId);
                 if (dto == null) continue;
                 dto.getRooms().add(mapRoomRow(rs));

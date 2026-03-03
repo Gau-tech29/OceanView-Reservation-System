@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.oceanview.model.User" %>
 <%@ page import="com.oceanview.dto.ReservationDTO" %>
+<%@ page import="com.oceanview.dto.ReservationRoomDTO" %>
+<%@ page import="java.util.List" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
@@ -22,7 +24,7 @@
       padding: 30px;
     }
     .bill-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       background: white;
       border-radius: 15px;
@@ -77,6 +79,13 @@
       font-size: 0.9rem;
     }
     .print-button { text-align: center; margin-top: 30px; }
+    .room-detail-item {
+      border-bottom: 1px solid #e9ecef;
+      padding: 8px 0;
+    }
+    .room-detail-item:last-child {
+      border-bottom: none;
+    }
 
     @media print {
       body { background: white; padding: 0; }
@@ -104,12 +113,10 @@
       <div class="col-md-6">
         <div class="info-row">
           <span class="info-label">Bill No:</span>
-          <%-- reservation number --%>
           <span class="info-value"><strong>${reservation.reservationNumber}</strong></span>
         </div>
         <div class="info-row">
           <span class="info-label">Date:</span>
-          <%-- Safe: use formattedCreatedAtLong helper instead of fmt:formatDate(LocalDateTime) --%>
           <span class="info-value">${reservation.formattedCreatedAtLong}</span>
         </div>
       </div>
@@ -189,7 +196,6 @@
       <div class="col-md-6">
         <div class="info-row">
           <span class="info-label">Check-in:</span>
-          <%-- Safe: use formattedCheckInDate helper instead of fmt:formatDate(LocalDate) --%>
           <span class="info-value">${reservation.formattedCheckInDate}</span>
         </div>
         <div class="info-row">
@@ -199,13 +205,36 @@
       </div>
       <div class="col-md-6">
         <div class="info-row">
-          <span class="info-label">Room:</span>
-          <span class="info-value">${reservation.roomNumber} (${reservation.roomType})</span>
+          <span class="info-label">Nights:</span>
+          <span class="info-value">${reservation.totalNights} night(s)</span>
         </div>
         <div class="info-row">
           <span class="info-label">Guests:</span>
           <span class="info-value">${reservation.adults} Adults, ${reservation.children} Children</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Rooms List -->
+    <div class="mt-3">
+      <div class="info-row">
+        <span class="info-label">Room(s):</span>
+        <span class="info-value">
+          <c:forEach items="${reservation.rooms}" var="room" varStatus="loop">
+            <div class="room-detail-item">
+              <strong>Room ${room.roomNumber}</strong>
+              <c:if test="${not empty room.roomType}">
+                (${room.roomType}<c:if test="${not empty room.roomView}"> - ${room.roomView.replace('_', ' ')}</c:if>)
+              </c:if>
+              <c:if test="${not empty room.capacity}">
+                <span class="text-muted"> · Capacity: ${room.capacity}</span>
+              </c:if>
+            </div>
+          </c:forEach>
+          <c:if test="${empty reservation.rooms}">
+            ${reservation.roomNumber} (${reservation.roomType})
+          </c:if>
+        </span>
       </div>
     </div>
   </div>
@@ -221,19 +250,37 @@
     </tr>
     </thead>
     <tbody>
-    <tr>
-      <td>Room Charges — ${reservation.roomType} (Room ${reservation.roomNumber})</td>
-      <td class="text-end">$<fmt:formatNumber value="${reservation.roomPrice}"    pattern="#,##0.00"/></td>
-      <td class="text-end">${reservation.totalNights}</td>
-      <td class="text-end">$<fmt:formatNumber value="${reservation.subtotal}"     pattern="#,##0.00"/></td>
-    </tr>
+    <c:forEach items="${reservation.rooms}" var="room" varStatus="loop">
+      <tr>
+        <td>
+          Room ${room.roomNumber}
+          <c:if test="${not empty room.roomType}">
+            (${room.roomType}<c:if test="${not empty room.roomView}"> - ${room.roomView.replace('_', ' ')}</c:if>)
+          </c:if>
+        </td>
+        <td class="text-end">$<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/></td>
+        <td class="text-end">${reservation.totalNights}</td>
+        <td class="text-end">$<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/></td>
+      </tr>
+    </c:forEach>
+
+    <!-- If no rooms in list, show single room (fallback) -->
+    <c:if test="${empty reservation.rooms}">
+      <tr>
+        <td>Room Charges — ${reservation.roomType} (Room ${reservation.roomNumber})</td>
+        <td class="text-end">$<fmt:formatNumber value="${reservation.roomPrice}" pattern="#,##0.00"/></td>
+        <td class="text-end">${reservation.totalNights}</td>
+        <td class="text-end">$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></td>
+      </tr>
+    </c:if>
+
     <tr>
       <td colspan="3" class="text-end fw-semibold">Subtotal</td>
-      <td class="text-end">$<fmt:formatNumber value="${reservation.subtotal}"     pattern="#,##0.00"/></td>
+      <td class="text-end">$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></td>
     </tr>
     <tr>
       <td colspan="3" class="text-end fw-semibold">Tax (12%)</td>
-      <td class="text-end">$<fmt:formatNumber value="${reservation.taxAmount}"    pattern="#,##0.00"/></td>
+      <td class="text-end">$<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></td>
     </tr>
     <c:if test="${reservation.discountAmount != null && reservation.discountAmount > 0}">
       <tr>
@@ -280,5 +327,13 @@
     </button>
   </div>
 </div>
+
+<script>
+  // Auto-trigger print dialog when page loads (optional)
+  window.onload = function() {
+    // Uncomment the line below if you want the print dialog to appear automatically
+    // window.print();
+  };
+</script>
 </body>
 </html>

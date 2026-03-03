@@ -290,7 +290,60 @@
                 </a>
             </div>
         </form>
+
+        <%-- Show filter results info --%>
+        <% if (request.getParameter("status") != null && !request.getParameter("status").isEmpty() ||
+                request.getParameter("guestName") != null && !request.getParameter("guestName").isEmpty()) {
+            Integer allCount = (Integer) request.getAttribute("allReservationsCount");
+            Integer filteredCount = (Integer) request.getAttribute("filteredCount");
+            if (allCount == null) allCount = reservations.size();
+            if (filteredCount == null) filteredCount = reservations.size();
+        %>
+        <div class="mt-2 text-muted small">
+            <i class="fas fa-info-circle me-1"></i>
+            Showing <%= filteredCount %> of <%= allCount %> total <%= isCheckIns ? "check-ins" : "check-outs" %>
+            <% if (filteredCount == 0) { %>
+            <span class="text-danger"> - No matches found</span>
+            <% } %>
+        </div>
+        <% } %>
     </div>
+
+    <!-- Active Filters Display -->
+    <%
+        String activeStatus = request.getParameter("status");
+        String activeGuestName = request.getParameter("guestName");
+        boolean hasFilters = (activeStatus != null && !activeStatus.isEmpty()) ||
+                (activeGuestName != null && !activeGuestName.isEmpty());
+
+        if (hasFilters) {
+    %>
+    <div class="mb-3">
+        <span class="fw-semibold me-2">Active Filters:</span>
+        <% if (activeStatus != null && !activeStatus.isEmpty()) { %>
+        <span class="badge bg-primary me-2">
+            Status: <%= activeStatus.replace("_", " ") %>
+            <a href="?<%=
+                (activeGuestName != null && !activeGuestName.isEmpty()) ?
+                "guestName=" + activeGuestName : ""
+            %>" class="text-white ms-1 text-decoration-none">
+                <i class="fas fa-times"></i>
+            </a>
+        </span>
+        <% } %>
+        <% if (activeGuestName != null && !activeGuestName.isEmpty()) { %>
+        <span class="badge bg-primary me-2">
+            Guest: <%= activeGuestName %>
+            <a href="?<%=
+                (activeStatus != null && !activeStatus.isEmpty()) ?
+                "status=" + activeStatus : ""
+            %>" class="text-white ms-1 text-decoration-none">
+                <i class="fas fa-times"></i>
+            </a>
+        </span>
+        <% } %>
+    </div>
+    <% } %>
 
     <!-- Reservations List -->
     <div class="table-card">
@@ -298,6 +351,11 @@
             <span class="fw-semibold">
                 <i class="fas fa-list me-2"></i>
                 <%= isCheckIns ? "Guests Arriving Today" : "Guests Departing Today" %>
+                <% if (hasFilters) { %>
+                <span class="badge bg-info text-white ms-2">
+                    <i class="fas fa-filter me-1"></i>Filtered
+                </span>
+                <% } %>
             </span>
             <a href="${pageContext.request.contextPath}<%= basePath %>/dashboard" class="btn btn-sm btn-outline-secondary">
                 <i class="fas fa-arrow-left me-1"></i>Back to Dashboard

@@ -418,7 +418,7 @@
                         <span class="sg-clear" onclick="clearGuest()" title="Clear Guest"><i class="fas fa-times"></i></span>
                     </div>
 
-                    <!-- Guest Edit Section -->
+                    <!-- Guest Edit Section - FIXED: All fields have 'edit-' prefix in IDs but name attributes are set for submission -->
                     <div class="guest-edit-section" id="guestEditSection">
                         <div class="guest-edit-header">
                             <h5 class="guest-edit-title"><i class="fas fa-edit me-2"></i>Edit Guest Details</h5>
@@ -490,28 +490,28 @@
                     <div class="info-tip"><i class="fas fa-info-circle"></i> Type at least 2 characters to search, then click a result. Click <i class="fas fa-pencil-alt"></i> to edit guest details.</div>
                 </div>
 
-                <!-- New Guest Panel -->
+                <!-- New Guest Panel - FIXED: Removed duplicate name attributes, added 'new-' prefix to IDs to avoid conflicts -->
                 <div id="panelNew" style="display:none;">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">First Name <span class="required-star">*</span></label>
-                            <input type="text" name="firstName" id="newFirstName" class="form-control" placeholder="First name">
+                            <input type="text" name="newFirstName" id="newFirstName" class="form-control" placeholder="First name">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Last Name <span class="required-star">*</span></label>
-                            <input type="text" name="lastName" id="newLastName" class="form-control" placeholder="Last name">
+                            <input type="text" name="newLastName" id="newLastName" class="form-control" placeholder="Last name">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
-                            <input type="email" name="guestEmail" class="form-control" placeholder="guest@email.com">
+                            <input type="email" name="newGuestEmail" id="newGuestEmail" class="form-control" placeholder="guest@email.com">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Phone</label>
-                            <input type="text" name="guestPhone" class="form-control" placeholder="+94 XX XXX XXXX">
+                            <input type="text" name="newGuestPhone" id="newGuestPhone" class="form-control" placeholder="+94 XX XXX XXXX">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">ID Type</label>
-                            <select name="idCardType" class="form-select">
+                            <select name="newIdCardType" id="newIdCardType" class="form-select">
                                 <option value="">-- Select --</option>
                                 <option value="PASSPORT">Passport</option>
                                 <option value="NATIONAL_ID">National ID</option>
@@ -520,15 +520,24 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">ID Number</label>
-                            <input type="text" name="idCardNumber" class="form-control" placeholder="ID number">
+                            <input type="text" name="newIdCardNumber" id="newIdCardNumber" class="form-control" placeholder="ID number">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Address</label>
-                            <input type="text" name="address" class="form-control" placeholder="Street address">
+                            <input type="text" name="newAddress" id="newAddress" class="form-control" placeholder="Street address">
                         </div>
-                        <div class="col-md-4"><label class="form-label">City</label><input type="text" name="city" class="form-control"></div>
-                        <div class="col-md-4"><label class="form-label">Country</label><input type="text" name="country" class="form-control"></div>
-                        <div class="col-md-4"><label class="form-label">Postal Code</label><input type="text" name="postalCode" class="form-control"></div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" name="newCity" id="newCity" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Country</label>
+                            <input type="text" name="newCountry" id="newCountry" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Postal Code</label>
+                            <input type="text" name="newPostalCode" id="newPostalCode" class="form-control">
+                        </div>
                     </div>
                     <div class="info-tip mt-3"><i class="fas fa-info-circle"></i> A new guest profile will be created on submission.</div>
                 </div>
@@ -1314,10 +1323,18 @@
             var mode = (document.getElementById('guestMode') || {}).value || 'existing';
             if (mode === 'existing') {
                 var gid = document.getElementById('guestId');
-                if (!gid || !gid.value) { alert('Please search and select a guest, or switch to "New Guest" tab.'); return false; }
+                if (!gid || !gid.value) {
+                    alert('Please search and select a guest, or switch to "New Guest" tab.');
+                    return false;
+                }
             } else {
-                var fn = document.getElementById('newFirstName'), ln = document.getElementById('newLastName');
-                if (!fn || !ln || !fn.value.trim() || !ln.value.trim()) { alert('First name and last name are required.'); return false; }
+                // FIXED: Use the new prefixed field names for validation
+                var fn = document.getElementById('newFirstName');
+                var ln = document.getElementById('newLastName');
+                if (!fn || !ln || !fn.value.trim() || !ln.value.trim()) {
+                    alert('First name and last name are required.');
+                    return false;
+                }
             }
         }
 

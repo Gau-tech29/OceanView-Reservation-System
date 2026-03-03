@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @WebServlet({"/staff/today-checkins", "/admin/today-checkins"})
 public class TodayCheckInsServlet extends HttpServlet {
@@ -56,14 +57,24 @@ public class TodayCheckInsServlet extends HttpServlet {
             LocalDate today = LocalDate.now();
             LOGGER.info("Fetching check-ins for date: " + today);
 
-            List<ReservationDTO> todayCheckIns = reservationService.getReservationsByCheckInDate(today);
-            LOGGER.info("Found " + todayCheckIns.size() + " check-ins for today");
+            // Get all check-ins for today
+            List<ReservationDTO> allCheckIns = reservationService.getReservationsByCheckInDate(today);
+            LOGGER.info("Found " + allCheckIns.size() + " check-ins for today");
 
-            request.setAttribute("reservations", todayCheckIns);
+            // Apply filters if provided
+            List<ReservationDTO> filteredCheckIns = applyFilters(allCheckIns, request);
+
+            request.setAttribute("reservations", filteredCheckIns);
+            request.setAttribute("allReservationsCount", allCheckIns.size());
+            request.setAttribute("filteredCount", filteredCheckIns.size());
             request.setAttribute("pageTitle", "Today's Check-ins - " + today.toString());
             request.setAttribute("isCheckIns", true);
             request.setAttribute("isAdmin", isAdmin);
             request.setAttribute("currentDate", today);
+
+            // Preserve filter parameters for the form
+            request.setAttribute("selectedStatus", request.getParameter("status"));
+            request.setAttribute("searchGuestName", request.getParameter("guestName"));
 
             request.getRequestDispatcher("/WEB-INF/views/todays-list.jsp")
                     .forward(request, response);
@@ -77,5 +88,36 @@ public class TodayCheckInsServlet extends HttpServlet {
             session.setAttribute("error", "Unexpected error: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + (isAdmin ? "/admin/dashboard" : "/staff/dashboard"));
         }
+    }
+
+    private List<ReservationDTO> applyFilters(List<ReservationDTO> reservations, HttpServletRequest request) {
+        String statusFilter = request.getParameter("status");
+        String guestNameFilter = request.getParameter("guestName");
+
+        if ((statusFilter == null || statusFilter.isEmpty()) &&
+                (guestNameFilter == null || guestNameFilter.isEmpty())) {
+            return reservations; // No filters applied
+        }
+
+        return reservations.stream()
+                .filter(r -> {
+                    // Filter by status
+                    if (statusFilter != null && !statusFilter.isEmpty()) {
+                        if (!statusFilter.equals(r.getReservationStatus())) {
+                            return false;
+                        }
+                    }
+
+                    // Filter by guest name
+                    if (guestNameFilter != null && !guestNameFilter.isEmpty()) {
+                        String guestName = r.getGuestName();
+                        if (guestName == null || !guestName.toLowerCase().contains(guestNameFilter.toLowerCase())) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .collect(Collectors.toList());
     }
 }

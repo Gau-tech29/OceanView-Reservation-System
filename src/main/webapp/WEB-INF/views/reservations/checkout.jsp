@@ -102,6 +102,15 @@
             cursor:pointer;transition:all .2s;
         }
         .btn-checkout-submit:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(25,135,84,.3);color:white;}
+        .room-badge {
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .room-badge:last-child {
+            margin-bottom: 0;
+        }
         @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0}}
     </style>
 </head>
@@ -220,7 +229,20 @@
                             </div>
                             <div class="info-item">
                                 <div class="lbl">Room(s)</div>
-                                <div class="val">${reservation.roomNumbersSummary}</div>
+                                <div class="val">
+                                    <c:forEach items="${reservation.rooms}" var="room" varStatus="loop">
+                                        <div class="room-badge">
+                                            <strong>Room ${room.roomNumber}</strong>
+                                            <c:if test="${not empty room.roomType}">
+                                                <br><small class="text-muted">${room.roomType}
+                                                <c:if test="${not empty room.roomView}"> - ${room.roomView.replace('_', ' ')}</c:if></small>
+                                            </c:if>
+                                        </div>
+                                    </c:forEach>
+                                    <c:if test="${empty reservation.rooms}">
+                                        ${reservation.roomNumber} (${reservation.roomType})
+                                    </c:if>
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="lbl">Guests</div>
@@ -232,18 +254,25 @@
                     <div class="card-section">
                         <div class="sec-title"><i class="fas fa-dollar-sign"></i>Price Breakdown</div>
                         <div class="price-box">
-                            <c:if test="${reservation.numberOfRooms > 1}">
-                                <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
-                                    <c:if test="${not empty room.roomPrice}">
-                                        <div class="p-row">
-                                            <span>Room ${loop.index+1} — ${room.roomNumber} (${room.roomType}) &times; ${reservation.totalNights}n</span>
-                                            <span>$<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/></span>
-                                        </div>
-                                    </c:if>
-                                </c:forEach>
-                            </c:if>
+                            <!-- Show each room's charges -->
+                            <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
+                                <div class="p-row">
+                                    <span>
+                                        <small class="text-muted">Room ${loop.index+1}:</small><br>
+                                        ${room.roomNumber}
+                                        <c:if test="${not empty room.roomType}">
+                                            (${room.roomType})
+                                        </c:if>
+                                    </span>
+                                    <span class="text-end">
+                                        $<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/> × ${reservation.totalNights} nights<br>
+                                        <strong>$<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/></strong>
+                                    </span>
+                                </div>
+                            </c:forEach>
+
                             <div class="p-row">
-                                <span>Room Charges</span>
+                                <span>Room Charges Total</span>
                                 <span>$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
                             </div>
                             <div class="p-row">
@@ -371,6 +400,9 @@
                                     </div>
                                     <div style="font-size:.85rem;color:#555;">
                                         Reservation <strong>${reservation.reservationNumber}</strong>
+                                        <c:if test="${reservation.numberOfRooms > 1}">
+                                            <br><small>${reservation.numberOfRooms} rooms</small>
+                                        </c:if>
                                     </div>
                                 </div>
                                 <div style="font-size:1.7rem;font-weight:700;color:#198754;">
