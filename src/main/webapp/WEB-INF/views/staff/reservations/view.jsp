@@ -73,7 +73,8 @@
         <div class="bg-light p-3 rounded">
           <p class="mb-1"><strong>Room:</strong> ${reservation.roomNumber}</p>
           <p class="mb-1"><strong>Type:</strong> ${reservation.roomType}</p>
-          <p class="mb-1"><strong>Rate:</strong> $${reservation.roomPrice}/night</p>
+          <!-- CHANGED: $ -> Rs. -->
+          <p class="mb-1"><strong>Rate:</strong> Rs. ${reservation.roomPrice}/night</p>
         </div>
       </div>
     </div>
@@ -90,12 +91,14 @@
       </div>
 
       <div class="col-md-6">
-        <h5><i class="fas fa-dollar-sign"></i> Payment Details</h5>
+        <!-- CHANGED: fa-dollar-sign -> fa-rupee-sign -->
+        <h5><i class="fas fa-rupee-sign"></i> Payment Details</h5>
         <div class="bg-light p-3 rounded">
-          <p class="mb-1"><strong>Subtotal:</strong> $${reservation.subtotal}</p>
-          <p class="mb-1"><strong>Tax (12%):</strong> $${reservation.taxAmount}</p>
-          <p class="mb-1"><strong>Discount:</strong> $${reservation.discountAmount}</p>
-          <p class="mb-0 fw-bold"><strong>Total:</strong> $${reservation.totalAmount}</p>
+          <!-- CHANGED: all $ -> Rs. -->
+          <p class="mb-1"><strong>Subtotal:</strong> Rs. ${reservation.subtotal}</p>
+          <p class="mb-1"><strong>Tax (12%):</strong> Rs. ${reservation.taxAmount}</p>
+          <p class="mb-1"><strong>Discount:</strong> Rs. ${reservation.discountAmount}</p>
+          <p class="mb-0 fw-bold"><strong>Total:</strong> Rs. ${reservation.totalAmount}</p>
           <p class="mb-0 mt-2"><strong>Payment Status:</strong>
             <span class="badge bg-${reservation.paymentStatus == 'PAID' ? 'success' : 'warning'}">
                 ${reservation.paymentStatus}

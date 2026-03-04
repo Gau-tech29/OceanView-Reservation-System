@@ -160,7 +160,8 @@
                        '<%= room.getRoomType() %>', <%= room.getBasePrice() %>)">
             <div class="fw-bold">Room <%= room.getRoomNumber() %></div>
             <div><small><%= room.getRoomType() %></small></div>
-            <div class="text-primary">$<%= room.getBasePrice() %>/night</div>
+            <!-- CHANGED: $ -> Rs. -->
+            <div class="text-primary">Rs. <%= room.getBasePrice() %>/night</div>
           </div>
           <% }} %>
         </div>
@@ -196,7 +197,8 @@
                    value="<%= isEdit ? reservation.getChildren() : 0 %>">
           </div>
           <div class="col-md-3 mb-3">
-            <label>Discount ($)</label>
+            <!-- CHANGED: Discount ($) -> Discount (Rs.) -->
+            <label>Discount (Rs.)</label>
             <input type="number" name="discountAmount" class="form-control" min="0" step="0.01"
                    value="<%= isEdit && reservation.getDiscountAmount() != null ? reservation.getDiscountAmount() : 0 %>"
                    onchange="calculateBill()">
@@ -215,18 +217,19 @@
         <div class="bill-preview" id="billPreview">
           <h6>Bill Preview</h6>
           <div class="row">
+            <!-- CHANGED: all $ -> Rs. in bill preview labels and JS below -->
             <div class="col-6">Room Rate:</div>
-            <div class="col-6 text-end" id="roomRate">$0.00/night</div>
+            <div class="col-6 text-end" id="roomRate">Rs. 0.00/night</div>
             <div class="col-6">Nights:</div>
             <div class="col-6 text-end" id="nights">0</div>
             <div class="col-6">Subtotal:</div>
-            <div class="col-6 text-end" id="subtotal">$0.00</div>
+            <div class="col-6 text-end" id="subtotal">Rs. 0.00</div>
             <div class="col-6">Tax (12%):</div>
-            <div class="col-6 text-end" id="tax">$0.00</div>
+            <div class="col-6 text-end" id="tax">Rs. 0.00</div>
             <div class="col-6">Discount:</div>
-            <div class="col-6 text-end" id="discount">-$0.00</div>
+            <div class="col-6 text-end" id="discount">-Rs. 0.00</div>
             <div class="col-6 fw-bold">Total:</div>
-            <div class="col-6 text-end fw-bold" id="total">$0.00</div>
+            <div class="col-6 text-end fw-bold" id="total">Rs. 0.00</div>
           </div>
         </div>
       </div>
@@ -307,25 +310,26 @@
   }
 
   function calculateBill() {
-    const checkIn = document.querySelector('input[name="checkInDate"]').value;
+    const checkIn  = document.querySelector('input[name="checkInDate"]').value;
     const checkOut = document.querySelector('input[name="checkOutDate"]').value;
     const discount = parseFloat(document.querySelector('input[name="discountAmount"]').value) || 0;
 
     if(!checkIn || !checkOut || !currentRoomPrice) return;
 
-    const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
+    const nights   = Math.round((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
     if(nights <= 0) return;
 
     const subtotal = currentRoomPrice * nights;
-    const tax = subtotal * 0.12;
-    const total = subtotal + tax - discount;
+    const tax      = subtotal * 0.12;
+    const total    = subtotal + tax - discount;
 
-    document.getElementById('roomRate').textContent = '$' + currentRoomPrice.toFixed(2) + '/night';
-    document.getElementById('nights').textContent = nights;
-    document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
-    document.getElementById('tax').textContent = '$' + tax.toFixed(2);
-    document.getElementById('discount').textContent = '-$' + discount.toFixed(2);
-    document.getElementById('total').textContent = '$' + total.toFixed(2);
+    // CHANGED: all $ -> Rs. in dynamic bill preview
+    document.getElementById('roomRate').textContent  = 'Rs. ' + currentRoomPrice.toFixed(2) + '/night';
+    document.getElementById('nights').textContent    = nights;
+    document.getElementById('subtotal').textContent  = 'Rs. ' + subtotal.toFixed(2);
+    document.getElementById('tax').textContent       = 'Rs. ' + tax.toFixed(2);
+    document.getElementById('discount').textContent  = '-Rs. ' + discount.toFixed(2);
+    document.getElementById('total').textContent     = 'Rs. ' + total.toFixed(2);
   }
 
   function validateForm() {
@@ -338,7 +342,7 @@
       }
     } else {
       const firstName = document.querySelector('input[name="firstName"]').value.trim();
-      const lastName = document.querySelector('input[name="lastName"]').value.trim();
+      const lastName  = document.querySelector('input[name="lastName"]').value.trim();
       if(!firstName || !lastName) {
         alert('First name and last name are required');
         return false;

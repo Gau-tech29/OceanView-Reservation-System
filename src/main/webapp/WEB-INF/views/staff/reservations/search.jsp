@@ -109,7 +109,8 @@
             <td>${res.roomNumber}</td>
             <td>${res.checkInDate}</td>
             <td>${res.checkOutDate}</td>
-            <td>$${res.totalAmount}</td>
+            <!-- CHANGED: $ -> Rs. -->
+            <td>Rs. ${res.totalAmount}</td>
             <td>${res.reservationStatus}</td>
             <td>
               <a href="${pageContext.request.contextPath}/staff/reservations/view?id=${res.id}"

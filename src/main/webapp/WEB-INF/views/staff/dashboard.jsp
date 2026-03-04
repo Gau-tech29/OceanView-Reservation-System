@@ -220,6 +220,8 @@
         <li><a href="<%= request.getContextPath() %><%= basePath %>/payments">
             <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
         </li>
+        <li><a href="<%= request.getContextPath() %>/help">
+            <i class="fas fa-question-circle"></i><span>Help & Guidelines</span></a></li>
         <li><a href="<%= request.getContextPath() %>/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>

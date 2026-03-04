@@ -250,6 +250,7 @@
         <li><a href="<%= request.getContextPath() %>/staff/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
         <li><a href="<%= request.getContextPath() %>/staff/rooms" class="active"><i class="fas fa-door-open"></i><span>Rooms</span></a></li>
         <li><a href="<%= request.getContextPath() %><%= basePath %>/payments"><i class="fas fa-credit-card"></i><span>Payments & Bills</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/help"><i class="fas fa-question-circle"></i><span>Help & Guidelines</span></a></li>
         <li><a href="<%= request.getContextPath() %>/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
 </div>
@@ -389,7 +390,8 @@
             if("OCCUPIED".equals(rStatus))    bCls="status-occupied";
             else if("MAINTENANCE".equals(rStatus)) bCls="status-maintenance";
             else if("RESERVED".equals(rStatus))    bCls="status-reserved";
-            String priceStr  = r.getBasePrice() != null ? String.format("$%.2f", r.getBasePrice()) : "$0.00";
+            // CHANGED: $ -> Rs.
+            String priceStr  = r.getBasePrice() != null ? String.format("Rs. %.2f", r.getBasePrice()) : "Rs. 0.00";
             String taxStr    = r.getTaxRate()   != null ? String.format("%.1f%%", r.getTaxRate())  : "0%";
             String amenities = r.getAmenities() != null && !r.getAmenities().isEmpty() ? r.getAmenities() : "No amenities listed";
             String descr     = r.getDescription() != null ? r.getDescription() : "";
@@ -458,7 +460,8 @@
                     if("OCCUPIED".equals(rStatus))    bCls="status-occupied";
                     else if("MAINTENANCE".equals(rStatus)) bCls="status-maintenance";
                     else if("RESERVED".equals(rStatus))    bCls="status-reserved";
-                    String priceStr  = r.getBasePrice() != null ? String.format("$%.2f", r.getBasePrice()) : "$0.00";
+                    // CHANGED: $ -> Rs.
+                    String priceStr  = r.getBasePrice() != null ? String.format("Rs. %.2f", r.getBasePrice()) : "Rs. 0.00";
                     String taxStr    = r.getTaxRate()   != null ? String.format("%.1f%%", r.getTaxRate())  : "0%";
                     String amenities = r.getAmenities() != null ? r.getAmenities() : "";
                     String descr     = r.getDescription() != null ? r.getDescription() : "";
@@ -527,7 +530,8 @@
                             <div><div class="detail-label">Active</div><div class="detail-value" id="mActive"></div></div></div>
                     </div>
                 </div>
-                <div class="detail-label mt-3 mb-2" style="padding-left:4px;"><i class="fas fa-dollar-sign me-1" style="color:var(--primary);"></i>Pricing</div>
+                <!-- CHANGED: fa-dollar-sign -> fa-rupee-sign, label text updated -->
+                <div class="detail-label mt-3 mb-2" style="padding-left:4px;"><i class="fas fa-rupee-sign me-1" style="color:var(--primary);"></i>Pricing</div>
                 <div class="price-grid">
                     <div class="price-box"><div class="pb-label">Base Rate / Night</div><div class="pb-val" id="mBase"></div></div>
                     <div class="price-box"><div class="pb-label">Tax Rate</div><div class="pb-val" id="mTax"></div></div>
@@ -576,8 +580,9 @@
         document.getElementById('mBase').textContent = price;
         document.getElementById('mTax').textContent  = tax;
         try {
-            var b=parseFloat(price.replace('$','')), t=parseFloat(tax.replace('%',''));
-            document.getElementById('mTotal').textContent = '$'+(b+b*t/100).toFixed(2);
+            // CHANGED: parse "Rs. " prefix instead of "$", display as "Rs. X.XX"
+            var b = parseFloat(price.replace('Rs. ', '')), t = parseFloat(tax.replace('%', ''));
+            document.getElementById('mTotal').textContent = 'Rs. ' + (b + b * t / 100).toFixed(2);
         } catch(e){ document.getElementById('mTotal').textContent = price; }
         document.getElementById('mAmenities').textContent = amenities || 'No amenities listed.';
         var dw=document.getElementById('mDescrWrap');
@@ -588,11 +593,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', function(){
-        // Auto-submit on dropdown change
         document.querySelectorAll('#filterForm select').forEach(function(s){
             s.addEventListener('change', function(){ document.getElementById('filterForm').submit(); });
         });
-        // Enter key in search box
         var si=document.querySelector('input[name="search"]');
         if(si) si.addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('filterForm').submit(); });
     });

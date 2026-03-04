@@ -68,6 +68,7 @@
     <li><a href="${pageContext.request.contextPath}/staff/reservations/search"><i class="fas fa-search"></i>Search</a></li>
     <li><a href="${pageContext.request.contextPath}/staff/guests"><i class="fas fa-users"></i>Guests</a></li>
     <li><a href="${pageContext.request.contextPath}/staff/rooms"><i class="fas fa-door-open"></i>Rooms</a></li>
+    <li><a href="${pageContext.request.contextPath}/help"><i class="fas fa-question-circle"></i>Help & Guidelines</a></li>
     <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
   </ul>
 </div>
@@ -126,11 +127,12 @@
             <td>${res.roomNumber}</td>
             <td>${res.checkInDate}</td>
             <td>${res.checkOutDate}</td>
-            <td>$${res.totalAmount}</td>
+            <!-- CHANGED: $ -> Rs. -->
+            <td>Rs. ${res.totalAmount}</td>
             <td>
-                                <span class="badge-status badge-${res.reservationStatus.toLowerCase()}">
-                                    ${res.reservationStatus}
-                                </span>
+                <span class="badge-status badge-${res.reservationStatus.toLowerCase()}">
+                    ${res.reservationStatus}
+                </span>
             </td>
             <td>
               <a href="${pageContext.request.contextPath}/staff/reservations/view?id=${res.id}"

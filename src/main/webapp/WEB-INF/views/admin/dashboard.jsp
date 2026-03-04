@@ -208,6 +208,8 @@
             <i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/settings">
             <i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="<%= request.getContextPath() %>/help">
+            <i class="fas fa-question-circle"></i><span>Help & Guidelines</span></a></li>
         <li><a href="<%= request.getContextPath() %>/logout">
             <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
@@ -279,7 +281,7 @@
         </a>
 
         <div class="stat-card" style="border-left-color:#20c997;">
-            <div class="stat-info"><h3>$<%= String.format("%,.0f", monthlyRevenue) %></h3><p>Monthly Revenue</p></div>
+            <div class="stat-info"><h3>Rs.<%= String.format("%,.0f", monthlyRevenue) %></h3><p>Monthly Revenue</p></div>
             <div class="stat-icon" style="background:linear-gradient(135deg,#20c997,#17a589);"><i class="fas fa-dollar-sign"></i></div>
         </div>
         <div class="stat-card" style="border-left-color:#ffc107;">
@@ -427,7 +429,7 @@
             data: {
                 labels: ['3mo ago', '2mo ago', 'Last month', 'This month'],
                 datasets: [{
-                    label: 'Revenue ($)',
+                    label: 'Revenue (Rs.)',
                     data: [0, 0, 0, <%= monthlyRevenue %>],
                     borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)',
                     tension: 0.4, fill: true, borderWidth: 2,
@@ -437,7 +439,7 @@
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+                scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rs.' + v.toLocaleString() } } }
             }
         });
 
