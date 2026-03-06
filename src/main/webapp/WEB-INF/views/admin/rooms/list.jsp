@@ -137,7 +137,8 @@
         <li><a href="${pageContext.request.contextPath}/admin/reservations"><i class="fas fa-calendar-alt"></i><span>All Reservations</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/bills"><i class="fas fa-file-invoice-dollar"></i><span>Bills & Payments</span></a></li>
-        <li><a href="${pageContext.request.contextPath}/admin/maintenance"><i class="fas fa-tools"></i><span>Maintenance</span></a></li>
+<%--        <li><a href="${pageContext.request.contextPath}/admin/maintenance"><i class="fas fa-tools"></i><span>Maintenance</span></a></li>--%>
+
         <li><a href="${pageContext.request.contextPath}/admin/reports"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
         <li><a href="${pageContext.request.contextPath}/admin/settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
@@ -313,7 +314,7 @@
                                 <td>${room.roomView.toString().replace('_',' ')}</td>
                                 <td>Floor ${room.floorNumber}</td>
                                 <td><i class="fas fa-user me-1" style="color:#9ca3af;font-size:0.8rem;"></i>${room.capacity}</td>
-                                <td><span class="price-cell">$${room.basePrice}</span></td>
+                                <td><span class="price-cell">Rs. ${room.basePrice}</span></td>
                                 <td>
                                     <c:choose>
                                         <c:when test="${room.status == 'AVAILABLE'}"><span class="status-badge status-available"><i class="fas fa-circle" style="font-size:0.5rem;"></i>Available</span></c:when>

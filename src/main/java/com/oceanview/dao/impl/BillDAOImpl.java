@@ -39,7 +39,6 @@ public class BillDAOImpl implements BillDAO {
         }
     }
 
-    // ─── Helper: convert DB string → BillStatus enum ─────────────────────────────
     private Bill.BillStatus dbToStatus(String dbStatus) {
         if (dbStatus == null) return Bill.BillStatus.DRAFT;
         switch (dbStatus) {

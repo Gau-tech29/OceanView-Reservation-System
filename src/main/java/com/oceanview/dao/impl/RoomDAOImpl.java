@@ -30,8 +30,6 @@ public class RoomDAOImpl implements RoomDAO {
         return instance;
     }
 
-    // ── CREATE ────────────────────────────────────────────────────────────────────
-
     @Override
     public Room save(Room room) throws SQLException {
         String sql =
@@ -69,8 +67,6 @@ public class RoomDAOImpl implements RoomDAO {
         return room;
     }
 
-    // ── UPDATE ────────────────────────────────────────────────────────────────────
-
     @Override
     public Room update(Room room) throws SQLException {
         String sql =
@@ -102,8 +98,6 @@ public class RoomDAOImpl implements RoomDAO {
         return room;
     }
 
-    // ── DELETE ────────────────────────────────────────────────────────────────────
-
     @Override
     public boolean delete(Long id) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
@@ -112,8 +106,6 @@ public class RoomDAOImpl implements RoomDAO {
             return ps.executeUpdate() > 0;
         }
     }
-
-    // ── SINGLE READS ──────────────────────────────────────────────────────────────
 
     @Override
     public Optional<Room> findById(Long id) throws SQLException {

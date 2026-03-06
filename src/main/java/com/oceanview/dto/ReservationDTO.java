@@ -8,17 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Data-transfer object for Reservation.
- *
- * Key points:
- *  - numberOfRooms  → count stored in reservations.number_of_rooms
- *  - rooms          → full list of ReservationRoomDTO loaded from reservation_rooms
- *  - roomIds        → transient list used in form → controller → service flow
- *
- * Single-room convenience getters (getRoomId, getRoomNumber, getRoomType, getFirstRoomPrice)
- * delegate to the FIRST element of the rooms list so that edit-mode JSP code works.
- */
 public class ReservationDTO {
 
     private Long   id;
@@ -26,24 +15,12 @@ public class ReservationDTO {
     private Long   guestId;
     private Long   userId;
 
-    // ── Room summary ──────────────────────────────────────────────────────────────
-
-    /** Total rooms booked — stored in reservations.number_of_rooms. */
     private Integer numberOfRooms;
 
-    /**
-     * All room details for this reservation, loaded from reservation_rooms.
-     * Always use this list for display / billing.
-     */
     private List<ReservationRoomDTO> rooms = new ArrayList<>();
 
-    /**
-     * Transient: room IDs collected from the form and passed through to the service.
-     * Not stored in the database.
-     */
     private List<Long> roomIds = new ArrayList<>();
 
-    // ── Stay fields ───────────────────────────────────────────────────────────────
 
     private LocalDate  checkInDate;
     private LocalDate  checkOutDate;
@@ -51,9 +28,6 @@ public class ReservationDTO {
     private Integer    adults;
     private Integer    children;
 
-    // ── Pricing ───────────────────────────────────────────────────────────────────
-
-    /** Combined nightly rate across all rooms (sum of each room base price). */
     private BigDecimal roomPrice;
     private BigDecimal taxAmount;
     private BigDecimal discountAmount;
@@ -296,7 +270,7 @@ public class ReservationDTO {
         if (rooms == null || rooms.isEmpty()) return "N/A";
         return rooms.stream()
                 .map(r -> r.getDisplayLabel()
-                        + (r.getRoomPrice() != null ? " @ $" + r.getRoomPrice() + "/night" : ""))
+                        + (r.getRoomPrice() != null ? " @ Rs. " + r.getRoomPrice() + "/night" : ""))
                 .collect(Collectors.joining("\n"));
     }
 

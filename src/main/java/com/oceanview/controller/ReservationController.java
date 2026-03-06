@@ -47,8 +47,6 @@ public class ReservationController extends HttpServlet {
         paymentService     = new PaymentService();
     }
 
-    // ─── Dispatch ─────────────────────────────────────────────────────────────────
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

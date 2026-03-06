@@ -96,9 +96,7 @@
     }
     .btn-action { padding: 10px 20px; border-radius: 10px; font-weight: 500; transition: all 0.3s; }
     .btn-action:hover { transform: translateY(-2px); }
-    /* Inline delete form should look like a button */
     .delete-form { display: inline; margin: 0; padding: 0; }
-
     .alert { border-radius: 10px; margin-bottom: 20px; }
 
     @media (max-width: 768px) {
@@ -117,31 +115,20 @@
     <p>Hotel Reservation System</p>
   </div>
   <ul class="sidebar-menu">
-    <li><a href="${pageContext.request.contextPath}<%= basePath %>/dashboard">
-      <i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
-    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations" class="active">
-      <i class="fas fa-calendar-alt"></i><span>Reservations</span></a></li>
-    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new">
-      <i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
-    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/search">
-      <i class="fas fa-search"></i><span>Search</span></a></li>
+    <li><a href="${pageContext.request.contextPath}<%= basePath %>/dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations" class="active"><i class="fas fa-calendar-alt"></i><span>Reservations</span></a></li>
+    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new"><i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
+    <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/search"><i class="fas fa-search"></i><span>Search</span></a></li>
     <% if (isAdmin) { %>
-    <li><a href="${pageContext.request.contextPath}/admin/guests">
-      <i class="fas fa-users"></i><span>Guests</span></a></li>
-    <li><a href="${pageContext.request.contextPath}/admin/manage-rooms">
-      <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
-    <li><a href="${pageContext.request.contextPath}/admin/bills">
-      <i class="fas fa-receipt"></i><span>Bills</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/admin/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/admin/manage-rooms"><i class="fas fa-door-open"></i><span>Rooms</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/admin/bills"><i class="fas fa-receipt"></i><span>Bills</span></a></li>
     <% } else { %>
-    <li><a href="${pageContext.request.contextPath}/staff/guests">
-      <i class="fas fa-users"></i><span>Guests</span></a></li>
-    <li><a href="${pageContext.request.contextPath}/staff/rooms">
-      <i class="fas fa-door-open"></i><span>Rooms</span></a></li>
-    <li><a href="${pageContext.request.contextPath}/staff/bills">
-      <i class="fas fa-receipt"></i><span>Bills</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/staff/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/staff/rooms"><i class="fas fa-door-open"></i><span>Rooms</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/staff/bills"><i class="fas fa-receipt"></i><span>Bills</span></a></li>
     <% } %>
-    <li><a href="${pageContext.request.contextPath}/logout">
-      <i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+    <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
   </ul>
 </div>
 
@@ -150,9 +137,7 @@
   <div class="top-nav">
     <div class="page-title"><h2>Reservation Details</h2></div>
     <div class="d-flex align-items-center gap-3">
-      <div class="user-avatar">
-        <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
-      </div>
+      <div class="user-avatar"><%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %></div>
       <div>
         <div style="font-weight:600;font-size:.9rem;"><%= user.getFullName() %></div>
         <div style="font-size:.75rem;color:#6c757d;"><%= user.getRole() %></div>
@@ -160,7 +145,6 @@
     </div>
   </div>
 
-  <!-- Session Messages -->
   <% if (session.getAttribute("success") != null) { %>
   <div class="alert alert-success alert-dismissible fade show">
     <i class="fas fa-check-circle me-2"></i><%= session.getAttribute("success") %>
@@ -215,7 +199,7 @@
             </c:choose>
             <c:choose>
               <c:when test="${reservation.paymentStatus == 'PAID'}">
-                <span class="status-badge payment-paid"><i class="fas fa-dollar-sign me-1"></i>Paid</span>
+                <span class="status-badge payment-paid"><i class="fas fa-rupee-sign me-1"></i>Paid</span>
               </c:when>
               <c:otherwise>
                 <span class="status-badge payment-pending">
@@ -271,13 +255,8 @@
                 <table class="table table-bordered table-hover align-middle">
                   <thead class="table-light">
                   <tr>
-                    <th>#</th>
-                    <th>Room Number</th>
-                    <th>Room Type</th>
-                    <th>View</th>
-                    <th>Floor</th>
-                    <th>Capacity</th>
-                    <th>Price/Night</th>
+                    <th>#</th><th>Room Number</th><th>Room Type</th><th>View</th>
+                    <th>Floor</th><th>Capacity</th><th>Price/Night</th>
                   </tr>
                   </thead>
                   <tbody>
@@ -286,18 +265,18 @@
                       <td><span class="badge bg-primary">${loop.index + 1}</span></td>
                       <td><strong><c:out value="${room.roomNumber}"/></strong></td>
                       <td>
-                          <span class="badge"
-                                style="background:
-                                <c:choose>
-                                <c:when test="${room.roomType == 'DELUXE'}">#f3e5f5;color:#7b1fa2</c:when>
-                                <c:when test="${room.roomType == 'SUITE'}">#fff8e1;color:#f57f17</c:when>
-                                <c:when test="${room.roomType == 'EXECUTIVE'}">#e8f5e9;color:#2e7d32</c:when>
-                                <c:when test="${room.roomType == 'FAMILY'}">#fce4ec;color:#c62828</c:when>
-                                <c:when test="${room.roomType == 'PRESIDENTIAL'}">#fdf3e7;color:#e65100</c:when>
-                                <c:otherwise>#e3f2fd;color:#1565c0</c:otherwise>
-                                        </c:choose>">
-                            <c:out value="${room.roomType}"/>
-                          </span>
+                        <span class="badge"
+                              style="background:
+                              <c:choose>
+                              <c:when test="${room.roomType == 'DELUXE'}">#f3e5f5;color:#7b1fa2</c:when>
+                              <c:when test="${room.roomType == 'SUITE'}">#fff8e1;color:#f57f17</c:when>
+                              <c:when test="${room.roomType == 'EXECUTIVE'}">#e8f5e9;color:#2e7d32</c:when>
+                              <c:when test="${room.roomType == 'FAMILY'}">#fce4ec;color:#c62828</c:when>
+                              <c:when test="${room.roomType == 'PRESIDENTIAL'}">#fdf3e7;color:#e65100</c:when>
+                              <c:otherwise>#e3f2fd;color:#1565c0</c:otherwise>
+                                      </c:choose>">
+                          <c:out value="${room.roomType}"/>
+                        </span>
                       </td>
                       <td><c:out value="${not empty room.roomView ? room.roomView : '—'}"/></td>
                       <td><c:out value="${not empty room.floorNumber ? room.floorNumber : '—'}"/></td>
@@ -305,7 +284,7 @@
                       <td>
                         <c:choose>
                           <c:when test="${not empty room.roomPrice}">
-                            $<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/>
+                            Rs.<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/>
                           </c:when>
                           <c:otherwise>—</c:otherwise>
                         </c:choose>
@@ -323,10 +302,7 @@
             </c:otherwise>
           </c:choose>
           <div class="info-grid mt-3">
-            <div class="info-item">
-              <div class="label">Total Rooms</div>
-              <div class="value">${reservation.numberOfRooms}</div>
-            </div>
+            <div class="info-item"><div class="label">Total Rooms</div><div class="value">${reservation.numberOfRooms}</div></div>
           </div>
         </div>
 
@@ -334,37 +310,21 @@
         <div class="info-section">
           <h5><i class="fas fa-calendar-alt me-2"></i>Stay Details</h5>
           <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Check-in</div>
-              <div class="value">${reservation.formattedCheckInDate}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Check-out</div>
-              <div class="value">${reservation.formattedCheckOutDate}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Nights</div>
-              <div class="value">${reservation.totalNights}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Guests</div>
-              <div class="value">${reservation.adults} Adults, ${reservation.children} Children</div>
-            </div>
+            <div class="info-item"><div class="label">Check-in</div><div class="value">${reservation.formattedCheckInDate}</div></div>
+            <div class="info-item"><div class="label">Check-out</div><div class="value">${reservation.formattedCheckOutDate}</div></div>
+            <div class="info-item"><div class="label">Nights</div><div class="value">${reservation.totalNights}</div></div>
+            <div class="info-item"><div class="label">Guests</div><div class="value">${reservation.adults} Adults, ${reservation.children} Children</div></div>
             <c:if test="${not empty reservation.source}">
-              <div class="info-item">
-                <div class="label">Source</div>
-                <div class="value"><c:out value="${reservation.source}"/></div>
-              </div>
+              <div class="info-item"><div class="label">Source</div><div class="value"><c:out value="${reservation.source}"/></div></div>
             </c:if>
           </div>
         </div>
 
         <!-- ── Price Breakdown ── -->
         <div class="info-section">
-          <h5><i class="fas fa-dollar-sign me-2"></i>Price Breakdown</h5>
+          <h5><i class="fas fa-rupee-sign me-2"></i>Price Breakdown</h5>
           <div class="price-breakdown">
 
-              <%-- Per-room breakdown if multiple rooms --%>
             <c:if test="${reservation.numberOfRooms > 1}">
               <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
                 <c:if test="${not empty room.roomPrice}">
@@ -372,7 +332,7 @@
                     <span>Room ${loop.index + 1} — <c:out value="${room.roomNumber}"/> (<c:out value="${room.roomType}"/>)
                       × ${reservation.totalNights} night(s)</span>
                     <span class="fw-bold">
-                      $<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/>
+                      Rs.<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/>
                     </span>
                   </div>
                 </c:if>
@@ -380,7 +340,6 @@
               <hr style="margin:8px 0;border-color:#dee2e6;">
             </c:if>
 
-              <%-- Subtotal row --%>
             <c:choose>
               <c:when test="${not empty reservation.subtotal}">
                 <div class="price-row">
@@ -389,28 +348,24 @@
                       <c:when test="${reservation.numberOfRooms > 1}">Total Room Charges (${reservation.totalNights} nights)</c:when>
                       <c:otherwise>Room Charges (${reservation.totalNights} nights
                         <c:if test="${not empty reservation.roomPrice}">
-                          @ $<fmt:formatNumber value="${reservation.roomPrice}" pattern="#,##0.00"/>/night
+                          @ Rs.<fmt:formatNumber value="${reservation.roomPrice}" pattern="#,##0.00"/>/night
                         </c:if>)
                       </c:otherwise>
                     </c:choose>
                   </span>
-                  <span class="fw-bold">$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
+                  <span class="fw-bold">Rs.<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
                 </div>
               </c:when>
               <c:otherwise>
-                <div class="price-row">
-                  <span>Room Charges</span>
-                  <span class="fw-bold">—</span>
-                </div>
+                <div class="price-row"><span>Room Charges</span><span class="fw-bold">—</span></div>
               </c:otherwise>
             </c:choose>
 
-              <%-- Tax --%>
             <c:choose>
               <c:when test="${not empty reservation.taxAmount}">
                 <div class="price-row">
                   <span>Tax (12%)</span>
-                  <span class="fw-bold">$<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
+                  <span class="fw-bold">Rs.<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
                 </div>
               </c:when>
               <c:otherwise>
@@ -418,21 +373,19 @@
               </c:otherwise>
             </c:choose>
 
-              <%-- Discount --%>
             <c:if test="${not empty reservation.discountAmount and reservation.discountAmount > 0}">
               <div class="price-row">
                 <span>Discount</span>
-                <span class="fw-bold text-success">-$<fmt:formatNumber value="${reservation.discountAmount}" pattern="#,##0.00"/></span>
+                <span class="fw-bold text-success">-Rs.<fmt:formatNumber value="${reservation.discountAmount}" pattern="#,##0.00"/></span>
               </div>
             </c:if>
 
-              <%-- Total --%>
             <div class="price-row total">
               <span>Total Amount</span>
               <span>
                 <c:choose>
                   <c:when test="${not empty reservation.totalAmount}">
-                    $<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/>
+                    Rs.<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/>
                   </c:when>
                   <c:otherwise>—</c:otherwise>
                 </c:choose>
@@ -462,8 +415,6 @@
 
         <!-- ── Actions ── -->
         <div class="action-buttons">
-
-            <%-- Check In --%>
           <c:if test="${reservation.reservationStatus == 'CONFIRMED'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/checkin?id=${reservation.id}"
                class="btn btn-success btn-action"
@@ -471,8 +422,6 @@
               <i class="fas fa-sign-in-alt me-2"></i>Check In
             </a>
           </c:if>
-
-            <%-- Check Out --%>
           <c:if test="${reservation.reservationStatus == 'CHECKED_IN'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/checkout?id=${reservation.id}"
                class="btn btn-warning btn-action"
@@ -480,8 +429,6 @@
               <i class="fas fa-sign-out-alt me-2"></i>Check Out
             </a>
           </c:if>
-
-            <%-- Cancel --%>
           <c:if test="${reservation.reservationStatus != 'CHECKED_OUT' and reservation.reservationStatus != 'CANCELLED'}">
             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/cancel?id=${reservation.id}"
                class="btn btn-danger btn-action"
@@ -489,23 +436,14 @@
               <i class="fas fa-times-circle me-2"></i>Cancel
             </a>
           </c:if>
-
-            <%-- Edit --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/edit?id=${reservation.id}"
              class="btn btn-primary btn-action">
             <i class="fas fa-edit me-2"></i>Edit
           </a>
-
-            <%-- Print Bill --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/print-bill?id=${reservation.id}"
              class="btn btn-info btn-action text-white" target="_blank">
             <i class="fas fa-print me-2"></i>Print Bill
           </a>
-
-            <%--
-              DELETE: must be a POST form — the controller's doPost handles /delete.
-              A plain GET link would hit doGet which has no /delete case → 404.
-            --%>
           <form method="POST"
                 action="${pageContext.request.contextPath}<%= basePath %>/reservations/delete"
                 class="delete-form"
@@ -515,13 +453,10 @@
               <i class="fas fa-trash me-2"></i>Delete
             </button>
           </form>
-
-            <%-- Back to List --%>
           <a href="${pageContext.request.contextPath}<%= basePath %>/reservations"
              class="btn btn-secondary btn-action ms-auto">
             <i class="fas fa-arrow-left me-2"></i>Back to List
           </a>
-
         </div>
       </div>
     </c:otherwise>

@@ -64,7 +64,6 @@
             background: var(--primary-color); color: white; border: none;
             padding: 8px 20px; border-radius: 10px; font-weight: 500;
         }
-        .btn-search-sm:hover { background: var(--primary-dark); }
         .filter-badge {
             background: #e9ecef; padding: 5px 12px; border-radius: 20px;
             font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;
@@ -104,7 +103,6 @@
         <li><a href="<%= request.getContextPath() %><%= basePath %>/payments">
             <i class="fas fa-credit-card"></i><span>Payments & Bills</span></a>
         </li>
-<%--        <li><a href="${pageContext.request.contextPath}<%= basePath %>/rooms"><i class="fas fa-door-open"></i>Rooms</a></li>--%>
         <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
     </ul>
 </div>
@@ -133,7 +131,7 @@
     <% session.removeAttribute("error"); %>
     <% } %>
 
-    <!-- Integrated Search Section - FIXED: Using GET method with correct parameter names -->
+    <!-- Search Section -->
     <div class="search-card">
         <form action="${pageContext.request.contextPath}<%= basePath %>/reservations" method="get" class="row g-3 align-items-center">
             <div class="col-md-3">
@@ -166,9 +164,7 @@
         <div class="mt-3">
             <span class="filter-badge">
                 <i class="fas fa-filter"></i> Search: "<%= searchKeyword %>"
-                <% if (searchType != null && !"all".equals(searchType)) { %>
-                    in <%= searchType %>
-                <% } %>
+                <% if (searchType != null && !"all".equals(searchType)) { %> in <%= searchType %><% } %>
                 <a href="${pageContext.request.contextPath}<%= basePath %>/reservations"><i class="fas fa-times"></i></a>
             </span>
         </div>
@@ -221,7 +217,7 @@
                     <td><%= r.getFormattedCheckOutDate() %></td>
                     <td><span class="badge-status <%= badgeClass %>"><%= status != null ? status.replace("_"," ") : "PENDING" %></span></td>
                     <td><span class="badge-status <%= pBadge %>"><%= pStatus != null ? pStatus : "PENDING" %></span></td>
-                    <td>$<fmt:formatNumber value="<%= r.getTotalAmount() %>" pattern="#,##0.00"/></td>
+                    <td>Rs.<fmt:formatNumber value="<%= r.getTotalAmount() %>" pattern="#,##0.00"/></td>
                     <td>
                         <div class="btn-group btn-group-sm">
                             <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/view?id=<%= r.getId() %>"
@@ -262,14 +258,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Auto-submit search after typing (optional, with debounce)
     let searchTimer;
     document.querySelector('input[name="search"]').addEventListener('input', function() {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => {
-            if (this.value.length >= 2 || this.value.length === 0) {
-                this.form.submit();
-            }
+            if (this.value.length >= 2 || this.value.length === 0) this.form.submit();
         }, 500);
     });
 </script>

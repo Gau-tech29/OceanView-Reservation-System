@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * JDBC implementation of GuestDAO.
- * All queries target the `guests` table in oceanview_db.
- */
 public class GuestDAOImpl implements GuestDAO {
 
     private static GuestDAOImpl instance;
@@ -25,8 +21,6 @@ public class GuestDAOImpl implements GuestDAO {
         if (instance == null) instance = new GuestDAOImpl();
         return instance;
     }
-
-    // ── CREATE ────────────────────────────────────────────────────────────────────
 
     @Override
     public Guest save(Guest g) throws SQLException {
@@ -46,7 +40,6 @@ public class GuestDAOImpl implements GuestDAO {
             g.setGuestNumber(gNum);
 
             LocalDateTime now = LocalDateTime.now();
-
             ps.setString(1,  gNum);
             ps.setString(2,  g.getFirstName());
             ps.setString(3,  g.getLastName());
@@ -63,7 +56,6 @@ public class GuestDAOImpl implements GuestDAO {
             ps.setString(14, g.getNotes());
             ps.setTimestamp(15, Timestamp.valueOf(now));
             ps.setTimestamp(16, Timestamp.valueOf(now));
-
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {

@@ -19,16 +19,7 @@ public interface RoomDAO extends BaseDAO<Room, Long> {
     boolean updateStatus(Long id, Room.RoomStatus status) throws SQLException;
     long countAvailableRooms() throws SQLException;
 
-    /**
-     * Returns active rooms with NO overlapping CONFIRMED/CHECKED_IN reservation.
-     *
-     * INCLUSIVE overlap (check-in and check-out dates are both considered occupied):
-     *   A room is blocked when an existing reservation's dates overlap [checkIn, checkOut]
-     *   i.e. existingCheckIn <= checkOut  AND  existingCheckOut >= checkIn
-     *
-     * @param checkIn  desired check-in  date (inclusive)
-     * @param checkOut desired check-out date (inclusive)
-     */
+
     List<Room> findAvailableRoomsForDates(LocalDate checkIn, LocalDate checkOut)
             throws SQLException;
 }

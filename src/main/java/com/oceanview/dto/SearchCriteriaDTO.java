@@ -2,10 +2,6 @@ package com.oceanview.dto;
 
 import java.time.LocalDate;
 
-/**
- * DTO that carries search parameters from the search form
- * through the controller into the service/DAO layer.
- */
 public class SearchCriteriaDTO {
 
     private String    searchType;

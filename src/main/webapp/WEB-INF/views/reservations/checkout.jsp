@@ -175,7 +175,7 @@
             <div class="total-banner">
                 <div>
                     <div class="label"><i class="fas fa-file-invoice-dollar me-2"></i>Total Amount Due for Checkout</div>
-                    <div class="amount">$<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/></div>
+                    <div class="amount">Rs.<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/></div>
                     <div class="meta">
                         Reservation: <strong>${reservation.reservationNumber}</strong>
                         &nbsp;&bull;&nbsp; Guest: <strong>${reservation.guestName}</strong>
@@ -252,7 +252,7 @@
                     </div>
 
                     <div class="card-section">
-                        <div class="sec-title"><i class="fas fa-dollar-sign"></i>Price Breakdown</div>
+                        <div class="sec-title"><i class="fas fa-rupee-sign"></i>Price Breakdown</div>
                         <div class="price-box">
                             <!-- Show each room's charges -->
                             <c:forEach var="room" items="${reservation.rooms}" varStatus="loop">
@@ -265,29 +265,29 @@
                                         </c:if>
                                     </span>
                                     <span class="text-end">
-                                        $<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/> × ${reservation.totalNights} nights<br>
-                                        <strong>$<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/></strong>
+                                        Rs.<fmt:formatNumber value="${room.roomPrice}" pattern="#,##0.00"/> × ${reservation.totalNights} nights<br>
+                                        <strong>Rs.<fmt:formatNumber value="${room.roomPrice * reservation.totalNights}" pattern="#,##0.00"/></strong>
                                     </span>
                                 </div>
                             </c:forEach>
 
                             <div class="p-row">
                                 <span>Room Charges Total</span>
-                                <span>$<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
+                                <span>Rs.<fmt:formatNumber value="${reservation.subtotal}" pattern="#,##0.00"/></span>
                             </div>
                             <div class="p-row">
                                 <span>Tax (12%)</span>
-                                <span>$<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
+                                <span>Rs.<fmt:formatNumber value="${reservation.taxAmount}" pattern="#,##0.00"/></span>
                             </div>
                             <c:if test="${not empty reservation.discountAmount and reservation.discountAmount > 0}">
                                 <div class="p-row disc">
                                     <span>Discount</span>
-                                    <span>-$<fmt:formatNumber value="${reservation.discountAmount}" pattern="#,##0.00"/></span>
+                                    <span>-Rs.<fmt:formatNumber value="${reservation.discountAmount}" pattern="#,##0.00"/></span>
                                 </div>
                             </c:if>
                             <div class="p-row total">
                                 <span>TOTAL DUE</span>
-                                <span>$<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/></span>
+                                <span>Rs.<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/></span>
                             </div>
                         </div>
                     </div>
@@ -406,7 +406,7 @@
                                     </div>
                                 </div>
                                 <div style="font-size:1.7rem;font-weight:700;color:#198754;">
-                                    $<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/>
+                                    Rs.<fmt:formatNumber value="${reservation.totalAmount}" pattern="#,##0.00"/>
                                 </div>
                             </div>
 
@@ -453,7 +453,7 @@
         const method = sel.value.replace(/_/g, ' ');
         const amt    = '${reservation.totalAmount}';
         return confirm(
-            'Confirm payment of $' + parseFloat(amt).toFixed(2) + ' via ' + method + '?\n\n'
+            'Confirm payment of Rs. ' + parseFloat(amt).toFixed(2) + ' via ' + method + '?\n\n'
             + 'This will:\n'
             + '\u2022 Mark the bill as PAID\n'
             + '\u2022 Set reservation status to CHECKED OUT\n\n'

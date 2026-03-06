@@ -2,10 +2,7 @@ package com.oceanview.dto;
 
 import java.math.BigDecimal;
 
-/**
- * Represents one room entry from the reservation_rooms junction table,
- * enriched with room details from the rooms table.
- */
+
 public class ReservationRoomDTO {
 
     private Long       id;             // reservation_rooms.id
@@ -19,9 +16,6 @@ public class ReservationRoomDTO {
     private Integer    capacity;
 
     public ReservationRoomDTO() {}
-
-    // ── Getters & Setters ─────────────────────────────────────────────────────────
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

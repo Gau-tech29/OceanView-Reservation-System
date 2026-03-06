@@ -23,14 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * DAO implementation for Reservation.
- *
- * IMPORTANT: The reservations table no longer has a room_id column.
- * - number_of_rooms (INT) stores the count of rooms booked.
- * - All actual room details are stored in the reservation_rooms junction table.
- * - The SELECT_DTO query joins guests only; room details come from enrichWithRooms().
- */
+
 public class ReservationDAOImpl implements ReservationDAO {
 
     private static ReservationDAOImpl instance;
@@ -42,8 +35,6 @@ public class ReservationDAOImpl implements ReservationDAO {
         return instance;
     }
 
-    // ─── Base SELECT fragment (no room join — rooms come from reservation_rooms) ──
-
     private static final String SELECT_DTO =
             "SELECT r.*, " +
                     "  CONCAT(g.first_name, ' ', g.last_name) AS guest_name, " +
@@ -52,8 +43,6 @@ public class ReservationDAOImpl implements ReservationDAO {
                     "  g.guest_number   AS guest_number_col " +
                     "FROM reservations r " +
                     "LEFT JOIN guests g ON r.guest_id = g.id ";
-
-    // ─── Save ─────────────────────────────────────────────────────────────────────
 
     @Override
     public Reservation save(Reservation r) throws SQLException {

@@ -777,9 +777,9 @@
             </span>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="#" class="btn-export" onclick="exportGuests()">
-                <i class="fas fa-download"></i> Export
-            </a>
+<%--            <a href="#" class="btn-export" onclick="exportGuests()">--%>
+<%--                <i class="fas fa-download"></i> Export--%>
+<%--            </a>--%>
             <a href="${pageContext.request.contextPath}<%= basePath %>/guests/new" class="btn-add">
                 <i class="fas fa-user-plus"></i> Add New Guest
             </a>

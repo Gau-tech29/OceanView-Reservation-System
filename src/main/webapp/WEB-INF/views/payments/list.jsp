@@ -313,14 +313,14 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-info">
-                <h3>$<fmt:formatNumber value="${weeklyRevenue}" pattern="#,##0.00"/></h3>
+                <h3>Rs.<fmt:formatNumber value="${weeklyRevenue}" pattern="#,##0.00"/></h3>
                 <p>Weekly Revenue</p>
             </div>
             <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
         </div>
         <div class="stat-card" style="border-left-color: #198754;">
             <div class="stat-info">
-                <h3>$<fmt:formatNumber value="${monthlyRevenue}" pattern="#,##0.00"/></h3>
+                <h3>Rs.<fmt:formatNumber value="${monthlyRevenue}" pattern="#,##0.00"/></h3>
                 <p>Monthly Revenue</p>
             </div>
             <div class="stat-icon" style="background: linear-gradient(135deg,#198754,#146c43);">
@@ -329,7 +329,7 @@
         </div>
         <div class="stat-card" style="border-left-color: #dc3545;">
             <div class="stat-info">
-                <h3>$<fmt:formatNumber value="${weeklyRefunds}" pattern="#,##0.00"/></h3>
+                <h3>Rs.<fmt:formatNumber value="${weeklyRefunds}" pattern="#,##0.00"/></h3>
                 <p>Weekly Refunds</p>
             </div>
             <div class="stat-icon" style="background: linear-gradient(135deg,#dc3545,#b02a37);">

@@ -312,7 +312,7 @@
             <div class="info-row">
               <span class="info-label">Bill Total:</span>
               <span class="info-value">
-                                $<fmt:formatNumber value="${payment.billTotalAmount}" pattern="#,##0.00"/>
+                                Rs.<fmt:formatNumber value="${payment.billTotalAmount}" pattern="#,##0.00"/>
                             </span>
             </div>
             <div class="info-row">
@@ -368,19 +368,19 @@
           </div>
           <div class="col-md-3">
             <small class="text-muted d-block">Room Charges</small>
-            <strong>$<fmt:formatNumber value="${bill.roomCharges}" pattern="#,##0.00"/></strong>
+            <strong>Rs.<fmt:formatNumber value="${bill.roomCharges}" pattern="#,##0.00"/></strong>
           </div>
           <div class="col-md-3">
             <small class="text-muted d-block">Tax Amount</small>
-            <strong>$<fmt:formatNumber value="${bill.taxAmount}" pattern="#,##0.00"/></strong>
+            <strong>Rs.<fmt:formatNumber value="${bill.taxAmount}" pattern="#,##0.00"/></strong>
           </div>
           <div class="col-md-3">
             <small class="text-muted d-block">Discount</small>
-            <strong>-$<fmt:formatNumber value="${bill.discountAmount}" pattern="#,##0.00"/></strong>
+            <strong>-Rs.<fmt:formatNumber value="${bill.discountAmount}" pattern="#,##0.00"/></strong>
           </div>
           <div class="col-md-3">
             <small class="text-muted d-block">Total Amount</small>
-            <strong class="text-primary fs-5">$<fmt:formatNumber value="${bill.totalAmount}" pattern="#,##0.00"/></strong>
+            <strong class="text-primary fs-5">Rs.<fmt:formatNumber value="${bill.totalAmount}" pattern="#,##0.00"/></strong>
           </div>
           <div class="col-md-3">
             <small class="text-muted d-block">Status</small>

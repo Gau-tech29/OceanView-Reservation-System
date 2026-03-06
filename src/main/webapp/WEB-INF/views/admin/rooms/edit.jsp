@@ -149,7 +149,7 @@
             <i class="fas fa-door-open"></i>
             <div>
                 <h4>Room ${room.roomNumber} — ${room.roomType}</h4>
-                <p>Floor ${room.floorNumber} &nbsp;|&nbsp; ${room.roomView} &nbsp;|&nbsp; Capacity: ${room.capacity} &nbsp;|&nbsp; $${room.basePrice}/night</p>
+                <p>Floor ${room.floorNumber} &nbsp;|&nbsp; ${room.roomView} &nbsp;|&nbsp; Capacity: ${room.capacity} &nbsp;|&nbsp; Rs. ${room.basePrice}/night</p>
             </div>
         </div>
     </c:if>
@@ -226,7 +226,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Base Price / Night <span class="req">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">Rs.</span>
                                 <input type="number" class="form-control" name="basePrice"
                                        value="${room.basePrice}" required min="0.01" step="0.01">
                             </div>

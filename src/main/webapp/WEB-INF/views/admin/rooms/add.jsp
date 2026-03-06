@@ -208,7 +208,7 @@
                 <div class="col-md-3">
                     <label class="form-label">Base Price / Night <span class="req">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text">$</span>
+                        <span class="input-group-text">Rs.</span>
                         <input type="number" class="form-control" name="basePrice" placeholder="0.00"
                                value="${param.basePrice}" required min="0.01" step="0.01">
                     </div>

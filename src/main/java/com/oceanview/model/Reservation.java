@@ -16,11 +16,6 @@ public class Reservation {
     private Long          guestId;
     private Long          userId;
 
-    /**
-     * Total number of rooms booked under this reservation.
-     * Stored in reservations.number_of_rooms.
-     * All actual room details live in reservation_rooms table.
-     */
     private Integer       numberOfRooms;
 
     private LocalDate     checkInDate;
@@ -29,10 +24,6 @@ public class Reservation {
     private Integer       children;
     private Integer       totalNights;
 
-    /**
-     * Combined nightly rate across ALL booked rooms.
-     * e.g. Room A ($100) + Room B ($150) = $250 / night stored here.
-     */
     private BigDecimal    roomPrice;
 
     private BigDecimal    taxAmount;
@@ -47,17 +38,10 @@ public class Reservation {
     private LocalDateTime     createdAt;
     private LocalDateTime     updatedAt;
 
-    // ── Associated objects (not persisted in reservations table) ────────────────
     private Guest      guest;
     private User       user;
 
-    /**
-     * Transient list of all room IDs for this reservation.
-     * Populated from reservation_rooms at query time. Not a DB column.
-     */
     private List<Long> roomIds = new ArrayList<>();
-
-    // ── Enums ─────────────────────────────────────────────────────────────────────
 
     public enum PaymentStatus {
         PENDING, PARTIAL, PAID, REFUNDED

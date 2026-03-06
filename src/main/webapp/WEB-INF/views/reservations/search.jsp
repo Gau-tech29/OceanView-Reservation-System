@@ -117,54 +117,18 @@
         <p>Hotel Reservation System</p>
     </div>
     <ul class="sidebar-menu">
-        <li>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/dashboard">
-                <i class="fas fa-chart-pie"></i><span>Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations">
-                <i class="fas fa-calendar-alt"></i><span>Reservations</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new">
-                <i class="fas fa-plus-circle"></i><span>New Reservation</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/search" class="active">
-                <i class="fas fa-search"></i><span>Search</span>
-            </a>
-        </li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations"><i class="fas fa-calendar-alt"></i><span>Reservations</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/new"><i class="fas fa-plus-circle"></i><span>New Reservation</span></a></li>
+        <li><a href="${pageContext.request.contextPath}<%= basePath %>/reservations/search" class="active"><i class="fas fa-search"></i><span>Search</span></a></li>
         <% if (isAdmin) { %>
-        <li>
-            <a href="${pageContext.request.contextPath}/admin/guests">
-                <i class="fas fa-users"></i><span>Guests</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}/admin/manage-rooms">
-                <i class="fas fa-door-open"></i><span>Rooms</span>
-            </a>
-        </li>
+        <li><a href="${pageContext.request.contextPath}/admin/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/admin/manage-rooms"><i class="fas fa-door-open"></i><span>Rooms</span></a></li>
         <% } else { %>
-        <li>
-            <a href="${pageContext.request.contextPath}/staff/guests">
-                <i class="fas fa-users"></i><span>Guests</span>
-            </a>
-        </li>
-        <li>
-            <a href="${pageContext.request.contextPath}/staff/rooms">
-                <i class="fas fa-door-open"></i><span>Rooms</span>
-            </a>
-        </li>
+        <li><a href="${pageContext.request.contextPath}/staff/guests"><i class="fas fa-users"></i><span>Guests</span></a></li>
+        <li><a href="${pageContext.request.contextPath}/staff/rooms"><i class="fas fa-door-open"></i><span>Rooms</span></a></li>
         <% } %>
-        <li>
-            <a href="${pageContext.request.contextPath}/logout">
-                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-            </a>
-        </li>
+        <li><a href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
     </ul>
 </div>
 
@@ -173,9 +137,7 @@
     <div class="top-nav">
         <div class="page-title"><h2>Search Reservations</h2></div>
         <div class="d-flex align-items-center gap-3">
-            <div class="user-avatar">
-                <%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %>
-            </div>
+            <div class="user-avatar"><%= user.getFirstName().charAt(0) %><%= user.getLastName().charAt(0) %></div>
             <div>
                 <div style="font-weight:600;font-size:.9rem;"><%= user.getFullName() %></div>
                 <div style="font-size:.75rem;color:#6c757d;"><%= user.getRole() %></div>
@@ -183,7 +145,7 @@
         </div>
     </div>
 
-    <!-- Search Form - IMPORTANT: Make sure action is correct -->
+    <!-- Search Form -->
     <div class="search-card">
         <h4><i class="fas fa-filter me-2"></i>Search Criteria</h4>
         <form action="${pageContext.request.contextPath}<%= basePath %>/reservations/search" method="post" id="searchForm">
@@ -232,12 +194,8 @@
                     </select>
                 </div>
                 <div class="col-12 text-center mt-3">
-                    <button type="submit" class="btn-search me-2">
-                        <i class="fas fa-search me-2"></i>Search
-                    </button>
-                    <button type="button" class="btn-reset" onclick="resetSearch()">
-                        <i class="fas fa-redo-alt me-2"></i>Reset
-                    </button>
+                    <button type="submit" class="btn-search me-2"><i class="fas fa-search me-2"></i>Search</button>
+                    <button type="button" class="btn-reset" onclick="resetSearch()"><i class="fas fa-redo-alt me-2"></i>Reset</button>
                 </div>
             </div>
         </form>
@@ -288,56 +246,34 @@
                                                 ${room.roomNumber}<c:if test="${not loop.last}">, </c:if>
                                             </c:forEach>
                                         </c:when>
-                                        <c:otherwise>
-                                            ${res.roomNumber}
-                                        </c:otherwise>
+                                        <c:otherwise>${res.roomNumber}</c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td>${res.formattedCheckInDate}</td>
                                 <td>${res.formattedCheckOutDate}</td>
-                                <td>$<fmt:formatNumber value="${res.totalAmount}" pattern="#,##0.00"/></td>
+                                <td>Rs.<fmt:formatNumber value="${res.totalAmount}" pattern="#,##0.00"/></td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${res.reservationStatus == 'CONFIRMED'}">
-                                            <span class="badge-status badge-confirmed">Confirmed</span>
-                                        </c:when>
-                                        <c:when test="${res.reservationStatus == 'CHECKED_IN'}">
-                                            <span class="badge-status badge-checked-in">Checked In</span>
-                                        </c:when>
-                                        <c:when test="${res.reservationStatus == 'CHECKED_OUT'}">
-                                            <span class="badge-status badge-checked-out">Checked Out</span>
-                                        </c:when>
-                                        <c:when test="${res.reservationStatus == 'CANCELLED'}">
-                                            <span class="badge-status badge-cancelled">Cancelled</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge-status badge-pending">${res.reservationStatus}</span>
-                                        </c:otherwise>
+                                        <c:when test="${res.reservationStatus == 'CONFIRMED'}"><span class="badge-status badge-confirmed">Confirmed</span></c:when>
+                                        <c:when test="${res.reservationStatus == 'CHECKED_IN'}"><span class="badge-status badge-checked-in">Checked In</span></c:when>
+                                        <c:when test="${res.reservationStatus == 'CHECKED_OUT'}"><span class="badge-status badge-checked-out">Checked Out</span></c:when>
+                                        <c:when test="${res.reservationStatus == 'CANCELLED'}"><span class="badge-status badge-cancelled">Cancelled</span></c:when>
+                                        <c:otherwise><span class="badge-status badge-pending">${res.reservationStatus}</span></c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${res.paymentStatus == 'PAID'}">
-                                            <span class="badge-status badge-paid">Paid</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge-status badge-unpaid">${res.paymentStatus}</span>
-                                        </c:otherwise>
+                                        <c:when test="${res.paymentStatus == 'PAID'}"><span class="badge-status badge-paid">Paid</span></c:when>
+                                        <c:otherwise><span class="badge-status badge-unpaid">${res.paymentStatus}</span></c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td>
                                     <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/view?id=${res.id}"
-                                       class="btn btn-sm btn-outline-primary btn-action" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                                       class="btn btn-sm btn-outline-primary btn-action" title="View"><i class="fas fa-eye"></i></a>
                                     <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/edit?id=${res.id}"
-                                       class="btn btn-sm btn-outline-success btn-action" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                       class="btn btn-sm btn-outline-success btn-action" title="Edit"><i class="fas fa-edit"></i></a>
                                     <a href="${pageContext.request.contextPath}<%= basePath %>/reservations/print-bill?id=${res.id}"
-                                       class="btn btn-sm btn-outline-info btn-action" title="Print Bill" target="_blank">
-                                        <i class="fas fa-print"></i>
-                                    </a>
+                                       class="btn btn-sm btn-outline-info btn-action" title="Print Bill" target="_blank"><i class="fas fa-print"></i></a>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -361,17 +297,9 @@
         $('select[name="paymentStatus"]').val('');
         $('#searchForm').submit();
     }
-
-    // Auto-submit when status or payment status changes
-    $('select[name="status"], select[name="paymentStatus"]').on('change', function() {
-        $('#searchForm').submit();
-    });
-
-    // Auto-submit when both dates are selected
+    $('select[name="status"], select[name="paymentStatus"]').on('change', function() { $('#searchForm').submit(); });
     $('input[name="checkInDate"], input[name="checkOutDate"]').on('change', function() {
-        if ($('input[name="checkInDate"]').val() && $('input[name="checkOutDate"]').val()) {
-            $('#searchForm').submit();
-        }
+        if ($('input[name="checkInDate"]').val() && $('input[name="checkOutDate"]').val()) $('#searchForm').submit();
     });
 </script>
 </body>
