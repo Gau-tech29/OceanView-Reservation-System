@@ -126,7 +126,7 @@ public class Payment {
     }
 
     public String getFormattedAmount() {
-        return String.format("$%.2f", amount != null ? amount.doubleValue() : 0.0);
+        return String.format("Rs. %.2f", amount != null ? amount.doubleValue() : 0.0);
     }
 
     public String getPaymentMethodDisplay() {

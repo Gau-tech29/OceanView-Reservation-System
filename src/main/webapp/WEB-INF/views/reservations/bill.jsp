@@ -322,15 +322,39 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="fas fa-print me-2"></i>Print Bill
         </button>
-        <button onclick="window.close()" class="btn btn-secondary ms-2">
+        <button onclick="closeBillTab()" class="btn btn-secondary ms-2">
             <i class="fas fa-times me-2"></i>Close
         </button>
     </div>
 </div>
 
 <script>
-    window.onload = function() {
-        // Uncomment the line below if you want the print dialog to appear automatically
+    function closeBillTab() {
+        // window.close() only works when tab was opened via window.open().
+        // When opened via <a target="_blank">, browsers block it.
+        // So we try close(), then fall back to history.back() after a short delay.
+        var closed = false;
+        try {
+            window.close();
+            // Give the browser 400ms to close; if still open, go back instead
+            setTimeout(function () {
+                if (!document.hidden) {
+                    // Tab is still open — navigate back instead
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // Nowhere to go back to — just blank the tab
+                        window.location.href = "about:blank";
+                    }
+                }
+            }, 400);
+        } catch (e) {
+            window.history.back();
+        }
+    }
+
+    window.onload = function () {
+        // Uncomment to auto-print on open:
         // window.print();
     };
 </script>

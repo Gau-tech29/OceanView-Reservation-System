@@ -15,8 +15,6 @@ public class SearchCriteriaDTO {
 
     public SearchCriteriaDTO() {}
 
-    // ── Getters & Setters ─────────────────────────────────────────────────────────
-
     public String getSearchType()                   { return searchType; }
     public void setSearchType(String v)             { this.searchType = v; }
 
